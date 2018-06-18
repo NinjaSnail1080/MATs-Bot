@@ -18,3 +18,11 @@
 __version__ = 0.1
 
 import discord
+import logging
+
+# Set up logger
+logger = logging.getLogger("mat")
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler("mat.log", "w", "utf-8")
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
