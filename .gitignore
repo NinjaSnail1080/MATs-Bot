@@ -115,3 +115,6 @@ idna_ssl.py
 /multidict
 /websockets
 /yarl
+
+# Ignore config file
+config.py
