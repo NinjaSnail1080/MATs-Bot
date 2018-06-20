@@ -2,7 +2,11 @@ MAT's Bot has the following libraries as dependencies:
 
 - aiohttp (https://github.com/aio-libs/aiohttp)
 - async-timeout (https://github.com/aio-libs/async-timeout)
+- attrs (https://github.com/python-attrs/attrs)
 - chardet (https://github.com/chardet/chardet)
 - discord.py (https://github.com/Rapptz/discord.py)
+- idna (https://github.com/kjd/idna)
+- idna-ssl (https://github.com/aio-libs/idna-ssl)
 - multidict (https://github.com/aio-libs/multidict)
 - websockets (https://github.com/aaugustin/websockets)
+- yarl (https://github.com/aio-libs/yarl)
