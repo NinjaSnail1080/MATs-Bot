@@ -19,6 +19,8 @@ __version__ = 0.1
 
 import discord
 import logging
+from discord.ext import commands
+import config
 
 # Set up logger
 logger = logging.getLogger("mat")
@@ -26,3 +28,26 @@ logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler("mat.log", "w", "utf-8")
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
+
+
+class MAT(commands.AutoShardedBot):
+
+    def __init__(self):
+        super().__init__(command_prefix=["!mat ", "mat/", "mat."],
+                         description="MAT's Bot",
+                         activity=discord.Game("!mat help"),
+                         max_messages=2500)
+
+    async def on_ready(self):
+        print('Logged in as')
+        print(bot.user.name)
+        print(bot.user.id)
+        print('------')
+
+    def run(self):
+        super().run(config.TOKEN)
+
+
+if __name__ == "__main__":
+    bot = MAT()
+    bot.run()
