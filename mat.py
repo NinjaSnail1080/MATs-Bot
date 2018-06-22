@@ -56,11 +56,14 @@ class MAT(commands.AutoShardedBot):
 
     @commands.command()
     async def help(self, ctx):
-        await ctx.send("Work in progress. My only command right now is `info`. My prefixes are `!mat `, `mat.`, `mat/`, or you could mention me.")
+        await ctx.send("Work in progress. My only command right now is `about`. My prefixes are "
+                       "`!mat `, `mat.`, `mat/`, or you could mention me.")
 
     @commands.command()
-    async def info(self, ctx):
-        embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose Discord bot written in Python.", color=discord.Color.from_rgb(0, 60, 255))
+    async def about(self, ctx):
+        embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose "
+                              "Discord bot written in Python.", color=discord.Color.from_rgb(
+                                  0, 60, 255))
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value="NinjaSnail1080#8581")
         embed.add_field(name="Server Count", value=f"{len(bot.guilds)}")
