@@ -108,11 +108,15 @@ venv.bak/
 /aiohttp
 /async_timeout
 /attr
+/cffi
 /chardet
 /discord
 /idna
 idna_ssl.py
 /multidict
+/nacl
+/pycparser
+six.py
 /websockets
 /yarl
 
