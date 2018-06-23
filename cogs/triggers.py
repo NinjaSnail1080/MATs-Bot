@@ -38,17 +38,20 @@ class Triggers:
                 url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
                 "7792/ping.gif"))
 
-        elif re.search("hmm", message.content, re.IGNORECASE):
+        if re.search("hmm", message.content, re.IGNORECASE):
             await message.channel.send(content="Hmmmmmmmmmmmmmmm...", embed=e.set_image(
                 url="https://cdn.discordapp.com/attachments/445772256140984330/452538872824332299"
                 "/Thonk.gif"))
 
-        elif message.content.lower() == "k":
+        if message.content.lower() == "k":
             await message.channel.send(
                 message.author.mention + " This is an auto-response. The person you are trying "
                 "to reach has no idea what \"k\" is meant to represent. They assume you wanted "
                 "to type \"ok\" but could not expand the energy to type two whole letters since "
                 "you were stabbed. The police have been notified.")
+
+        if re.search("ice cream", message.content, re.IGNORECASE) or re.search("vanilla", message.content, re.IGNORECASE):
+            await message.channel.send("Kinda warming up to vanilla now")
 
 
 def setup(bot):

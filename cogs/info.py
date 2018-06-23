@@ -51,7 +51,7 @@ class Info:
         embed.add_field(name="Library", value="discord.py")
         embed.add_field(name="License", value="GPL v3.0")
         embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot")
-        embed.set_footer(text="Dedicated to WooMAT1416#1142")
+        embed.set_footer(text="Dedicated to WooMAT1417#1142")
 
         await ctx.send(embed=embed)
 
