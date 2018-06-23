@@ -28,7 +28,7 @@ class Triggers:
         self.bot = bot
 
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author == self.bot.user:
             return
         e = discord.Embed(color=discord.Color.from_rgb(0, 60, 255))
 
@@ -50,8 +50,12 @@ class Triggers:
                 "to type \"ok\" but could not expand the energy to type two whole letters since "
                 "you were stabbed. The police have been notified.")
 
-        if re.search("ice cream", message.content, re.IGNORECASE) or re.search("vanilla", message.content, re.IGNORECASE):
-            await message.channel.send("Kinda warming up to vanilla now")
+        if re.search("can't", message.content, re.IGNORECASE) and re.search(
+            "believe", message.content, re.IGNORECASE):
+            await message.channel.send("You better believe it, scrub")
+
+        if re.search("loss", message.content, re.IGNORECASE):
+            await message.channel.send("| ||\n|| |_")
 
 
 def setup(bot):
