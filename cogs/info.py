@@ -16,10 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from mat import __version__
 from discord.ext import commands
 import discord
 import inspect
-import mat
+
+_commands = ["help", "info"]
+
 
 class Info:
 
@@ -31,9 +34,9 @@ class Info:
             if isinstance(member, commands.Command):
                 if member.parent is None:
                     bot.add_command(member)
-        
-        bot.remove_command("help")
-        bot.remove_command("info")
+
+        for cmd in _commands:
+            bot.remove_command(cmd)
 
     @commands.command()
     async def help(self, ctx):
@@ -47,7 +50,7 @@ class Info:
         embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose "
                               "Discord bot written in Python.", color=discord.Color.from_rgb(
                                   0, 60, 255))
-        embed.add_field(name="Version", value=mat.__version__)
+        embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value="NinjaSnail1080#8581")
         embed.add_field(name="Server Count", value=f"{len(self.bot.guilds)}")
         embed.add_field(name="Language", value="Python 3.6.4")

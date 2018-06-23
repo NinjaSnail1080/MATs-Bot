@@ -35,6 +35,8 @@ logger.addHandler(handler)
 
 initial_extensions = ["cogs.triggers", "cogs.info"]
 
+_commands = ["help", "info"]
+
 
 def get_prefix(bot, message):
     
@@ -50,8 +52,8 @@ class MAT(commands.AutoShardedBot):
                          pm_help=None,
                          activity=discord.Game("!mat help"),
                          fetch_offline_members=False)
-        self.remove_command("help")
-        self.remove_command("info")
+        for cmd in _commands:
+            self.remove_command(cmd)
 
         for extension in initial_extensions:
             try:

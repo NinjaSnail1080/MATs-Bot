@@ -28,15 +28,17 @@ class Triggers:
         self.bot = bot
 
     async def on_message(self, message):
+        if message.author.bot:
+            return
         e = discord.Embed(color=discord.Color.from_rgb(0, 60, 255))
 
         if re.search("pinged", message.content, re.IGNORECASE):
-            await message.channel.send(embed=e.set_image(
+            await message.channel.send(content="Pinged?", embed=e.set_image(
                 url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
                 "7792/ping.gif"))
 
         elif re.search("hmm", message.content, re.IGNORECASE):
-            await message.channel.send(embed=e.set_image(
+            await message.channel.send(content="Hmmmmmmmmmmmmmmm...", embed=e.set_image(
                 url="https://cdn.discordapp.com/attachments/445772256140984330/452538872824332299"
                 "/Thonk.gif"))
 
