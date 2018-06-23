@@ -29,12 +29,6 @@ class Info:
     def __init__(self, bot):
         self.bot = bot
 
-        members = inspect.getmembers(self)
-        for name, member in members:
-            if isinstance(member, commands.Command):
-                if member.parent is None:
-                    bot.add_command(member)
-
         for cmd in _commands:
             bot.remove_command(cmd)
 
