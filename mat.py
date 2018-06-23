@@ -21,7 +21,6 @@ from discord.ext import commands
 import discord
 import asyncio
 
-import logging
 import inspect
 import random
 import os
@@ -30,12 +29,6 @@ import config
 
 if __name__ == "__main__":
     from cogs import *
-
-    logger = logging.getLogger("mat")
-    logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler("mat.log", "w", "utf-8")
-    handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-    logger.addHandler(handler)
 
     initial_extensions = []
     for f in os.listdir("cogs"):
@@ -68,29 +61,22 @@ class MAT(commands.AutoShardedBot):
                          shard_id=0,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
+
         for cmd in _commands:
             self.remove_command(cmd)
 
         for extention in initial_extensions:
-            try:
-                self.load_extension(extention)
-            except:
-                import traceback
-                logger.warning("Failed to load {}.".format(extention))
-                print("-------------------------------")
-                traceback.print_exc()
-                print("-------------------------------")
+            self.load_extension(extention)
 
     async def on_ready(self):
         print("Logged in as")
         print(bot.user.name)
         print(bot.user.id)
-        print("---------")
-
-        logger.info("Logged in")
-        logger.info(f"Shards: {self.shard_count}")
-        logger.info(f"Servers {len(self.guilds)}")
-        logger.info(f"Users {len(set(self.get_all_members()))}")
+        print("-----------------")
+        print("Shards: " + str(self.shard_count))
+        print("Servers: " + str(len(self.guilds)))
+        print("Users: " + str(len(set(self.get_all_members()))))
+        print("-----------------")
 
     async def on_message(self, message):
         if message.author.bot:
