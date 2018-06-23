@@ -69,7 +69,7 @@ class MAT(commands.AutoShardedBot):
             self.load_extension(extention)
 
     async def on_ready(self):
-        print("Logged in as")
+        print("\nLogged in as")
         print(bot.user.name)
         print(bot.user.id)
         print("-----------------")
@@ -79,8 +79,9 @@ class MAT(commands.AutoShardedBot):
         print("-----------------")
 
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author == bot.user:
             return
+
         await bot.process_commands(message)
 
     async def switch_games(self):
