@@ -24,24 +24,32 @@ import asyncio
 import logging
 import inspect
 import random
+import os
 
 import config
+if __name__ == "__main__":
+    from cogs import *
 
-logger = logging.getLogger("mat")
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler("mat.log", "w", "utf-8")
-handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-logger.addHandler(handler)
+    logger = logging.getLogger("mat")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler("mat.log", "w", "utf-8")
+    handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+    logger.addHandler(handler)
 
-initial_extensions = ["cogs.triggers", "cogs.info"]
+    initial_extensions = []
+    for f in os.listdir("cogs"):
+        if f != "__init__.py":
+            if f.endswith(".py"):
+                f = f.replace(".py", "")
+                initial_extensions.append("cogs." + f)
 
-_commands = ["help", "info"]
+    _commands = info._commands
 
-games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
-         "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick", 
-         "with the server owner's pussy", "with you", "dead","with myself", 
-         "some epic game that you don't have", "with fire", "hard-to-get", "Project X", 
-         "getting friendzoned by Sigma", "getting friendzoned by Monika"]
+    games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
+            "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick", 
+            "with the server owner's pussy", "with you", "dead","with myself", 
+            "some epic game that you don't have", "with fire", "hard-to-get", "Project X", 
+            "getting friendzoned by Sigma", "getting friendzoned by Monika"]
 
 
 def get_prefix(bot, message):
@@ -56,24 +64,32 @@ class MAT(commands.AutoShardedBot):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          pm_help=None,
-                         activity=discord.Game("\"!mat help\" for help"),
+                         shard_id=0,
+                         activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
         for cmd in _commands:
             self.remove_command(cmd)
 
-        for extension in initial_extensions:
+        for extention in initial_extensions:
             try:
-                self.load_extension(extension)
-            except Exception as e:
-                import traceback, sys
-                print(f"Failed to load extension {extension}.", file=sys.stderr)
+                self.load_extension(extention)
+            except:
+                import traceback
+                logger.warning("Failed to load {}.".format(extention))
+                print("-------------------------------")
                 traceback.print_exc()
+                print("-------------------------------")
 
     async def on_ready(self):
         print("Logged in as")
         print(bot.user.name)
         print(bot.user.id)
         print("---------")
+
+        logger.info("Logged in")
+        logger.info(f"Shards: {self.shard_count}")
+        logger.info(f"Servers {len(self.guilds)}")
+        logger.info(f"Users {len(set(self.get_all_members()))}")
 
     async def on_message(self, message):
         if message.author.bot:
