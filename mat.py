@@ -22,6 +22,8 @@ import discord
 
 import logging
 import inspect
+import traceback
+import sys
 
 import config
 
@@ -31,47 +33,41 @@ handler = logging.FileHandler("mat.log", "w", "utf-8")
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
+initial_extensions = ["cogs.triggers", "cogs.info"]
+
+
+def get_prefix(bot, message):
+    
+    prefixes = ["!mat ", "mat/", "mat."]
+    return commands.when_mentioned_or(*prefixes)(bot, message)
+
 
 class MAT(commands.AutoShardedBot):
 
     def __init__(self):
-        super().__init__(command_prefix=["!mat ", "mat/", "mat.", "<@459559711210078209> "],
+        super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          pm_help=None,
                          activity=discord.Game("!mat help"),
                          fetch_offline_members=False)
         self.remove_command("help")
+        self.remove_command("info")
 
-        members = inspect.getmembers(self)
-        for name, member in members:
-            if isinstance(member, commands.Command):
-                if member.parent is None:
-                    self.add_command(member)
+        for extension in initial_extensions:
+            try:
+                self.load_extension(extension)
+            except Exception as e:
+                print(f"Failed to load extension {extension}.", file=sys.stderr)
+                traceback.print_exc()
 
     async def on_ready(self):
-        print('Logged in as')
+        print("Logged in as")
         print(bot.user.name)
         print(bot.user.id)
-        print('------')
+        print("---------")
 
-    @commands.command()
-    async def help(self, ctx):
-        await ctx.send("Work in progress. My only command right now is `about`. My prefixes are "
-                       "`!mat `, `mat.`, `mat/`, or you could mention me.")
-
-    @commands.command()
-    async def about(self, ctx):
-        embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose "
-                              "Discord bot written in Python.", color=discord.Color.from_rgb(
-                                  0, 60, 255))
-        embed.add_field(name="Version", value=__version__)
-        embed.add_field(name="Author", value="NinjaSnail1080#8581")
-        embed.add_field(name="Server Count", value=f"{len(bot.guilds)}")
-        embed.add_field(name="Library", value="discord.py")
-        embed.add_field(name="License", value="GPL v3.0")
-        embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot")
-
-        await ctx.send(embed=embed)
+    async def on_message(self, message):
+        await bot.process_commands(message)
 
     def run(self):
         super().run(config.TOKEN)
