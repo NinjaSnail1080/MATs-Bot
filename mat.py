@@ -19,10 +19,12 @@ __version__ = 0.1
 
 from discord.ext import commands
 import discord
+import asyncio
 
 import logging
 import inspect
 import traceback
+import random
 import sys
 
 import config
@@ -37,6 +39,12 @@ initial_extensions = ["cogs.triggers", "cogs.info"]
 
 _commands = ["help", "info"]
 
+games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
+         "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick", 
+         "with the server owner's pussy", "with you", "dead","with myself", 
+         "some epic game that you don't have", "with fire", "hard-to-get", "Project X", 
+         "getting friendzoned by Sigma", "getting friendzoned by Monika"]
+
 
 def get_prefix(bot, message):
     
@@ -50,7 +58,7 @@ class MAT(commands.AutoShardedBot):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          pm_help=None,
-                         activity=discord.Game("!mat help"),
+                         activity=discord.Game("\"!mat help\" for help"),
                          fetch_offline_members=False)
         for cmd in _commands:
             self.remove_command(cmd)
@@ -69,9 +77,18 @@ class MAT(commands.AutoShardedBot):
         print("---------")
 
     async def on_message(self, message):
+        if message.author.bot:
+            return
         await bot.process_commands(message)
 
+    async def switch_games(self):
+        await self.wait_until_ready()
+        while True:
+            await self.change_presence(activity=discord.Game(random.choice(games)))
+            await asyncio.sleep(5)
+
     def run(self):
+        self.loop.create_task(self.switch_games())
         super().run(config.TOKEN)
 
 
