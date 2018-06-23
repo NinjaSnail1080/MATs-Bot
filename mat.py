@@ -23,9 +23,7 @@ import asyncio
 
 import logging
 import inspect
-import traceback
 import random
-import sys
 
 import config
 
@@ -67,6 +65,7 @@ class MAT(commands.AutoShardedBot):
             try:
                 self.load_extension(extension)
             except Exception as e:
+                import traceback, sys
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
 
