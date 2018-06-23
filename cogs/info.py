@@ -55,6 +55,26 @@ class Info:
 
         await ctx.send(embed=embed)
 
+    # Eventually this'll be moved to a different cog
+    @commands.command()
+    async def lenny(self, ctx):
+        embed = discord.Embed(
+            title="A list of Lenny Faces for all of your copypasting needs",
+            color=discord.Color.from_rgb(0, 60, 255))
+        
+        embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
+        embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
+        embed.add_field(name="Winky", value="( ͡~ ͜ʖ ͡°)")
+        embed.add_field(name="Wide-Eyed", value="( ͡◉ ͜ʖ ͡◉)")
+        embed.add_field(name="Wide-Eyed 2", value="( ͡☉ ͜ʖ ͡☉)")
+        embed.add_field(name="Happy", value="( ͡ᵔ ͜ʖ ͡ᵔ )")
+        embed.add_field(name="Sad", value="( ͡° ʖ̯ ͡°)")
+        embed.add_field(name="With Ears", value="ʕ ͡° ͜ʖ ͡°ʔ")
+        embed.add_field(name="Communist", value="(☭ ͜ʖ ☭)")
+        embed.set_footer(text="From: https://www.lennyfaces.net/")
+
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Info(bot))

@@ -20,6 +20,10 @@ from discord.ext import commands
 import discord
 
 import re
+import random
+
+sigma_responses = ["Some placeholder text", "A lot of placeholder text", "placeholder text",
+                   "Lorem ipsum dolar sit amet", "RandomRandomTextText", "some text"]
 
 
 class Triggers:
@@ -30,6 +34,7 @@ class Triggers:
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+
         e = discord.Embed(color=discord.Color.from_rgb(0, 60, 255))
 
         if re.search("pinged", message.content, re.IGNORECASE) or re.search(
@@ -55,7 +60,7 @@ class Triggers:
             await message.channel.send("You better believe it, scrub")
 
         if re.search("loss", message.content, re.IGNORECASE):
-            await message.channel.send("| ||\n|| |_")
+            await message.channel.send(" |    ||\n\n||    |_")
 
 
 def setup(bot):
