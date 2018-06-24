@@ -61,9 +61,6 @@ class Triggers:
             "believe", message.content, re.IGNORECASE):
             await message.channel.send("You better believe it, scrub")
 
-        if re.search("loss", message.content, re.IGNORECASE):
-            await message.channel.send(" |    ||\n\n||    |_")
-
 
 def setup(bot):
     bot.add_cog(Triggers(bot))
