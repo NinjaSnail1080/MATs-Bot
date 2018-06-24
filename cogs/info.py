@@ -19,7 +19,6 @@
 from mat import __version__
 from discord.ext import commands
 import discord
-import inspect
 
 _commands = ["help", "info"]
 

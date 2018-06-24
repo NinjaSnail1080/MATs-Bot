@@ -59,6 +59,7 @@ class MAT(commands.AutoShardedBot):
                          description="MAT's Bot",
                          pm_help=None,
                          shard_id=0,
+                         status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
 
@@ -77,6 +78,7 @@ class MAT(commands.AutoShardedBot):
         print("Servers: " + str(len(self.guilds)))
         print("Users: " + str(len(set(self.get_all_members()))))
         print("-----------------")
+        await self.change_presence(status=discord.Status.online)
 
     async def on_message(self, message):
         if message.author == bot.user:
