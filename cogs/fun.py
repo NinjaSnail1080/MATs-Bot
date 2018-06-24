@@ -22,6 +22,7 @@ import discord
 
 
 class Fun:
+    "Fun stuff!"
 
     def __init__(self, bot):
         self.bot = bot

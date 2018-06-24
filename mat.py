@@ -53,6 +53,7 @@ def get_prefix(bot, message):
 
 
 class MAT(commands.Bot):
+    "MAT's Bot"
 
     def __init__(self):
         super().__init__(command_prefix=get_prefix,
