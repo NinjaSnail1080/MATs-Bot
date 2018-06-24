@@ -50,13 +50,12 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
-class MAT(commands.AutoShardedBot):
+class MAT(commands.Bot):
 
     def __init__(self):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          pm_help=None,
-                         shard_id=0,
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
