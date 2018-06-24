@@ -20,16 +20,13 @@ from mat import __version__
 from discord.ext import commands
 import discord
 
-_commands = ["help", "info"]
-
 
 class Info:
 
     def __init__(self, bot):
         self.bot = bot
 
-        for cmd in _commands:
-            bot.remove_command(cmd)
+        self.bot.remove_command("help")
 
     @commands.command()
     async def help(self, ctx):
@@ -51,26 +48,6 @@ class Info:
         embed.add_field(name="License", value="GPL v3.0")
         embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot")
         embed.set_footer(text="Dedicated to WooMAT1417#1142")
-
-        await ctx.send(embed=embed)
-
-    # Eventually this'll be moved to a different cog
-    @commands.command()
-    async def lenny(self, ctx):
-        embed = discord.Embed(
-            title="A list of Lenny faces for all of your copypasting needs",
-            color=discord.Color.from_rgb(0, 60, 255), url="https://www.lennyfaces.net/")
-        
-        embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
-        embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
-        embed.add_field(name="Winky", value="( ͡~ ͜ʖ ͡°)")
-        embed.add_field(name="Wide-Eyed", value="( ͡◉ ͜ʖ ͡◉)")
-        embed.add_field(name="Wide-Eyed 2", value="( ͡☉ ͜ʖ ͡☉)")
-        embed.add_field(name="Happy", value="( ͡ᵔ ͜ʖ ͡ᵔ )")
-        embed.add_field(name="Sad", value="( ͡° ʖ̯ ͡°)")
-        embed.add_field(name="With Ears", value="ʕ ͡° ͜ʖ ͡°ʔ")
-        embed.add_field(name="Communist", value="(☭ ͜ʖ ☭)")
-        embed.set_footer(text="From: https://www.lennyfaces.net/")
 
         await ctx.send(embed=embed)
 
