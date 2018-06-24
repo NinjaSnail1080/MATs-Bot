@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import __version__
+from mat import __version__, mat_color
 from discord.ext import commands
 import discord
 

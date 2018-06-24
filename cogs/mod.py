@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from mat import mat_color
 from discord.ext import commands
 import discord
 
@@ -28,20 +29,17 @@ class Moderation:
     
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, member, reason):
-        if ctx.author.guild_permissions.kick_members:
+    async def kick(self, ctx, member, reason=None):
+        if ctx.author.permissions_in(ctx.channel).kick_members:
             try:
                 if reason is None:
-                    r = "No reason given"
-                    reason = "Action performed by " + ctx.author.name
-                else:
-                    r = reason
+                    reason = "No reason given"
                 for m in ctx.message.mentions:
-                    await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
-                    await ctx.send(
-                        embed=discord.Embed(
-                            color=discord.Color.from_rgb(0, 60, 255), title=m.name + 
-                            " kicked by " + ctx.author.name, description="Reason: " + r))
+                    if m != self.bot.user:
+                        await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
+                        await ctx.send(embed=discord.Embed(
+                            color=mat_color, title=m.name + " kicked by " + 
+                            ctx.author.name, description="Reason: " + reason))
             except discord.Forbidden:
                 await ctx.send(
                     "I don't have permissions to kick that person. What's the point of having "

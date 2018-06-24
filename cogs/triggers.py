@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from mat import mat_color
 from discord.ext import commands
 import discord
 
@@ -40,7 +41,7 @@ class Triggers:
         if message.author.id == 281807963147075584:
             await message.channel.send(random.choice(sigma_responses))
 
-        e = discord.Embed(color=discord.Color.from_rgb(0, 60, 255))
+        e = discord.Embed(color=mat_color)
 
         if re.search("pinged", message.content, re.IGNORECASE) or re.search(
             "ping me", message.content, re.IGNORECASE):

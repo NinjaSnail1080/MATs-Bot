@@ -29,7 +29,7 @@ class Fun:
     async def lenny(self, ctx):
         embed = discord.Embed(
             title="A list of Lenny faces for all of your copypasting needs",
-            color=discord.Color.from_rgb(0, 60, 255), url="https://www.lennyfaces.net/")
+            color=mat_color, url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
         embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")

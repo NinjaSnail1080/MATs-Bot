@@ -27,6 +27,8 @@ import os
 
 import config
 
+mat_color = discord.Color.from_rgb(0, 60, 255)
+
 if __name__ == "__main__":
     from cogs import *
 
