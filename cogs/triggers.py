@@ -22,8 +22,7 @@ import discord
 import re
 import random
 
-sigma_responses = ["Some placeholder text", "A lot of placeholder text", "placeholder text",
-                   "Lorem ipsum dolar sit amet", "RandomRandomTextText", "some text"]
+sigma_responses = ["placeholder text"]
 
 
 class Triggers:
@@ -34,6 +33,9 @@ class Triggers:
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+
+        if message.author.id == 281807963147075584:
+            await message.channel.send(random.choice(sigma_responses))
 
         e = discord.Embed(color=discord.Color.from_rgb(0, 60, 255))
 

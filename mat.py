@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 
 def get_prefix(bot, message):
-    
+
     prefixes = ["!mat ", "mat/", "mat."]
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
@@ -70,7 +70,7 @@ class MAT(commands.AutoShardedBot):
 
     async def on_ready(self):
         print("\nLogged in as")
-        print(bot.user.name)
+        print(bot.user)
         print(bot.user.id)
         print("-----------------")
         print("Shards: " + str(self.shard_count))
