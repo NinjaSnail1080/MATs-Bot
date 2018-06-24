@@ -29,18 +29,21 @@ class Moderation:
     
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, member, reason=None):
+    async def kick(self, ctx, members, reason=None):
         if ctx.author.permissions_in(ctx.channel).kick_members:
-            try:
-                if reason is None:
-                    reason = "No reason given"
-                for m in ctx.message.mentions:
-                    if m != self.bot.user:
+            cant_kick = []
+            if reason is None:
+                reason = "No reason given"
+            for m in ctx.message.mentions:
+                if m != self.bot.user:
+                    try:
                         await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
                         await ctx.send(embed=discord.Embed(
                             color=mat_color, title=m.name + " kicked by " + 
                             ctx.author.name, description="Reason: " + reason))
-            except discord.Forbidden:
+                    except discord.Forbidden:
+                        cant_kick.append(m.name)
+            for i in cant_kick:
                 await ctx.send(
                     "I don't have permissions to kick that person. What's the point of having "
                     "all these moderation commmands if I can't use them?\n\nEither I don't have "
