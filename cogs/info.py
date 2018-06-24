@@ -45,7 +45,7 @@ class Info:
         embed.add_field(name="Author", value="NinjaSnail1080#8581")
         embed.add_field(name="Server Count", value=f"{len(self.bot.guilds)}")
         embed.add_field(name="Language", value="Python 3.6.4")
-        embed.add_field(name="Library", value="discord.py")
+        embed.add_field(name="Library", value="discord.py (rewrite)")
         embed.add_field(name="License", value="GPL v3.0")
         embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot")
         embed.set_footer(text="Dedicated to WooMAT1417#1142")
