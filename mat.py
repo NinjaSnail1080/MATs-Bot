@@ -37,8 +37,6 @@ if __name__ == "__main__":
                 f = f.replace(".py", "")
                 initial_extensions.append("cogs." + f)
 
-    _commands = info._commands
-
     games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
             "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick", 
             "with the server owner's pussy", "with you", "dead","with myself", 
@@ -62,9 +60,6 @@ class MAT(commands.AutoShardedBot):
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
-
-        for cmd in _commands:
-            self.remove_command(cmd)
 
         for extention in initial_extensions:
             self.load_extension(extention)
