@@ -45,7 +45,7 @@ class Moderation:
             except discord.Forbidden:
                 await ctx.send(
                     "I don't have permissions to kick that person. What's the point of having "
-                    "all these moderation commmands if I can't use them?\nEither I don't have "
+                    "all these moderation commmands if I can't use them?\n\nEither I don't have "
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
                     "fix that please?")
         else:

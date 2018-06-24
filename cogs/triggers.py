@@ -48,7 +48,8 @@ class Triggers:
                 url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
                 "7792/ping.gif"))
 
-        if re.search("hmm", message.content, re.IGNORECASE):
+        if re.search("hmm", message.content, re.IGNORECASE) or re.search(
+            "think", message.content, re.IGNORECASE):
             await message.channel.send(content="Hmmmmmmmmmmmmmmm...", embed=e.set_image(
                 url="https://cdn.discordapp.com/attachments/445772256140984330/452538872824332299"
                 "/Thonk.gif"))
