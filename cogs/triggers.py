@@ -22,7 +22,9 @@ import discord
 import re
 import random
 
-sigma_responses = ["placeholder text"]
+sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-D-Does s-s-she "
+                   "have a boyf-f-friend?\nAsking for a friend!", "What a beautiful voice...",
+                   "Oh, I hope she doesn't see my Playing status..."]
 
 
 class Triggers:
