@@ -28,19 +28,18 @@ class Moderation:
     
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, member: discord.Member, reason):
+    async def kick(self, ctx, members, reason):
         if ctx.author.guild_permissions.kick_members:
             try:
                 if reason is None:
                     r = "No reason given"
-                    reason = "Action done by " + ctx.author.name
+                    reason = "Action performed by " + ctx.author.name
                 else:
                     r = reason
-                await member.kick(reason=reason)
-                await ctx.send(embed=discord.Embed(color=discord.Color.from_rgb(0, 60, 255), title=str(member) + "kicked by" + ctx.author, description="Reason: " + r))
+                for m in ctx.message.mentions:
+                    await ctx.send(embed=discord.Embed(color=discord.Color.from_rgb(0, 60, 255), title=m.name + " kicked by " + ctx.author.name, description="Reason: " + r))
+                    await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
             except discord.Forbidden:
-                import traceback
-                traceback.print_exc()
                 await ctx.send("I don't have permissions to kick members. What's the point of having all these moderation commmands if I can't use them?")
         else:
             await ctx.send("You don't have permissions to kick members. You better take this issue to whoever's in charge of your server")
