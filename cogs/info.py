@@ -31,10 +31,10 @@ class Info:
 
     @commands.command()
     async def help(self, ctx):
-        await ctx.send("**Work in progress**. My only command right now is `info`. My prefixes "
-                       "are `!mat `, `mat.`, `mat/`, or you could mention me.\n\nNote: I can't "
-                       "be on all the time. Since Ninja has no way of hosting me 24/7 as of now, "
-                       "I can only be on when he manually runs the script.")
+        await ctx.send("**Work in progress**. My only commands right now are `info`, `lenny`, "
+        "and `kick`. My prefixes are `!mat `, `mat.`, `mat/`, or you could mention me.\n\nNote: "
+        "I can't be on all the time. Since Ninja has no way of hosting me 24/7 as of now, I can "
+        "only be on when he manually runs the script.")
 
     @commands.command()
     async def info(self, ctx):
