@@ -19,6 +19,9 @@
 from mat import mat_color
 from discord.ext import commands
 import discord
+import asyncio
+
+import random
 
 
 class Moderation:
@@ -49,6 +52,63 @@ class Moderation:
                     "all these moderation commmands if I can't use them?\nEither I don't have "
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
                     "fix that please?")
+        else:
+            await ctx.send(
+                "You don't have permissions to kick members. You better take this issue to "
+                "whoever's in charge of your server")
+
+    @commands.command()
+    @commands.guild_only()
+    async def randomkick(self, ctx, members=None):
+        if ctx.author.permissions_in(ctx.channel).kick_members:
+            rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni", 
+                        "RIP in pieces", "Rest in pieces"]
+            cant_kick = ("Damn, it looks like I don't have permission to kick this person. Could "
+                         "one of you guys check my role to make sure I have either the Kick "
+                         "Members privilege or the Administrator privilege?\n\nIf I already, do, "
+                         "then I probably picked someone with a role higher than mine. So try "
+                         "again, or better yet, put my role above everyone else's. Then we can "
+                         "make this *really* interesting...")
+            if members is None:
+                member = random.choice(ctx.channel.guild.members)
+                try:
+                    await member.kick(
+                        reason="Unlucky individual selected by the randomkick performed by " + 
+                        ctx.author.name)
+                    temp = await ctx.send("And the unlucky individual about to be kicked is...")
+                    with ctx.channel.typing():
+                        await asyncio.sleep(2)
+                        await temp.delete()
+                        await ctx.send(embed=discord.Embed(
+                            color=mat_color, title=member.name + "!!!", description=random.choice(
+                                rip_list)))
+                    await ctx.send(
+                        "Now someone's gonna have to go invite them back. I suggest you go, " +
+                        ctx.author.mention)
+                except discord.Forbidden:
+                    await ctx.send(cant_kick)
+            else:
+                member_s = []
+                for m in ctx.message.mentions:
+                    if m != self.bot.user:
+                        member_s.append(m)
+                member = random.choice(member_s)
+                try:
+                    await member.kick(
+                        reason="Unlucky individual selected by the randomkick performed by " +
+                        ctx.author.name)
+                    temp = await ctx.send("And the unlucky individual about to be kicked is...")
+                    with ctx.channel.typing():
+                        await asyncio.sleep(2)
+                        await temp.delete()
+                        await ctx.send(embed=discord.Embed(
+                            color=mat_color, title=member.name + "!!!", description=random.choice(
+                                rip_list)))
+                    await ctx.send(
+                        "Now someone's gonna have to go invite them back. I suggest you go, " +
+                        ctx.author.mention)
+                except discord.Forbidden:
+                    await ctx.send(cant_kick)
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
