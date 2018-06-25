@@ -104,7 +104,7 @@ venv.bak/
 .mypy_cache/
 
 
-# Ignore discord.py and dependencies
+# Ignore requirments
 /aiodns
 /aiohttp
 /async_timeout
