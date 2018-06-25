@@ -105,16 +105,18 @@ venv.bak/
 
 
 # Ignore discord.py and dependencies
+/aiodns
 /aiohttp
 /async_timeout
 /attr
+/cchardet
 /cffi
-/chardet
 /discord
 /idna
 idna_ssl.py
 /multidict
 /nacl
+/pycares
 /pycparser
 six.py
 /websockets
