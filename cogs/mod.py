@@ -29,7 +29,7 @@ class Moderation:
     
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, members, reason=None):
+    async def kick(self, ctx, member, reason=None):
         if ctx.author.permissions_in(ctx.channel).kick_members:
             cant_kick = []
             if reason is None:
