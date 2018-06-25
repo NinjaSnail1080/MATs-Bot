@@ -79,11 +79,11 @@ class MAT(commands.Bot):
         await self.change_presence(status=discord.Status.online)
 
     async def on_guild_join(self, guild):
-        message = ("'Sup guys, it's good to be here.\n\nHey, as a favor, could one of you change "
-                   "my role's color to **#003cff**? It's kinda my signature color, but due to an "
-                   "issue with how Discord's permission system works, I can't automatically "
-                   "change my role's color to that. So it'd be great if one of you guys in "
-                   "charge could do it for me.")
+        message = ("Hello everyone, it's good to be here!\n\nHey, as a favor, could one of you "
+                   "change my role's color to **#003cff**? It's kinda my signature color, but "
+                   "due to an issue with how Discord's permission system works, I can't "
+                   "automatically change my role's color to that. So it'd be great if one of you "
+                   "guys in charge could do it for me.")
         sent = False
         for c in guild.text_channels:
             if re.search("general", c.name) or re.search("chat", c.name) or re.search(
