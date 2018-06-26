@@ -55,7 +55,7 @@ class Moderation:
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
-                "whoever's in charge of your server")
+                "whoever's in charge of this server")
 
     @commands.command()
     @commands.guild_only()
@@ -112,7 +112,7 @@ class Moderation:
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
-                "whoever's in charge of your server")
+                "whoever's in charge of this server")
 
 
 def setup(bot):
