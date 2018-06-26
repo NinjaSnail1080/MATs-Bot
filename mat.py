@@ -21,7 +21,6 @@ from discord.ext import commands
 import discord
 import asyncio
 
-import inspect
 import random
 import os
 import re
