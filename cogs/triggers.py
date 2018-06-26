@@ -51,13 +51,13 @@ class Triggers:
 
         if re.search("think", message.content, re.IGNORECASE):
             await message.channel.send(content="Thinking...", embed=e.set_image(
-                url="https://cdn.discordapp.com/attachments/445766533096931370/461043390365302785"
-                "/giphy.gif"))
+                url="https://cdn.discordapp.com/attachments/419762316666470401/461276989060546560"
+                "/thinking.gif"))
 
         elif re.search("hmm", message.content, re.IGNORECASE):
-            await message.channel.send(content="Hmmmmmmmmmmmmmmm...", embed=e.set_image(
-                url="https://cdn.discordapp.com/attachments/445772256140984330/452538872824332299"
-                "/Thonk.gif"))
+            await message.channel.send(content="Hmmmmmmmmmmmmmmmm...", embed=e.set_image(
+                url="https://cdn.discordapp.com/attachments/419762316666470401/461277909949218819"
+                "/thonk.gif"))
 
         if message.content.lower() == "k":
             await message.channel.send(
