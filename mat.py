@@ -36,7 +36,7 @@ if __name__ == "__main__":
     for f in os.listdir("cogs"):
         if f != "__init__.py":
             if f.endswith(".py"):
-                f = f.replace(".py", "")
+                f = f[:-3]
                 initial_extensions.append("cogs." + f)
 
     games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",

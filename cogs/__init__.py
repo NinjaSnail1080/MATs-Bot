@@ -22,5 +22,5 @@ __all__ = []
 
 for f in os.listdir("cogs"):
     if f.endswith(".py"):
-        f = f.replace(".py", "")
+        f = f[:-3]
         __all__.append(f)
