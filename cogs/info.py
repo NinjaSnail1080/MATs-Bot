@@ -32,10 +32,11 @@ class Info:
     @commands.command()
     async def help(self, ctx):
         await ctx.send("**Work in progress**. My only commands right now are `info`, `lenny`, "
-        "and `kick`. My prefixes are `!mat `, `mat.`, `mat/`, or you could mention me. I also "
-        "have numerous trigger words/phrases, which serve to amuse/infuriate the people of this "
-        "server.\n\nNote: I can't be on all the time. Since Ninja has no way of hosting me 24/7 "
-        "as of now, I can only be on when he manually runs the script.")
+        "`coinflip`, `kick`, and `randomkick. My prefixes are `!mat `, `mat.`, `mat/`, or you "
+        "could mention me. I also have numerous trigger words/phrases, which serve to "
+        "amuse/infuriate the people of this server.\n\nNote: I can't be on all the time. Since "
+        "Ninja has no way of hosting me 24/7 as of now, I can only be on when he manually runs "
+        "the script.")
 
     @commands.command()
     async def info(self, ctx):

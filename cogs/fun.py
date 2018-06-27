@@ -19,6 +19,9 @@
 from mat import mat_color
 from discord.ext import commands
 import discord
+import asyncio
+
+import random
 
 
 class Fun:
@@ -26,6 +29,18 @@ class Fun:
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command()
+    async def coinflip(self, ctx):
+        coin = random.choice([1, 2])
+        temp = await ctx.send("Flipping...")
+        with ctx.channel.typing():
+            await asyncio.sleep(1)
+            await temp.delete()
+            if coin == 1:
+                await ctx.send("Heads!")
+            elif coin == 2:
+                await ctx.send("Tails!")
 
     @commands.command()
     async def lenny(self, ctx):
