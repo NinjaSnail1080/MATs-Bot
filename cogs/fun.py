@@ -41,7 +41,7 @@ class Fun:
                 await ctx.send("Heads!")
             elif coin == 2:
                 await ctx.send("Tails!")
-
+    
     @commands.command()
     async def lenny(self, ctx):
         embed = discord.Embed(
