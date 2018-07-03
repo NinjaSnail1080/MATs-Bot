@@ -18,10 +18,11 @@
 
 from mat import mat_color
 from discord.ext import commands
+from bs4 import BeautifulSoup
 import discord
 import asyncio
 import aiohttp
-from bs4 import BeautifulSoup
+import ascii
 
 import random
 
@@ -31,6 +32,12 @@ class Fun:
 
     def __init__(self, bot):
         self.bot = bot
+    
+    @commands.command()
+    async def ascii(self, ctx, image):
+        art = ascii.loadFromUrl(image, color=False)
+        art = art[:-122]
+        await ctx.send(art)
 
     @commands.command()
     async def coinflip(self, ctx):
