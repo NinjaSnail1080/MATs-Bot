@@ -29,7 +29,7 @@ class Moderation:
 
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.command()
     @commands.guild_only()
     async def kick(self, ctx, member, reason=None):
