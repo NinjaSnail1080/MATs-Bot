@@ -25,6 +25,7 @@ import aiohttp
 import ascii
 
 import random
+import re
 
 
 class Fun:
@@ -35,9 +36,17 @@ class Fun:
     
     @commands.command()
     async def ascii(self, ctx, image):
-        art = ascii.loadFromUrl(image, color=False)
-        art = art[:-122]
-        await ctx.send(art)
+        # Heavily WIP
+        with ctx.channel.typing():
+            art = ascii.loadFromUrl(image, 80, False)
+            art = art[:-122]
+            if len(art) > 2000:
+                split_art = re.findall(".{1,2000}", art)
+                for a in split_art:
+                    with ctx.channel.typing():
+                        await ctx.send("```\n" + a + "\n```")
+            else:
+                await ctx.send("```\n" + art + "\n```")
 
     @commands.command()
     async def coinflip(self, ctx):
