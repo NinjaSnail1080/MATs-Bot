@@ -42,7 +42,7 @@ class Moderation:
                     try:
                         await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
                         await ctx.send(embed=discord.Embed(
-                            color=mat_color, title=m.name + " kicked by " + 
+                            color=mat_color, title=m.name + " kicked by " +
                             ctx.author.name, description="Reason: " + reason))
                     except discord.Forbidden:
                         cant_kick.append(m.name)
@@ -61,7 +61,7 @@ class Moderation:
     @commands.guild_only()
     async def randomkick(self, ctx, members=None):
         if ctx.author.permissions_in(ctx.channel).kick_members:
-            rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni", 
+            rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                         "RIP in pieces", "Rest in pieces"]
             cant_kick = ("Damn, it looks like I don't have permission to kick this person. Could "
                          "one of you guys check my role to make sure I have either the Kick "
@@ -73,7 +73,7 @@ class Moderation:
                 member = random.choice(ctx.channel.guild.members)
                 try:
                     await member.kick(
-                        reason="Unlucky individual selected by the randomkick performed by " + 
+                        reason="Unlucky individual selected by the randomkick performed by " +
                         ctx.author.name)
                     temp = await ctx.send("And the unlucky individual about to be kicked is...")
                     with ctx.channel.typing():
