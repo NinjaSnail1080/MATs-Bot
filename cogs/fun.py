@@ -33,20 +33,23 @@ class Fun:
 
     def __init__(self, bot):
         self.bot = bot
-    
+
     @commands.command()
     async def ascii(self, ctx, image):
-        # Heavily WIP
-        with ctx.channel.typing():
-            art = ascii.loadFromUrl(image, 80, False)
-            art = art[:-122]
-            if len(art) > 2000:
-                split_art = re.findall(".{1,2000}", art)
-                for a in split_art:
-                    with ctx.channel.typing():
-                        await ctx.send("```\n" + a + "\n```")
-            else:
-                await ctx.send("```\n" + art + "\n```")
+        try:
+            with ctx.channel.typing():
+                art = ascii.loadFromUrl(image, 60, False)
+                if len(art) > 2000:
+                    art = "".join(art.split())
+                    split_art = re.findall(".{1,1920}", art)
+                    for a in split_art:
+                        message = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
+                        await ctx.send("```\n" + message + "```")
+                else:
+                    await ctx.send("```\n" + art + "```")
+        except:
+            await ctx.send("Huh, something went wrong. I wasn't able to convert that image "
+                            "into ascii art. Try a different picture.")
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -59,7 +62,7 @@ class Fun:
                 await ctx.send("Heads!")
             elif coin == 2:
                 await ctx.send("Tails!")
-    
+
     @commands.command()
     async def lenny(self, ctx):
         embed = discord.Embed(
@@ -99,7 +102,7 @@ class Fun:
                 await ctx.send(embed=embed)
         except:
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
-                            "wasn't able to get a comic. Try again in a little bit.")
+                           "wasn't able to get a comic. Try again in a little bit.")
 
 
 def setup(bot):
