@@ -69,6 +69,9 @@ class Triggers:
         if re.search("can't", message.content, re.IGNORECASE) and re.search(
             "believe", message.content, re.IGNORECASE):
             await message.channel.send("You better believe it, scrub")
+        
+        if message.content.lower() == "jesus":
+            await message.channel.send("Christ")
 
 
 def setup(bot):
