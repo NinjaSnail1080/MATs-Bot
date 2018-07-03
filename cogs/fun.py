@@ -20,6 +20,8 @@ from mat import mat_color
 from discord.ext import commands
 import discord
 import asyncio
+import aiohttp
+from bs4 import BeautifulSoup
 
 import random
 
@@ -58,6 +60,23 @@ class Fun:
         embed.add_field(name="With Ears", value="ʕ ͡° ͜ʖ ͡°ʔ")
         embed.add_field(name="Communist", value="(☭ ͜ʖ ☭)")
         embed.set_footer(text="From: https://www.lennyfaces.net/")
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def xkcd(self, ctx):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://c.xkcd.com/random/comic/") as w:
+                url = str(w.url)
+                soup = BeautifulSoup(await w.text(), "lxml")
+                title = soup.find("div", id="ctitle").get_text()
+                comic = soup.find("div", id="comic")
+                image = "https:" + comic.img["src"]
+                caption = comic.img["title"]
+
+        embed = discord.Embed(title=title, color=mat_color, url=url)
+        embed.set_image(url=image)
+        embed.set_footer(text=caption)
 
         await ctx.send(embed=embed)
 
