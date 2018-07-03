@@ -107,6 +107,7 @@ venv.bak/
 # Ignore requirments
 /aiodns
 /aiohttp
+/ascii
 /async_timeout
 /attr
 /bs4
@@ -118,9 +119,11 @@ idna_ssl.py
 /lxml
 /multidict
 /nacl
+/PIL
 /pycares
 /pycparser
 six.py
+/urllib3
 /websockets
 /yarl
 
