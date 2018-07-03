@@ -32,8 +32,8 @@ class Info:
     @commands.command()
     async def help(self, ctx):
         await ctx.send("**Work in progress**. My only commands right now are `info`, `lenny`, "
-        "`coinflip`, `kick`, and `randomkick`. My prefixes are `!mat `, `mat.`, `mat/`, or you "
-        "could mention me. I also have numerous trigger words/phrases, which serve to "
+        "`coinflip`, `xkcd`, `kick`, and `randomkick`. My prefixes are `!mat `, `mat.`, `mat/`, "
+        "or you could mention me. I also have numerous trigger words/phrases, which serve to "
         "amuse/infuriate the people of this server.\n\nNote: I can't be on all the time. Since "
         "Ninja has no way of hosting me 24/7 as of now, I can only be on when he manually runs "
         "the script.")
@@ -44,7 +44,7 @@ class Info:
                               "Discord bot written in Python.", color=mat_color)
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value="NinjaSnail1080#8581")
-        embed.add_field(name="Server Count", value=f"{len(self.bot.guilds)}")
+        embed.add_field(name="Server Count", value=len(self.bot.guilds))
         embed.add_field(name="Language", value="Python 3.6.4")
         embed.add_field(name="Library", value="discord.py (rewrite)")
         embed.add_field(name="License", value="GPL v3.0")
