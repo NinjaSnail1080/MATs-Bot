@@ -23,10 +23,14 @@ import aiohttp
 
 
 class NSFW:
-    "NSFW commands"
+    """NSFW commands"""
 
     def __init__(self, bot):
         self.bot = bot
+
+    async def gonewild(self, ctx):
+        """Sends a random post from r/gonewild"""
+        pass
 
 
 def setup(bot):

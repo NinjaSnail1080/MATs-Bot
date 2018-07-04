@@ -22,7 +22,7 @@ import discord
 
 
 class Music:
-    "Play some music"
+    """Play some music"""
 
     def __init__(self, bot):
         self.bot = bot

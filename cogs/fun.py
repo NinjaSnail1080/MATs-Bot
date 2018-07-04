@@ -29,13 +29,14 @@ import re
 
 
 class Fun:
-    "Fun stuff!"
+    """Fun stuff!"""
 
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
     async def ascii(self, ctx, image):
+        """Converts an image into ascii art"""
         try:
             with ctx.channel.typing():
                 art = ascii.loadFromUrl(image, 60, False)
@@ -53,6 +54,7 @@ class Fun:
 
     @commands.command()
     async def coinflip(self, ctx):
+        """Flips a coin, pretty self-explanatory"""
         coin = random.choice(["Heads!", "Tails!"])
         temp = await ctx.send("Flipping...")
         with ctx.channel.typing():
@@ -62,6 +64,7 @@ class Fun:
 
     @commands.command()
     async def diceroll(self, ctx, sides=None):
+        """Rolls a dice. By default a 6-sided one though the number of sides can be specified"""
         if sides is None:
             sides = "6"
         dice = str(random.randrange(1, int(sides)))
@@ -73,8 +76,9 @@ class Fun:
 
     @commands.command()
     async def lenny(self, ctx):
+        """A list of Lenny faces for all your copypasting needs"""
         embed = discord.Embed(
-            title="A list of Lenny faces for all of your copypasting needs",
+            title="A list of Lenny faces for all your copypasting needs",
             color=mat_color, url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
@@ -92,6 +96,7 @@ class Fun:
 
     @commands.command()
     async def xkcd(self, ctx):
+        """Posts a random xkcd comic"""
         try:
             with ctx.channel.typing():
                 async with aiohttp.ClientSession() as session:

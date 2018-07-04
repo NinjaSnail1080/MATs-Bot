@@ -25,7 +25,7 @@ import random
 
 
 class Moderation:
-    "Moderation tools"
+    """Moderation tools"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -33,6 +33,7 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def kick(self, ctx, member, reason=None):
+        """Kicks a member"""
         if ctx.author.permissions_in(ctx.channel).kick_members:
             cant_kick = []
             if reason is None:
@@ -60,6 +61,7 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def randomkick(self, ctx, members=None):
+        """Randomly selects a member to kick. Feeling lucky?"""
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                         "RIP in pieces", "Rest in pieces"]

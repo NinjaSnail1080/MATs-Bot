@@ -22,7 +22,7 @@ import discord
 
 
 class Info:
-    "Information"
+    """Information"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -31,6 +31,7 @@ class Info:
 
     @commands.command()
     async def help(self, ctx):
+        """Help"""
         await ctx.send("**Work in progress**. My commands right now are `info`, `lenny`, "
         "`coinflip`, `diceroll`, `xkcd`, `ascii`, `kick`, and `randomkick`. My prefixes are "
         "`!mat `, `mat.`, `mat/`, or you could mention me. I also have numerous trigger "
@@ -40,6 +41,7 @@ class Info:
 
     @commands.command()
     async def info(self, ctx):
+        """Info about the bot"""
         embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose "
                               "Discord bot written in Python.", color=mat_color)
         embed.add_field(name="Version", value=__version__)
