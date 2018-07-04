@@ -29,7 +29,7 @@ sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-
 
 
 class Triggers:
-    "Trigger words that the bot will respond to"
+    """Trigger words that the bot will respond to"""
 
     def __init__(self, bot):
         self.bot = bot
