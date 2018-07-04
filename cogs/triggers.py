@@ -71,6 +71,9 @@ class Triggers:
             await message.channel.send("You better believe it, scrub")
 
         if message.content.lower() == "jesus":
+            await message.channel.send("christ")
+
+        if message.content == "Jesus":
             await message.channel.send("Christ")
 
 
