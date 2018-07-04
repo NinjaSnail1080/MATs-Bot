@@ -53,15 +53,23 @@ class Fun:
 
     @commands.command()
     async def coinflip(self, ctx):
-        coin = random.choice([1, 2])
+        coin = random.choice(["Heads!", "Tails!"])
         temp = await ctx.send("Flipping...")
         with ctx.channel.typing():
             await asyncio.sleep(1)
             await temp.delete()
-            if coin == 1:
-                await ctx.send("Heads!")
-            elif coin == 2:
-                await ctx.send("Tails!")
+            await ctx.send(coin)
+
+    @commands.command()
+    async def diceroll(self, ctx, sides=None):
+        if sides is None:
+            sides = "6"
+        dice = str(random.randrange(1, int(sides)))
+        temp = await ctx.send("Rolling a " + sides + "-sided dice...")
+        with ctx.channel.typing():
+            await asyncio.sleep(2)
+            await temp.delete()
+            await ctx.send(dice + "!")
 
     @commands.command()
     async def lenny(self, ctx):
@@ -95,7 +103,7 @@ class Fun:
                         image = "https:" + comic.img["src"]
                         caption = comic.img["title"]
 
-                embed = discord.Embed(title=title, color=mat_color, url=url)
+                embed = discord.Embed(title="xkcd | " + title, color=mat_color, url=url)
                 embed.set_image(url=image)
                 embed.set_footer(text=caption)
 
