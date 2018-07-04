@@ -35,22 +35,26 @@ class Fun:
         self.bot = bot
 
     @commands.command()
-    async def ascii(self, ctx, image):
+    async def ascii(self, ctx, image=None):
         """Converts an image into ascii art"""
-        try:
-            with ctx.channel.typing():
-                art = ascii.loadFromUrl(image, 60, False)
-                if len(art) > 2000:
-                    art = "".join(art.split())
-                    split_art = re.findall(".{1,1920}", art)
-                    for a in split_art:
-                        message = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                        await ctx.send("```\n" + message + "```")
-                else:
-                    await ctx.send("```\n" + art + "```")
-        except:
-            await ctx.send("Huh, something went wrong. I wasn't able to convert that image "
-                            "into ascii art. Try a different picture.")
+        if image is not None:
+            try:
+                with ctx.channel.typing():
+                    art = ascii.loadFromUrl(image, 60, False)
+                    if len(art) > 2000:
+                        art = "".join(art.split())
+                        split_art = re.findall(".{1,1920}", art)
+                        for a in split_art:
+                            message = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
+                            await ctx.send("```\n" + message + "```")
+                    else:
+                        await ctx.send("```\n" + art + "```")
+            except:
+                await ctx.send("Huh, something went wrong. I wasn't able to convert this image "
+                               "into ascii art. Try again with a different picture.")
+        else:
+            await ctx.send("You need to include a link to the image you want to convert.\n\n"
+                           "Format like this:  `!mat ascii https://www.example.com/image.png`")
 
     @commands.command()
     async def coinflip(self, ctx):
