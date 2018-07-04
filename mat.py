@@ -20,6 +20,7 @@ __version__ = 0.3
 from discord.ext import commands
 import discord
 import asyncio
+import urllib3
 
 import random
 import os
@@ -34,6 +35,8 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
          "with the server owner's pussy", "with you", "dead", "with myself",
          "some epic game that you don't have", "with fire", "hard-to-get", "Project X",
          "getting friendzoned by Sigma", "getting friendzoned by Monika"]
+
+urllib3.disable_warnings()
 
 if __name__ == "__main__":
     from cogs import *
