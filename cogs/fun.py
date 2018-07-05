@@ -71,7 +71,7 @@ class Fun:
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified"""
         if sides is None:
             sides = "6"
-        dice = str(random.randrange(1, int(sides)))
+        dice = str(random.randrange(1, int(sides) + 1))
         temp = await ctx.send("Rolling a " + sides + "-sided dice...")
         with ctx.channel.typing():
             await asyncio.sleep(2)
