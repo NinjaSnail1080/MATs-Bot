@@ -102,14 +102,14 @@ class Info:
 
             delta = datetime.datetime.utcnow() - s.created_at
 
-            y = int(delta.total_seconds()) // 31536000 # * Number of seconds in a non-leap year
+            y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
             mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
             d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
             h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
             mi = int(delta.total_seconds()) // 60 % 60
             se = int(delta.total_seconds()) % 60
-            #! Dont change delta.totalseconds() to delta.seconds.
-            #! For reasons I don't understand, it doesn't work.
+            #! Do not change "delta.totalseconds()" to "delta.seconds"
+            #! For reasons I don't understand, it doesn't work
 
             if y == 1:
                 year_s = " year"
