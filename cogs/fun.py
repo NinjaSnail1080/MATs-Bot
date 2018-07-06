@@ -36,7 +36,7 @@ class Fun:
 
     @commands.command()
     async def ascii(self, ctx, image=None):
-        """Converts an image into ascii art"""
+        """Converts an image into ascii art. Will work for most images"""
         if image is not None:
             try:
                 with ctx.channel.typing():
@@ -112,7 +112,8 @@ class Fun:
                         image = "https:" + comic.img["src"]
                         caption = comic.img["title"]
 
-                embed = discord.Embed(title="xkcd | " + title, color=mat_color, url=url)
+                embed = discord.Embed(title=title, color=mat_color, url=url)
+                embed.set_author(name="xkcd.com", url="https://www.xkcd.com/")
                 embed.set_image(url=image)
                 embed.set_footer(text=caption)
 
