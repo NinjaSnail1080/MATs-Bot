@@ -29,19 +29,6 @@ class Info:
     def __init__(self, bot):
         self.bot = bot
 
-        self.bot.remove_command("help")
-
-    @commands.command()
-    async def help(self, ctx):
-        """Help"""
-        await ctx.send("**Work in progress**. My commands right now are `info`, `lenny`, "
-                       "`coinflip`, `diceroll`, `serverinfo`, `xkcd`, `ascii`, `kick`, and "
-                       "`randomkick`. My prefixes are `!mat `, `mat.`, `mat/`, or you could "
-                       "mention me. I also have numerous trigger words/phrases, which serve to "
-                       "amuse/infuriate the people of this server.\n\nNote: I can't be on all "
-                       "the time. Since Ninja has no way of hosting me 24/7 as of now, I can "
-                       "only be on when he manually runs the script.")
-
     @commands.command()
     async def info(self, ctx):
         """Info about me"""
@@ -108,7 +95,7 @@ class Info:
             h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
             mi = int(delta.total_seconds()) // 60 % 60
             se = int(delta.total_seconds()) % 60
-            #! Do not change "delta.totalseconds()" to "delta.seconds"
+            #! Do not change "int(delta.totalseconds())" to "delta.seconds"
             #! For reasons I don't understand, it doesn't work
 
             if y == 1:
