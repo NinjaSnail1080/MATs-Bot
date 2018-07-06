@@ -47,98 +47,117 @@ class Info:
 
     @commands.command()
     @commands.guild_only()
-    async def serverinfo(self, ctx, id=None):
+    async def serverinfo(self, ctx):
         """Info about the server."""
-        if id is None:
-            s = ctx.channel.guild
+        s = ctx.channel.guild
+
+        embed = discord.Embed(
+            title=s.name, description="Server ID: " + str(s.id), color=mat_color)
+        embed.set_thumbnail(url=s.icon_url)
+        embed.add_field(name="Members", value=s.member_count)
+        embed.add_field(name="Roles", value=len(s.roles))
+        embed.add_field(name="Text Channels", value=len(s.text_channels))
+        embed.add_field(name="Voice Channels", value=len(s.voice_channels))
+        embed.add_field(name="Categories", value=len(s.categories))
+        embed.add_field(name="Custom Emojis", value=len(s.emojis))
+        embed.add_field(name="Region", value=str(s.region).upper())
+        embed.add_field(
+            name="Verification Level", value=str(s.verification_level).capitalize())
+        if s.afk_channel is not None:
+            embed.add_field(
+                name="AFK Channel", value=s.afk_channel.mention + " after " + str(
+                    s.afk_timeout // 60) + " minutes")
         else:
-            s = self.bot.get_guild(int(id))
+            embed.add_field(name="AFK Channel", value="No AFK channel")
+        embed.add_field(
+            name="Server Creation Date", value=s.created_at.strftime("%b %-d, %Y"))
+        if s.features:
+            embed.add_field(name="Server Features", value=", ".join(s.features),
+            inline=False)
+        embed.add_field(
+            name="Server Owner", value=str(s.owner) + " (User ID: " + str(s.owner_id) + ")",
+            inline=False)
 
-        if s is None:
-            await ctx.send("This isn't a valid server id. Try again with a different one.")
-        elif s is not None and s.unavailable:
-            await ctx.send("This server is unavailable. I can't collect info on it. Try again "
-                           "with a different id.")
+        delta = datetime.datetime.utcnow() - s.created_at
+
+        y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
+        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
+        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
+        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
+        mi = int(delta.total_seconds()) // 60 % 60
+        se = int(delta.total_seconds()) % 60
+        #! Do not change "int(delta.totalseconds())" to "delta.seconds"
+        #! For reasons I don't understand, it doesn't work
+
+        if y == 1:
+            year_s = " year"
         else:
-            embed = discord.Embed(
-                title=s.name, description="Server ID: " + str(s.id), color=mat_color)
-            embed.set_thumbnail(url=s.icon_url)
-            embed.add_field(name="Members", value=s.member_count)
-            embed.add_field(name="Roles", value=len(s.roles))
-            embed.add_field(name="Text Channels", value=len(s.text_channels))
-            embed.add_field(name="Voice Channels", value=len(s.voice_channels))
-            embed.add_field(name="Categories", value=len(s.categories))
-            embed.add_field(name="Custom Emojis", value=len(s.emojis))
-            embed.add_field(name="Region", value=str(s.region).upper())
-            embed.add_field(
-                name="Verification Level", value=str(s.verification_level).capitalize())
-            if s.afk_channel is not None:
-                embed.add_field(
-                    name="AFK Channel", value=s.afk_channel.mention + " after " + str(
-                        s.afk_timeout // 60) + " minutes")
-            else:
-                embed.add_field(name="AFK Channel", value="No AFK channel")
-            embed.add_field(
-                name="Server Creation Date", value=s.created_at.strftime("%b %-d, %Y"))
-            if s.features:
-                embed.add_field(name="Server Features", value=", ".join(s.features),
-                inline=False)
-            embed.add_field(
-                name="Server Owner", value=str(s.owner) + " (User ID: " + str(s.owner_id) + ")",
-                inline=False)
+            year_s = " years"
+        if mo == 1:
+            month_s = " month"
+        else:
+            month_s = " months"
+        if d == 1:
+            day_s = " day"
+        else:
+            day_s = " days"
+        if h == 1:
+            hour_s = " hour"
+        else:
+            hour_s = " hours"
+        if mi == 1:
+            minute_s = " minute"
+        else:
+            minute_s = " minutes"
+        if se == 1:
+            second_s = " second"
+        else:
+            second_s = " seconds"
 
-            delta = datetime.datetime.utcnow() - s.created_at
+        footer = []
+        if y != 0:
+            footer.append(str(y) + year_s + ", ")
+        if mo != 0:
+            footer.append(str(mo) + month_s + ", ")
+        if d != 0:
+            footer.append(str(d) + day_s + ", ")
+        if h != 0:
+            footer.append(str(h) + hour_s + ", ")
+        if mi != 0:
+            footer.append(str(mi) + minute_s + ", ")
+        footer.append("and " + str(se) + second_s + ".")
 
-            y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
-            mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
-            d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
-            h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
-            mi = int(delta.total_seconds()) // 60 % 60
-            se = int(delta.total_seconds()) % 60
-            #! Do not change "int(delta.totalseconds())" to "delta.seconds"
-            #! For reasons I don't understand, it doesn't work
+        embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
 
-            if y == 1:
-                year_s = " year"
-            else:
-                year_s = " years"
-            if mo == 1:
-                month_s = " month"
-            else:
-                month_s = " months"
-            if d == 1:
-                day_s = " day"
-            else:
-                day_s = " days"
-            if h == 1:
-                hour_s = " hour"
-            else:
-                hour_s = " hours"
-            if mi == 1:
-                minute_s = " minute"
-            else:
-                minute_s = " minutes"
-            if se == 1:
-                second_s = " second"
-            else:
-                second_s = " seconds"
+        await ctx.send(embed=embed)
 
-            footer = []
-            if y != 0:
-                footer.append(str(y) + year_s + ", ")
-            if mo != 0:
-                footer.append(str(mo) + month_s + ", ")
-            if d != 0:
-                footer.append(str(d) + day_s + ", ")
-            if h != 0:
-                footer.append(str(h) + hour_s + ", ")
-            if mi != 0:
-                footer.append(str(mi) + minute_s + ", ")
-            footer.append("and " + str(se) + second_s + ".")
+    @commands.command()
+    async def userinfo(self, ctx, user=None):
+        """Info about a user"""
+        #! Not working as of now
+        if user is None:
+            m = ctx.author
+            p = await ctx.author.profile()
+        if m.bot:
+            b = " (Bot Account)"
+        else:
+            b = ""
 
-            embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
+        embed = discord.Embed(title=m + b, description="User ID: " + str(m.id), color=mat_color)
+        embed.set_thumbnail(url=m.avatar_url)
 
-            await ctx.send(embed=embed)
+        embed.add_field(name="Display Name (Nickname)", value=m.display_name)
+        embed.add_field(name="Status", value=m.status)
+        if p.nitro:
+            embed.add_field(name="Discord Nitro?", value="Yes")
+        else:
+            embed.add_field(name="Discord Nitro?", value="No")
+        if p.hypesquad:
+            embed.add_field(name="Discord HypeSquad?", value="Yes")
+        else:
+            embed.add_field(name="Discord HypeSquad?", value="Yes")
+
+        ctx.send(content="**WIP Command**", embed=embed)
 
 
 def setup(bot):
