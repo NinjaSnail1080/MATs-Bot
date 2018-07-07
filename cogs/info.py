@@ -21,7 +21,6 @@ from discord.ext import commands
 import discord
 
 import datetime
-import random
 
 
 class Info:
@@ -82,7 +81,7 @@ class Info:
         delta = datetime.datetime.utcnow() - s.created_at
 
         y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
-        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
+        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
         d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
         h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
         mi = int(delta.total_seconds()) // 60 % 60
@@ -182,7 +181,7 @@ class Info:
         delta = datetime.datetime.utcnow() - m.created_at
 
         y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
-        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
+        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
         d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
         h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
         mi = int(delta.total_seconds()) // 60 % 60
