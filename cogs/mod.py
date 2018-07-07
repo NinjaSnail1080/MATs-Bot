@@ -106,9 +106,6 @@ class Moderation:
                         await ctx.send(embed=discord.Embed(
                             color=mat_color, title=member.name + "!!!", description=random.choice(
                                 rip_list)))
-                    await ctx.send(
-                        "Now someone's gonna have to go invite them back. I suggest you go, " +
-                        ctx.author.mention)
                 except discord.Forbidden:
                     await ctx.send(cant_kick)
         else:
