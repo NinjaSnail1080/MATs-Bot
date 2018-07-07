@@ -21,6 +21,7 @@ from discord.ext import commands
 import discord
 
 import datetime
+import random
 
 
 class Info:
@@ -158,6 +159,7 @@ class Info:
         for r in m.roles:
             if r.name != "@everyone":
                 roles.append("`" + r.name + "`")
+        roles = roles[::-1]
 
         embed = discord.Embed(
             title=str(m), description="User ID: " + str(m.id), color=mat_color)
@@ -165,8 +167,8 @@ class Info:
 
         embed.add_field(name="Display Name", value=m.display_name)
         embed.add_field(name="Status", value=str(m.status).title())
-        embed.add_field(name="Activity", value=m.activity)
         embed.add_field(name="Color", value=str(m.color))
+        embed.add_field(name="Playing", value=m.activity)
         embed.add_field(name="Top Role", value=m.top_role)
         embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
         if m.bot:

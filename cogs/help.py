@@ -22,6 +22,8 @@ import discord
 
 import re
 
+#TODO: Fix all this cause none of it works properly
+
 
 class Help:
     """Help commands"""
