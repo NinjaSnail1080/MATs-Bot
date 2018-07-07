@@ -139,9 +139,8 @@ class Info:
         else:
             if len(ctx.message.mentions) != 0:
                 for member in ctx.message.mentions:
-                    if member.id != self.bot.user.id:
-                        m = member
-                        break
+                    m = member
+                    break
             else:
                 m = ctx.channel.guild.get_member(int(user))
                 if m is None:
