@@ -74,7 +74,7 @@ class Fun:
         dice = str(random.randrange(1, int(sides) + 1))
         temp = await ctx.send("Rolling a " + sides + "-sided dice...")
         with ctx.channel.typing():
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.5)
             await temp.delete()
             await ctx.send(dice + "!")
 
@@ -106,14 +106,15 @@ class Fun:
                 async with aiohttp.ClientSession() as session:
                     async with session.get("https://c.xkcd.com/random/comic/") as w:
                         url = str(w.url)
+                        number = url.replace("https://xkcd.com/", "")[:-1]
                         soup = BeautifulSoup(await w.text(), "lxml")
                         title = soup.find("div", id="ctitle").get_text()
                         comic = soup.find("div", id="comic")
                         image = "https:" + comic.img["src"]
                         caption = comic.img["title"]
 
-                embed = discord.Embed(title=title, color=mat_color, url=url)
-                embed.set_author(name="xkcd.com", url="https://www.xkcd.com/")
+                embed = discord.Embed(title=title + " | #" + number , color=mat_color, url=url)
+                embed.set_author(name="xkcd", url="https://xkcd.com/")
                 embed.set_image(url=image)
                 embed.set_footer(text=caption)
 
