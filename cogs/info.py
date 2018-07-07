@@ -60,9 +60,9 @@ class Info:
         embed.add_field(name="Voice Channels", value=len(s.voice_channels))
         embed.add_field(name="Categories", value=len(s.categories))
         embed.add_field(name="Custom Emojis", value=len(s.emojis))
-        embed.add_field(name="Region", value=str(s.region).upper())
         embed.add_field(
             name="Verification Level", value=str(s.verification_level).capitalize())
+        embed.add_field(name="Region", value=str(s.region).upper())
         if s.afk_channel is not None:
             embed.add_field(
                 name="AFK Channel", value=s.afk_channel.mention + " after " + str(
