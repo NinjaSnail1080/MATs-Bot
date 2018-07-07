@@ -70,7 +70,7 @@ class Info:
         else:
             embed.add_field(name="AFK Channel", value="No AFK channel")
         embed.add_field(
-            name="Server Creation Date", value=s.created_at.strftime("%b %-d, %Y"))
+            name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
         if s.features:
             embed.add_field(name="Server Features", value=", ".join(s.features),
             inline=False)
