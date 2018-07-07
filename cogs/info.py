@@ -134,25 +134,24 @@ class Info:
     @commands.command()
     async def userinfo(self, ctx, user=None):
         """Info about a user"""
-        #* WIP
         if user is None:
             m = ctx.author
         else:
-            #TODO: Fix this bit, it's messed up
             if len(ctx.message.mentions) != 0:
                 for member in ctx.message.mentions:
-                    # if member.id != self.bot.user.id:
+                    if member.id != self.bot.user.id:
                         m = member
+                        break
             else:
-                try:
-                    m = ctx.channel.guild.get_member(int(user))
-                except:
-                    #TODO: Fix this part cause it's not working correctly
-                    m = ctx.author
+                m = ctx.channel.guild.get_member(int(user))
+                if m is None:
                     await ctx.send("Huh, something went wrong. You're supposed to format the "
                                    "message like this: `<prefix> userinfo (OPTIONAL)<mention "
-                                   "user or user's id>`.\n\nJust so that this command doesn't "
-                                   "go to waste, here's *your* user info:")
+                                   "user or user's id>` If you did format it correctly then "
+                                   "the user id you put is probably invalid, or it was for "
+                                   "someone who isn't in this server.\n\nJust so that this "
+                                   "command doesn't go to waste, here's *your* user info:")
+                    m = ctx.author
 
         roles = []
         for r in m.roles:
