@@ -134,30 +134,102 @@ class Info:
     @commands.command()
     async def userinfo(self, ctx, user=None):
         """Info about a user"""
-        #! Not working as of now
+        #* WIP
         if user is None:
             m = ctx.author
-            p = await ctx.author.profile()
-        if m.bot:
-            b = " (Bot Account)"
         else:
-            b = ""
+            #TODO: Fix this bit, it's messed up
+            if len(ctx.message.mentions) != 0:
+                for member in ctx.message.mentions:
+                    # if member.id != self.bot.user.id:
+                        m = member
+            else:
+                try:
+                    m = ctx.channel.guild.get_member(int(user))
+                except:
+                    #TODO: Fix this part cause it's not working correctly
+                    m = ctx.author
+                    await ctx.send("Huh, something went wrong. You're supposed to format the "
+                                   "message like this: `<prefix> userinfo (OPTIONAL)<mention "
+                                   "user or user's id>`.\n\nJust so that this command doesn't "
+                                   "go to waste, here's *your* user info:")
 
-        embed = discord.Embed(title=m + b, description="User ID: " + str(m.id), color=mat_color)
+        roles = []
+        for r in m.roles:
+            if r.name != "@everyone":
+                roles.append("`" + r.name + "`")
+
+        embed = discord.Embed(
+            title=str(m), description="User ID: " + str(m.id), color=mat_color)
         embed.set_thumbnail(url=m.avatar_url)
 
-        embed.add_field(name="Display Name (Nickname)", value=m.display_name)
-        embed.add_field(name="Status", value=m.status)
-        if p.nitro:
-            embed.add_field(name="Discord Nitro?", value="Yes")
+        embed.add_field(name="Display Name", value=m.display_name)
+        embed.add_field(name="Status", value=str(m.status).title())
+        embed.add_field(name="Activity", value=m.activity)
+        embed.add_field(name="Color", value=str(m.color))
+        embed.add_field(name="Top Role", value=m.top_role)
+        embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
+        if m.bot:
+            embed.add_field(name="Bot?", value="Yes")
         else:
-            embed.add_field(name="Discord Nitro?", value="No")
-        if p.hypesquad:
-            embed.add_field(name="Discord HypeSquad?", value="Yes")
-        else:
-            embed.add_field(name="Discord HypeSquad?", value="Yes")
+            embed.add_field(name="Bot?", value="No")
+        embed.add_field(name="Joined Discord", value=m.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(
+            name="Roles (" + str(len(roles)) + ")", value=", ".join(roles), inline=False)
 
-        ctx.send(content="**WIP Command**", embed=embed)
+        delta = datetime.datetime.utcnow() - m.created_at
+
+        y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
+        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in a 30 days
+        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
+        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
+        mi = int(delta.total_seconds()) // 60 % 60
+        se = int(delta.total_seconds()) % 60
+        #! Do not change "int(delta.totalseconds())" to "delta.seconds"
+        #! For reasons I don't understand, it doesn't work
+
+        if y == 1:
+            year_s = " year"
+        else:
+            year_s = " years"
+        if mo == 1:
+            month_s = " month"
+        else:
+            month_s = " months"
+        if d == 1:
+            day_s = " day"
+        else:
+            day_s = " days"
+        if h == 1:
+            hour_s = " hour"
+        else:
+            hour_s = " hours"
+        if mi == 1:
+            minute_s = " minute"
+        else:
+            minute_s = " minutes"
+        if se == 1:
+            second_s = " second"
+        else:
+            second_s = " seconds"
+
+        footer = []
+        if y != 0:
+            footer.append(str(y) + year_s + ", ")
+        if mo != 0:
+            footer.append(str(mo) + month_s + ", ")
+        if d != 0:
+            footer.append(str(d) + day_s + ", ")
+        if h != 0:
+            footer.append(str(h) + hour_s + ", ")
+        if mi != 0:
+            footer.append(str(mi) + minute_s + ", ")
+        footer.append("and " + str(se) + second_s + ".")
+
+        embed.set_footer(
+            text=m.name + " has been on Discord for roughly " + "".join(footer))
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
