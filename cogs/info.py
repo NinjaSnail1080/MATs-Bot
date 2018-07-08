@@ -80,10 +80,10 @@ class Info:
 
         delta = datetime.datetime.utcnow() - s.created_at
 
-        y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
+        y = int(delta.total_seconds()) // 31557600 #* Number of seconds in 365.25 days
         mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
-        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
-        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
+        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in 1 day
+        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
@@ -169,22 +169,28 @@ class Info:
             embed.add_field(name="Playing", value=m.activity.name)
         except:
             embed.add_field(name="Playing", value=m.activity)
-        embed.add_field(name="Top Role", value=m.top_role)
+        if roles:
+            embed.add_field(name="Top Role", value=m.top_role)
+        else:
+            embed.add_field(name="Top Role", value="No roles")
         embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
         if m.bot:
             embed.add_field(name="Bot?", value="Yes")
         else:
             embed.add_field(name="Bot?", value="No")
         embed.add_field(name="Joined Discord", value=m.created_at.strftime("%b %-d, %Y"))
-        embed.add_field(
-            name="Roles (" + str(len(roles)) + ")", value=", ".join(roles), inline=False)
+        if roles:
+            embed.add_field(
+                name="Roles (" + str(len(roles)) + ")", value=", ".join(roles), inline=False)
+        else:
+            embed.add_field(name="Roles", value="`No roles`")
 
         delta = datetime.datetime.utcnow() - m.created_at
 
-        y = int(delta.total_seconds()) // 31536000 #* Number of seconds in a non-leap year
+        y = int(delta.total_seconds()) // 31557600 #* Number of seconds in 356.25 days
         mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
-        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in a day
-        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in an hour
+        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in 1 day
+        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
