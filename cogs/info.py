@@ -165,7 +165,10 @@ class Info:
         embed.add_field(name="Display Name", value=m.display_name)
         embed.add_field(name="Status", value=str(m.status).title())
         embed.add_field(name="Color", value=str(m.color))
-        embed.add_field(name="Playing", value=m.activity.name)
+        try:
+            embed.add_field(name="Playing", value=m.activity.name)
+        except:
+            embed.add_field(name="Playing", value=m.activity)
         embed.add_field(name="Top Role", value=m.top_role)
         embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
         if m.bot:
