@@ -89,15 +89,49 @@ class MAT(commands.Bot):
                    "guys in charge could do it for me.")
         sent = False
         for c in guild.text_channels:
-            if re.search("general", c.name) or re.search("chat", c.name) or re.search(
-                "off-topic", c.name):
-                await c.send(content=message)
+            if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
+                "general", c.name):
+                await c.send(message)
                 sent = True
                 break
         if not sent:
             c = random.choice(guild.text_channels)
-            await c.send(content="~~Damn, you guys must have a really strange system for naming "
-            "your channels~~\n\n" + message)
+            await c.send("~~Damn, you guys must have a really strange system for naming your "
+                         "channels~~\n\n" + message)
+
+        support_server = self.get_guild(463959531807047700)
+        joins = support_server.get_channel(465393762512797696)
+
+        embed = discord.Embed(
+            title="Joined " + guild.name, description="ID: " + str(guild.id) + "\nJoined: " +
+            guild.me.joined_at.strftime("%b %-d, %Y"), color=mat_color)
+        embed.set_thumbnail(url=guild.icon_url)
+        embed.add_field(name="Members", value=guild.member_count)
+        embed.add_field(name="Roles", value=len(guild.roles))
+        embed.add_field(name="Text Channels", value=len(guild.text_channels))
+        embed.add_field(name="Voice Channels", value=len(guild.voice_channels))
+        embed.add_field(name="Categories", value=len(guild.categories))
+        embed.add_field(name="Custom Emojis", value=len(guild.emojis))
+        embed.add_field(
+            name="Verification Level", value=str(guild.verification_level).capitalize())
+        embed.add_field(name="Region", value=str(guild.region).upper())
+        if guild.afk_channel is not None:
+            embed.add_field(
+                name="AFK Channel", value=guild.afk_channel.mention + " after " + str(
+                    guild.afk_timeout // 60) + " minutes")
+        else:
+            embed.add_field(name="AFK Channel", value="No AFK channel")
+        embed.add_field(
+            name="Server Created", value=guild.created_at.strftime("%b %-d, %Y"))
+        if guild.features:
+            embed.add_field(name="Server Features", value=", ".join(guild.features),
+                            inline=False)
+        embed.add_field(
+            name="Server Owner", value=str(guild.owner) + " (User ID: " + str(
+                guild.owner_id) + ")", inline=False)
+        embed.set_footer(text="I am now part of " + str(len(self.guilds)) + " servers!")
+
+        await joins.send(embed=embed)
 
     async def on_message(self, message):
         if message.author == bot.user:
