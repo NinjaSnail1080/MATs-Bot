@@ -30,8 +30,6 @@ import config
 #* This module contains a single variable called "TOKEN", which is assigned to a string that
 #* contains the bot's token. It's needed in order to run the bot.
 
-mat_color = discord.Color.from_rgb(0, 60, 255)
-
 games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
          "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick",
          "with the server owner's pussy", "with you", "dead", "with myself",

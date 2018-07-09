@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import __version__, mat_color
+from mat import __version__
 from discord.ext import commands
 import discord
 
@@ -29,9 +29,11 @@ class Info:
     def __init__(self, bot):
         self.bot = bot
 
+
     @commands.command()
     async def info(self, ctx):
         """Info about me"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         app = await self.bot.application_info()
 
@@ -54,7 +56,9 @@ class Info:
     @commands.command()
     @commands.guild_only()
     async def serverinfo(self, ctx):
-        """Info about the server."""
+        """Info about the server"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         s = ctx.channel.guild
 
         embed = discord.Embed(
@@ -139,7 +143,10 @@ class Info:
 
     @commands.command()
     async def userinfo(self, ctx, user=None):
-        """Info about a user"""
+        """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
+        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         if user is None:
             m = ctx.author
         else:

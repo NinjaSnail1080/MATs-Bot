@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 import discord
 
@@ -37,6 +36,8 @@ class Triggers:
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
+
+        mat_color = self.bot.get_guild(message.channel.guild.id).me.top_role.color
 
         if message.author.id == 281807963147075584:
             await message.channel.send(random.choice(sigma_responses))

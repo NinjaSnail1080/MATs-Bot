@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
@@ -36,7 +35,9 @@ class Fun:
 
     @commands.command()
     async def ascii(self, ctx, image=None):
-        """Converts an image into ascii art. Will work for most images"""
+        """Converts an image into ascii art. Will work for most images.
+        Format like this:`<prefix> ascii <image URL>`"""
+
         if image is not None:
             try:
                 with ctx.channel.typing():
@@ -54,11 +55,12 @@ class Fun:
                                "into ascii art. Try again with a different picture.")
         else:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
-                           "Format like this:  `!mat ascii https://www.example.com/image.png`")
+                           "Format like this: `<prefix> ascii https://www.example.com/image.png`")
 
     @commands.command()
     async def coinflip(self, ctx):
         """Flips a coin, pretty self-explanatory"""
+
         coin = random.choice(["Heads!", "Tails!"])
         temp = await ctx.send("Flipping...")
         with ctx.channel.typing():
@@ -68,7 +70,9 @@ class Fun:
 
     @commands.command()
     async def diceroll(self, ctx, sides=None):
-        """Rolls a dice. By default a 6-sided one though the number of sides can be specified"""
+        """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
+        Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`"""
+
         if sides is None:
             sides = "6"
         try:
@@ -84,6 +88,8 @@ class Fun:
     @commands.command()
     async def lenny(self, ctx):
         """A list of Lenny faces for all your copypasting needs"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         embed = discord.Embed(
             title="A list of Lenny faces for all your copypasting needs",
             color=mat_color, url="https://www.lennyfaces.net/")
@@ -104,6 +110,8 @@ class Fun:
     @commands.command()
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         try:
             with ctx.channel.typing():
                 async with aiohttp.ClientSession() as session:

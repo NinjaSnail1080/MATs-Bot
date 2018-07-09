@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 import discord
 import asyncio
@@ -33,7 +32,11 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def kick(self, ctx, member, reason=None):
-        """Kicks a member"""
+        """Kicks a member from the server.
+        Format like this: `<prefix> kick <@mention member(s)> <reason for kicking>`
+        Put the reason in \"quotation marks\" if it's more than one word. If you want to kick multiple members, @mention all of them and surround their names with \"quotation marks\""""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         if ctx.author.permissions_in(ctx.channel).kick_members:
             cant_kick = []
             if reason is None:
@@ -61,7 +64,11 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def randomkick(self, ctx, members=None):
-        """Randomly selects a member to kick. Feeling lucky?"""
+        """Kicks a random member, feeling lucky?
+        Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.
+        If you don't mention anyone, I'll randomly select someone from the server."""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                         "RIP in pieces", "Rest in pieces"]

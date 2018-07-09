@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 import discord
 import aiohttp
@@ -32,8 +31,10 @@ class NSFW:
 
     @commands.command()
     async def gonewild(self, ctx):
-        """Sends a random post from r/gonewild"""
-        # Heavy WIP
+        """Sends a random post from r/gonewild (Not actually working yet. Heavy WIP)"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
+        #* Heavy WIP
         if ctx.channel.is_nsfw():
             with ctx.channel.typing():
                 async with aiohttp.ClientSession() as session:

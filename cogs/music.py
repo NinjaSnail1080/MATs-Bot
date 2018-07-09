@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 import discord
 
@@ -26,7 +25,6 @@ class Music:
 
     def __init__(self, bot):
         self.bot = bot
-
 
 def setup(bot):
     bot.add_cog(Music(bot))

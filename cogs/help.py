@@ -16,9 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import mat_color
 from discord.ext import commands
 import discord
+
+from cogs.fun import Fun
+from cogs.info import Info
+from cogs.mod import Moderation
+from cogs.music import Music
+from cogs.nsfw import NSFW
 
 # list_prefixes = "**Prefixes**: `" + "` | `".join()) + "`"
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
@@ -35,6 +40,8 @@ class Help:
     @commands.command()
     async def help(self, ctx, cat=None):
         """HELP!"""
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         if cat is None:
             embed = discord.Embed(
                 title="MAT's Bot | Help Command", description=list_prefixes + "\n**Categories**:",
@@ -81,71 +88,71 @@ class Help:
 
         else:
             await ctx.send("That's not a category. The ones you can pick are:\n`fun` (Fun "
-                           "commands)\n`info` (Information commands)\n`mod` (Moderation "
-                           "commands)\n`music` (Music commands)\n`nsfw` (NSFW commands)")
+                           "commands)\n`info` (Information commands)\n`mod` (Moderation commands)"
+                           "\n`music` (Music commands)\n`nsfw` (NSFW commands)")
 
     async def fun(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         embed = discord.Embed(
             title="Help | Fun Commands", description=list_prefixes, color=mat_color)
 
         embed.add_field(
-            name="ascii", value="Converts an image into ascii art. Will work for most "
-            "images\nFormat like this: `<prefix> ascii <image_url>`", inline=False)
+            name="ascii", value=Fun.ascii.help, inline=False)
         embed.add_field(
-            name="coinflip", value="Flips a coin, pretty self-explanatory", inline=False)
+            name="coinflip", value=Fun.coinflip.help, inline=False)
         embed.add_field(
-            name="diceroll", value="Rolls a dice. By default a 6-sided one though the "
-            "number of sides can be specified.\nFormat like this: `<prefix> diceroll (OPTIONAL)<# "
-            "of sides>`", inline=False)
+            name="diceroll", value=Fun.diceroll.help, inline=False)
         embed.add_field(
-            name="lenny", value="A list of Lenny faces for all your copypasting needs", inline=False)
-        embed.add_field(name="xkcd", value="Posts a random xkcd comic", inline=False)
+            name="lenny", value=Fun.lenny.help, inline=False)
+        embed.add_field(name="xkcd", value=Fun.xkcd.help, inline=False)
 
         await ctx.send(embed=embed)
 
     async def image(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
     async def info(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         embed = discord.Embed(
             title="Help | Information Commands", description=list_prefixes, color=mat_color)
 
-        embed.add_field(name="info", value="Info about me!", inline=False)
-        embed.add_field(name="serverinfo", value="Info about the server", inline=False)
-        embed.add_field(
-            name="userinfo", value="Info about a user. By default it'll show your user info, but "
-            "you can specify a different member of your server.\nFormat like this: `<prefix> "
-            "userinfo (OPTIONAL)<@mention user or user's id>`", inline=False)
+        embed.add_field(name="info", value=Info.info.help, inline=False)
+        embed.add_field(name="serverinfo", value=Info.serverinfo.help, inline=False)
+        embed.add_field(name="userinfo", value=Info.userinfo.help, inline=False)
 
         await ctx.send(embed=embed)
 
     async def mod(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         embed = discord.Embed(
             title="Help | Moderation Commands", description=list_prefixes, color=mat_color)
 
         embed.add_field(
-            name="kick (Must have the \"kick members\" permission)", value="Kicks a member from "
-            "the server.\nFormat like this: `<prefix> kick <@mention member(s)> <reason for "
-            "kicking>` Put the reason in \"quotation marks\" if it's more than one word. If you "
-            "want to kick multiple members, @mention all of them and surround their names with "
-            "\"quotation marks\"", inline=False)
+            name="kick (Must have the \"kick members\" permission)", value=Moderation.kick.help,
+            inline=False)
         embed.add_field(
-            name="randomkick (Must have the \"kick members\" permission)", value="Kicks a random "
-            "member, feeling lucky?\nFormat like this: `<prefix> randomkick (OPTIONAL)<list of "
-            "@mentions you want me to randomly pick from>`. If you don't mention anyone, I'll "
-            "randomly select someone from the server.", inline=False)
+            name="randomkick (Must have the \"kick members\" permission)",
+            value=Moderation.randomkick.help, inline=False)
 
         await ctx.send(embed=embed)
 
     async def music(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
     async def nsfw(self, ctx):
+        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
         embed = discord.Embed(
             title="Help | NSFW Commands ( ͡° ͜ʖ ͡°)", description=list_prefixes, color=mat_color)
 
-        embed.add_field(name="gonewild", value="Posts a random image from r/gonewild (Not "
-                        "actually working yet. Heavy WIP)")
+        embed.add_field(name="gonewild", value=NSFW.gonewild.help)
 
         await ctx.send(embed=embed)
 
