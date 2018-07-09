@@ -32,15 +32,21 @@ class Info:
     @commands.command()
     async def info(self, ctx):
         """Info about me"""
-        embed = discord.Embed(title="MAT's Bot", description="A open-source, general purpose "
-                              "Discord bot written in Python.", color=mat_color)
+
+        app = await self.bot.application_info()
+
+        embed = discord.Embed(
+            title=str(self.bot.user), description=app.description + "\n\n**User/Client ID**: " +
+            str(app.id), color=mat_color)
+        embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
-        embed.add_field(name="Author", value="NinjaSnail1080#8581")
+        embed.add_field(name="Author", value=app.owner)
         embed.add_field(name="Server Count", value=len(self.bot.guilds))
         embed.add_field(name="Language", value="Python 3.6.4")
         embed.add_field(name="Library", value="discord.py (rewrite)")
         embed.add_field(name="License", value="GPL v3.0")
-        embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot")
+        embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot",
+                        inline=False)
         embed.set_footer(text="Dedicated to WooMAT1417#1142")
 
         await ctx.send(embed=embed)
@@ -87,7 +93,7 @@ class Info:
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
-        #! For reasons I don't understand, it doesn't work
+        #! For reasons I don't fully understand, it doesn't work
 
         if y == 1:
             year_s = " year"
@@ -145,7 +151,7 @@ class Info:
                 m = ctx.channel.guild.get_member(int(user))
                 if m is None:
                     await ctx.send("Huh, something went wrong. You're supposed to format the "
-                                   "message like this: `<prefix> userinfo (OPTIONAL)<mention "
+                                   "message like this: `<prefix> userinfo (OPTIONAL)<@mention "
                                    "user or user's id>` If you did format it correctly then "
                                    "the user id you put is probably invalid, or it was for "
                                    "someone who isn't in this server.\n\nJust so that this "
@@ -194,7 +200,7 @@ class Info:
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
-        #! For reasons I don't understand, it doesn't work
+        #! For reasons I don't fully understand, it doesn't work
 
         if y == 1:
             year_s = " year"
