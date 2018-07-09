@@ -22,13 +22,11 @@ import discord
 
 import datetime
 
-
 class Info:
     """Information"""
 
     def __init__(self, bot):
         self.bot = bot
-
 
     @commands.command()
     async def info(self, ctx):
