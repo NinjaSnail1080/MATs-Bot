@@ -71,12 +71,15 @@ class Fun:
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified"""
         if sides is None:
             sides = "6"
-        dice = str(random.randrange(1, int(sides) + 1))
-        temp = await ctx.send("Rolling a " + sides + "-sided dice...")
-        with ctx.channel.typing():
-            await asyncio.sleep(1.5)
-            await temp.delete()
-            await ctx.send(dice + "!")
+        try:
+            dice = str(random.randrange(2, int(sides) + 1))
+            temp = await ctx.send("Rolling a " + sides + "-sided dice...")
+            with ctx.channel.typing():
+                await asyncio.sleep(1.5)
+                await temp.delete()
+                await ctx.send(dice + "!")
+        except ValueError:
+            await ctx.send("The number of sides must be an **integer above 1**. Try again.")
 
     @commands.command()
     async def lenny(self, ctx):

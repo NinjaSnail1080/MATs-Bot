@@ -27,6 +27,8 @@ import os
 import re
 
 import config
+#* This module contains a single variable called "TOKEN", which is assigned to a string that
+#* contains the bot's token. It's needed in order to run the bot.
 
 mat_color = discord.Color.from_rgb(0, 60, 255)
 
@@ -85,7 +87,8 @@ class MAT(commands.Bot):
                    "change my role's color to **#003cff**? It's kinda my signature color, but "
                    "due to an issue with how Discord's permission system works, I can't "
                    "automatically change my role's color to that. So it'd be great if one of you "
-                   "guys in charge could do it for me.")
+                   "guys in charge could do it for me.\n\nAnyway, I can do many things! Type "
+                   "!mat help to get started")
         sent = False
         for c in guild.text_channels:
             if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
@@ -102,8 +105,9 @@ class MAT(commands.Bot):
         joins = support_server.get_channel(465393762512797696)
 
         embed = discord.Embed(
-            title="Joined " + guild.name, description="ID: " + str(guild.id) + "\nJoined: " +
-            guild.me.joined_at.strftime("%b %-d, %Y"), color=mat_color)
+            title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
+            "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
+            color=mat_color)
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
@@ -128,9 +132,10 @@ class MAT(commands.Bot):
         embed.add_field(
             name="Server Owner", value=str(guild.owner) + " (User ID: " + str(
                 guild.owner_id) + ")", inline=False)
-        embed.set_footer(text="I am now part of " + str(len(self.guilds)) + " servers!")
 
-        await joins.send(embed=embed)
+        await joins.send(
+            content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
+                len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
     async def on_message(self, message):
         if message.author == bot.user:
