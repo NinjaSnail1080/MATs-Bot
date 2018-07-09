@@ -42,20 +42,19 @@ class Help:
 
             embed.add_field(
                 name="<:confetti:464831811558572035> Fun", value="5 commands\n`<prefix> help "
-                "fun` for more info")
-            embed.add_field(
-                name="<:paint:464836778000515072> Image Manipulation", value="0 commands\n"
-                "`<prefix> help image` for more info")
+                "fun` for more info", inline=False)
             embed.add_field(
                 name="<:info:464831966382915584> Info", value="2 commands\n`<prefix> help info` "
-                "for more info")
+                "for more info", inline=False)
             embed.add_field(
                 name="<:Fist:464833337983500289> Moderation", value="2 commands\n`<prefix> help "
-                "mod` for more info")
+                "mod` for more info", inline=False)
             embed.add_field(
-                name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
+                name=":notes: Music", value="0 commands\n`<prefix> help music` for more info",
+                inline=False)
             embed.add_field(
-                name=":wink: NSFW", value="1 command\n`<prefix> help nsfw` for more info")
+                name=":wink: NSFW", value="1 command\n`<prefix> help nsfw` for more info",
+                inline=False)
 
             await ctx.send(
                 content="**Note**: I can't be on all the time. Since Ninja has no way of hosting "
@@ -65,8 +64,26 @@ class Help:
         elif cat == "fun":
             await self.fun(ctx)
 
+        elif cat == "image":
+            await self.image(ctx)
+
         elif cat == "info":
             await self.info(ctx)
+
+        elif cat == "mod":
+            await self.mod(ctx)
+
+        elif cat == "music":
+            await self.music(ctx)
+
+        elif cat == "nsfw":
+            await self.nsfw(ctx)
+
+        else:
+            await ctx.send("That's not a category. The ones you can pick are:\n`fun` (Fun "
+                           "commands)\n`image` (Image Manipulation commands)\n`info` (Information"
+                           " commands)\n`mod` (Moderation commands)\n`music` (Music commands)\n"
+                           "`nsfw` (NSFW commands)\n`all` (See all commands)")
 
     async def fun(self, ctx):
         embed = discord.Embed(
@@ -79,22 +96,57 @@ class Help:
             name="coinflip", value="Flips a coin, pretty self-explanatory", inline=False)
         embed.add_field(
             name="diceroll", value="Rolls a dice. By default a 6-sided one though the "
-            "number of sides can be specified. Format like this: `<prefix> diceroll (OPTIONAL)<# "
+            "number of sides can be specified.\nFormat like this: `<prefix> diceroll (OPTIONAL)<# "
             "of sides>`", inline=False)
         embed.add_field(
             name="lenny", value="A list of Lenny faces for all your copypasting needs", inline=False)
         embed.add_field(name="xkcd", value="Posts a random xkcd comic", inline=False)
 
+        await ctx.send(embed=embed)
+
+    async def image(self, ctx):
+        await ctx.send("No commands yet ¯\_(ツ)_/¯")
+
     async def info(self, ctx):
         embed = discord.Embed(
-            title="Help | Info Commands", description=list_prefixes, color=mat_color)
+            title="Help | Information Commands", description=list_prefixes, color=mat_color)
 
         embed.add_field(name="info", value="Info about me!", inline=False)
         embed.add_field(name="serverinfo", value="Info about the server", inline=False)
         embed.add_field(
             name="userinfo", value="Info about a user. By default it'll show your user info, but "
-            "you can specify a different member of your server. Format like this: `<prefix> "
+            "you can specify a different member of your server.\nFormat like this: `<prefix> "
             "userinfo (OPTIONAL)<@mention user or user's id>`", inline=False)
+
+        await ctx.send(embed=embed)
+
+    async def mod(self, ctx):
+        embed = discord.Embed(
+            title="Help | Moderation Commands", description=list_prefixes, color=mat_color)
+
+        embed.add_field(
+            name="kick (Must have the \"kick members\" permission)", value="Kicks a member from "
+            "the server.\nFormat like this: `<prefix> kick <@mention member(s)> <reason for "
+            "kicking>` Put the reason in \"quotation marks\" if it's more than one word. If you "
+            "want to kick multiple members, @mention all of them and surround their names with "
+            "\"quotation marks\"", inline=False)
+        embed.add_field(
+            name="randomkick (Must have the \"kick members\" permission)", value="Kicks a random "
+            "member, feeling lucky?\nFormat like this: `<prefix> randomkick (OPTIONAL)<list of "
+            "@mentions you want me to randomly pick from>`. If you don't mention anyone, I'll "
+            "randomly select someone from the server.", inline=False)
+
+        await ctx.send(embed=embed)
+
+    async def music(self, ctx):
+        await ctx.send("No commands yet ¯\_(ツ)_/¯")
+
+    async def nsfw(self, ctx):
+        embed = discord.Embed(
+            title="Help | NSFW Commands ( ͡° ͜ʖ ͡°)", description=list_prefixes, color=mat_color)
+
+        embed.add_field(name="gonewild", value="Posts a random image from r/gonewild (Not "
+                        "actually working yet. Heavy WIP)")
 
         await ctx.send(embed=embed)
 
