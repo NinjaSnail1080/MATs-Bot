@@ -40,12 +40,12 @@ class Help:
     @commands.command()
     async def help(self, ctx, cat=None):
         """HELP!"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if cat is None:
             embed = discord.Embed(
                 title="MAT's Bot | Help Command", description=list_prefixes + "\n**Categories**:",
-                color=mat_color)
+                color=color)
 
             embed.add_field(
                 name="<:confetti:464831811558572035> Fun", value="5 commands\n`<prefix> help "
@@ -92,10 +92,10 @@ class Help:
                            "\n`music` (Music commands)\n`nsfw` (NSFW commands)")
 
     async def fun(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         embed = discord.Embed(
-            title="Help | Fun Commands", description=list_prefixes, color=mat_color)
+            title="Help | Fun Commands", description=list_prefixes, color=color)
 
         embed.add_field(
             name="ascii", value=Fun.ascii.help, inline=False)
@@ -110,15 +110,15 @@ class Help:
         await ctx.send(embed=embed)
 
     async def image(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
     async def info(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         embed = discord.Embed(
-            title="Help | Information Commands", description=list_prefixes, color=mat_color)
+            title="Help | Information Commands", description=list_prefixes, color=color)
 
         embed.add_field(name="info", value=Info.info.help, inline=False)
         embed.add_field(name="serverinfo", value=Info.serverinfo.help, inline=False)
@@ -127,10 +127,10 @@ class Help:
         await ctx.send(embed=embed)
 
     async def mod(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         embed = discord.Embed(
-            title="Help | Moderation Commands", description=list_prefixes, color=mat_color)
+            title="Help | Moderation Commands", description=list_prefixes, color=color)
 
         embed.add_field(
             name="kick (Must have the \"kick members\" permission)", value=Moderation.kick.help,
@@ -145,15 +145,15 @@ class Help:
         await ctx.send(embed=embed)
 
     async def music(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
     async def nsfw(self, ctx):
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         embed = discord.Embed(
-            title="Help | NSFW Commands ( ͡° ͜ʖ ͡°)", description=list_prefixes, color=mat_color)
+            title="Help | NSFW Commands ( ͡° ͜ʖ ͡°)", description=list_prefixes, color=color)
 
         embed.add_field(name="gonewild", value=NSFW.gonewild.help)
 

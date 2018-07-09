@@ -33,13 +33,13 @@ class Info:
     @commands.command()
     async def info(self, ctx):
         """Info about me"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         app = await self.bot.application_info()
 
         embed = discord.Embed(
             title=str(self.bot.user), description=app.description + "\n\n**User/Client ID**: " +
-            str(app.id), color=mat_color)
+            str(app.id), color=color)
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value=app.owner)
@@ -57,12 +57,12 @@ class Info:
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Info about the server"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         s = ctx.channel.guild
 
         embed = discord.Embed(
-            title=s.name, description="Server ID: " + str(s.id), color=mat_color)
+            title=s.name, description="Server ID: " + str(s.id), color=color)
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(name="Members", value=s.member_count)
         embed.add_field(name="Roles", value=len(s.roles))
@@ -145,7 +145,7 @@ class Info:
     async def userinfo(self, ctx, user=None):
         """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if user is None:
             m = ctx.author
@@ -189,7 +189,7 @@ class Info:
             a = "Nothing right now"
 
         embed = discord.Embed(
-            title=str(m), description="User ID: " + str(m.id), color=mat_color)
+            title=str(m), description="User ID: " + str(m.id), color=color)
         embed.set_thumbnail(url=m.avatar_url)
 
         embed.add_field(name="Display Name", value=m.display_name)

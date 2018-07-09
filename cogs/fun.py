@@ -88,11 +88,11 @@ class Fun:
     @commands.command()
     async def lenny(self, ctx):
         """A list of Lenny faces for all your copypasting needs"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         embed = discord.Embed(
             title="A list of Lenny faces for all your copypasting needs",
-            color=mat_color, url="https://www.lennyfaces.net/")
+            color=color, url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
         embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
@@ -110,7 +110,7 @@ class Fun:
     @commands.command()
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         try:
             with ctx.channel.typing():
@@ -124,7 +124,7 @@ class Fun:
                         image = "https:" + comic.img["src"]
                         caption = comic.img["title"]
 
-                embed = discord.Embed(title=title + " | #" + number , color=mat_color, url=url)
+                embed = discord.Embed(title=title + " | #" + number , color=color, url=url)
                 embed.set_author(name="xkcd", url="https://xkcd.com/")
                 embed.set_image(url=image)
                 embed.set_footer(text=caption)

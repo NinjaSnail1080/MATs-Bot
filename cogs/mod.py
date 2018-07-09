@@ -35,7 +35,7 @@ class Moderation:
         """Kicks a member from the server.
         Format like this: `<prefix> kick <@mention member(s)> <reason for kicking>`
         Put the reason in \"quotation marks\" if it's more than one word. If you want to kick multiple members, @mention all of them and surround their names with \"quotation marks\""""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
             cant_kick = []
@@ -46,7 +46,7 @@ class Moderation:
                     try:
                         await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
                         await ctx.send(embed=discord.Embed(
-                            color=mat_color, title=m.name + " kicked by " +
+                            color=color, title=m.name + " kicked by " +
                             ctx.author.name, description="Reason: " + reason))
                     except discord.Forbidden:
                         cant_kick.append(m.name)
@@ -76,7 +76,7 @@ class Moderation:
         """Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.
         If you don't mention anyone, I'll randomly select someone from the server."""
-        mat_color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
@@ -98,7 +98,7 @@ class Moderation:
                         await asyncio.sleep(2)
                         await temp.delete()
                         await ctx.send(embed=discord.Embed(
-                            color=mat_color, title=member.name + "!!!", description=random.choice(
+                            color=color, title=member.name + "!!!", description=random.choice(
                                 rip_list)))
                     await ctx.send(
                         "Now someone's gonna have to go invite them back. I suggest you go, " +
@@ -120,7 +120,7 @@ class Moderation:
                         await asyncio.sleep(2)
                         await temp.delete()
                         await ctx.send(embed=discord.Embed(
-                            color=mat_color, title=member.name + "!!!", description=random.choice(
+                            color=color, title=member.name + "!!!", description=random.choice(
                                 rip_list)))
                 except discord.Forbidden:
                     await ctx.send(cant_kick)
