@@ -63,6 +63,15 @@ class Moderation:
 
     @commands.command()
     @commands.guild_only()
+    async def purge(self, ctx, number=None, member=None):
+        """HEAVY WIP. Do not use"""
+
+        if ctx.author.permissions_in(ctx.channel).manage_messages:
+            if number is not None:
+                await ctx.channel.purge(limit=int(number) + 1)
+
+    @commands.command()
+    @commands.guild_only()
     async def randomkick(self, ctx, members=None):
         """Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.

@@ -136,6 +136,9 @@ class Help:
             name="kick (Must have the \"kick members\" permission)", value=Moderation.kick.help,
             inline=False)
         embed.add_field(
+            name="purge (Must have the \"manage messages\" permission",
+            value=Moderation.purge.help, inline=False)
+        embed.add_field(
             name="randomkick (Must have the \"kick members\" permission)",
             value=Moderation.randomkick.help, inline=False)
 
