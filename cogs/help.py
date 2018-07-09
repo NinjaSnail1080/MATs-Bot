@@ -81,9 +81,8 @@ class Help:
 
         else:
             await ctx.send("That's not a category. The ones you can pick are:\n`fun` (Fun "
-                           "commands)\n`image` (Image Manipulation commands)\n`info` (Information"
-                           " commands)\n`mod` (Moderation commands)\n`music` (Music commands)\n"
-                           "`nsfw` (NSFW commands)")
+                           "commands)\n`info` (Information commands)\n`mod` (Moderation "
+                           "commands)\n`music` (Music commands)\n`nsfw` (NSFW commands)")
 
     async def fun(self, ctx):
         embed = discord.Embed(
