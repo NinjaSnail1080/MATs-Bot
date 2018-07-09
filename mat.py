@@ -47,11 +47,11 @@ if __name__ == "__main__":
             if f.endswith(".py"):
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
-    initial_extensions.remove("cogs.help") #! Temporary operation while I fix the help command
 
 
-def get_prefix(bot, message):
+async def get_prefix(bot, message):
 
+    global prefixes
     prefixes = ["!mat ", "mat/", "mat."]
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
