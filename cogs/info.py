@@ -164,6 +164,23 @@ class Info:
                 roles.append("`" + r.name + "`")
         roles = roles[::-1]
 
+        if m.activity is not None:
+            if m.activity.type == discord.ActivityType.playing:
+                t = "Playing"
+                a = m.activity.name
+            elif m.activity.type == discord.ActivityType.streaming:
+                t = "Streaming"
+                a = m.activity.name
+            elif m.activity.type == discord.ActivityType.listening:
+                t = "Listening to"
+                a = m.activity.title
+            elif m.activity.type == discord.ActivityType.watching:
+                t = "Watching"
+                a = m.activity.name
+        else:
+            t = "Playing"
+            a = "Nothing right now"
+
         embed = discord.Embed(
             title=str(m), description="User ID: " + str(m.id), color=mat_color)
         embed.set_thumbnail(url=m.avatar_url)
@@ -171,14 +188,8 @@ class Info:
         embed.add_field(name="Display Name", value=m.display_name)
         embed.add_field(name="Status", value=str(m.status).title())
         embed.add_field(name="Color", value=str(m.color))
-        try:
-            embed.add_field(name="Playing", value=m.activity.name)
-        except:
-            embed.add_field(name="Playing", value=m.activity)
-        if roles:
-            embed.add_field(name="Top Role", value=m.top_role)
-        else:
-            embed.add_field(name="Top Role", value="No roles")
+        embed.add_field(name=t, value=a)
+        embed.add_field(name="Top Role", value=m.top_role)
         embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
         if m.bot:
             embed.add_field(name="Bot?", value="Yes")
