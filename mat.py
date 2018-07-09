@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
 async def get_prefix(bot, message):
 
-    global prefixes
     prefixes = ["!mat ", "mat/", "mat."]
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
