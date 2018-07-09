@@ -165,17 +165,17 @@ class Info:
         roles = roles[::-1]
 
         if m.activity is not None:
-            if m.activity.type == discord.ActivityType.playing:
-                t = "Playing"
-                a = m.activity.name
+            if m.activity.type == discord.ActivityType.listening:
+                t = "Listening to"
+                a = m.activity.title
             elif m.activity.type == discord.ActivityType.streaming:
                 t = "Streaming"
                 a = m.activity.name
-            elif m.activity.type == discord.ActivityType.listening:
-                t = "Listening to"
-                a = m.activity.title
             elif m.activity.type == discord.ActivityType.watching:
                 t = "Watching"
+                a = m.activity.name
+            else:
+                t = "Playing"
                 a = m.activity.name
         else:
             t = "Playing"
