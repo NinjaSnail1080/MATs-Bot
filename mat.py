@@ -153,7 +153,7 @@ class MAT(commands.Bot):
         await self.wait_until_ready()
         while True:
             await self.change_presence(activity=discord.Game(random.choice(games)))
-            await asyncio.sleep(5)
+            await asyncio.sleep(random.randint(4, 8))
 
     def run(self):
         self.loop.create_task(self.switch_games())

@@ -81,7 +81,9 @@ class Fun:
         if sides is None:
             sides = "6"
         try:
-            dice = str(random.randrange(2, int(sides) + 1))
+            if sides == "1":
+                raise ValueError
+            dice = str(random.randint(1, int(sides)))
             temp = await ctx.send("Rolling a " + sides + "-sided dice...")
             with ctx.channel.typing():
                 await asyncio.sleep(1.5)
