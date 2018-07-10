@@ -50,7 +50,7 @@ class Moderation:
             cant_kick = []
             if reason is None:
                 reason = "No reason given"
-            for m in ctx.message.mentions:
+            for m in set(ctx.message.mentions):
                 if m != self.bot.user:
                     try:
                         await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
@@ -60,7 +60,7 @@ class Moderation:
                     except discord.Forbidden:
                         cant_kick.append(m.display_name)
                 else:
-                    await ctx.send("...\n\n*Very* funny, but I'm not gonna kick myself. You can "
+                    await ctx.send("...\n\nVery funny, but I'm not gonna kick myself. You can "
                                    "do it yourself if you hate me that much.")
             for i in cant_kick:
                 await ctx.send(
@@ -102,11 +102,7 @@ class Moderation:
             if members is None:
                 member = random.choice(ctx.channel.guild.members)
             else:
-                member_s = []
-                for m in ctx.message.mentions:
-                    if m != self.bot.user:
-                        member_s.append(m)
-                member = random.choice(member_s)
+                member = random.choice(set(ctx.message.mentions))
 
             try:
                 await member.kick(
