@@ -11,9 +11,10 @@ ascii==3.6
 # async-timeout==3.0.0
 # attrs==18.1.0
 beautifulsoup4==4.6.0
-cchardet==2.1.1 # Note: The library installed with discord.py is chardet. However, I replaced it
-#                 with cchardet, which is the same as chardet, but much faster.
+cchardet==2.1.1  # Note: The library installed with discord.py is chardet. However, I replaced it
+#                  with cchardet, which is the same as chardet, but much faster.
 # cffi==1.11.5
+decorator==3.4.0
 # discord.py==1.0.0a1477+g184c430
 # idna==2.7
 # idna-ssl==1.0.1
@@ -25,5 +26,6 @@ pycares==2.3.0
 Pillow==5.2.0
 # six==1.11.0
 urllib3==1.23
+validators==0.12.2
 # websockets==5.0.1
 # yarl==1.2.6
