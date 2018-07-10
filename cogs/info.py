@@ -85,10 +85,10 @@ class Info:
 
         delta = datetime.datetime.utcnow() - s.created_at
 
-        y = int(delta.total_seconds()) // 31557600 #* Number of seconds in 365.25 days
-        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
-        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in 1 day
-        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in 1 hour
+        y = int(delta.total_seconds()) // 31557600  #* Number of seconds in 365.25 days
+        mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
+        d = int(delta.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
+        h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
@@ -206,10 +206,10 @@ class Info:
 
         delta = datetime.datetime.utcnow() - m.created_at
 
-        y = int(delta.total_seconds()) // 31557600 #* Number of seconds in 356.25 days
-        mo = int(delta.total_seconds()) // 2592000 % 12 #* Number of seconds in 30 days
-        d = int(delta.total_seconds()) // 86400 % 30 #* Number of seconds in 1 day
-        h = int(delta.total_seconds()) // 3600 % 24 #* Number of seconds in 1 hour
+        y = int(delta.total_seconds()) // 31557600  #* Number of seconds in 356.25 days
+        mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
+        d = int(delta.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
+        h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
