@@ -138,8 +138,10 @@ class Info:
 
     @commands.command()
     async def userinfo(self, ctx, user=None):
-        """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
-        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`"""
+        """
+        Info about a user. By default it'll show your user info, but you can specify a different member of your server.
+        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`
+        """
 
         if user is None:
             m = ctx.author
@@ -180,7 +182,7 @@ class Info:
                 a = m.activity.name
         else:
             t = "Playing"
-            a = "Nothing right now"
+            a = "Nothing as of now"
 
         embed = discord.Embed(
             title=str(m), description="User ID: " + str(m.id), color=find_color(

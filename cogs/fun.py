@@ -36,8 +36,10 @@ class Fun:
 
     @commands.command()
     async def ascii(self, ctx, image=None):
-        """Converts an image into ascii art. Will work for most images.
-        Format like this:`<prefix> ascii <image URL>`"""
+        """
+        Converts an image into ascii art. Will work for most images.
+        Format like this:`<prefix> ascii <image URL>`
+        """
 
         if image is not None:
             try:
@@ -71,8 +73,10 @@ class Fun:
 
     @commands.command()
     async def diceroll(self, ctx, sides=None):
-        """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
-        Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`"""
+        """
+        Rolls a dice. By default a 6-sided one though the number of sides can be specified.
+        Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
+        """
 
         if sides is None:
             sides = "6"
