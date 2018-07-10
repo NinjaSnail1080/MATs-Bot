@@ -31,11 +31,19 @@ class Moderation:
 
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, member, reason=None):
+    async def kick(self, ctx, member=None, reason=None):
         """Kicks a member from the server.
         Format like this: `<prefix> kick <@mention member(s)> <reason for kicking>`
         Put the reason in \"quotation marks\" if it's more than one word. If you want to kick multiple members, @mention all of them and surround their names with \"quotation marks\""""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
+
+        command_failed = False
+        if member is None:
+            await ctx.send("You didn't format the command correctly. It's supposed to look like "
+                           "this:\n`<prefix> kick <@mention member(s)> <reason for kicking>`\nPut"
+                           " the reason in \"quotation marks\" if it's more than one word. If "
+                           "you want to kick multiple members, @mention all of them and surround "
+                           "their names with \"quotation marks\"")
+            command_failed = True
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
             cant_kick = []
@@ -46,10 +54,13 @@ class Moderation:
                     try:
                         await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
                         await ctx.send(embed=discord.Embed(
-                            color=color, title=m.name + " kicked by " +
-                            ctx.author.name, description="Reason: " + reason))
+                            color=find_color(ctx, ctx.channel.guild), title=m.name +
+                            " kicked by " + ctx.author.name, description="Reason: " + reason))
                     except discord.Forbidden:
-                        cant_kick.append(m.name)
+                        cant_kick.append(m.display_name)
+                else:
+                    await ctx.send("...\n\n*Very* funny, but I'm not gonna kick myself. You can "
+                                   "do it yourself if you hate me that much.")
             for i in cant_kick:
                 await ctx.send(
                     "I don't have permissions to kick **" + i + "**. What's the point of having "
@@ -57,9 +68,10 @@ class Moderation:
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
                     "fix that please?")
         else:
-            await ctx.send(
-                "You don't have permissions to kick members. You better take this issue to "
-                "whoever's in charge of this server")
+            if not command_failed:
+                await ctx.send(
+                    "You don't have permissions to kick members. You better take this issue to "
+                    "whoever's in charge of this server")
 
     @commands.command()
     @commands.guild_only()
@@ -76,7 +88,6 @@ class Moderation:
         """Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.
         If you don't mention anyone, I'll randomly select someone from the server."""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
@@ -89,41 +100,29 @@ class Moderation:
                          "make this *really* interesting...")
             if members is None:
                 member = random.choice(ctx.channel.guild.members)
-                try:
-                    await member.kick(
-                        reason="Unlucky individual selected by the randomkick performed by " +
-                        ctx.author.name)
-                    temp = await ctx.send("And the unlucky individual about to be kicked is...")
-                    with ctx.channel.typing():
-                        await asyncio.sleep(2)
-                        await temp.delete()
-                        await ctx.send(embed=discord.Embed(
-                            color=color, title=member.name + "!!!", description=random.choice(
-                                rip_list)))
-                    await ctx.send(
-                        "Now someone's gonna have to go invite them back. I suggest you go, " +
-                        ctx.author.mention)
-                except discord.Forbidden:
-                    await ctx.send(cant_kick)
             else:
                 member_s = []
                 for m in ctx.message.mentions:
                     if m != self.bot.user:
                         member_s.append(m)
                 member = random.choice(member_s)
-                try:
-                    await member.kick(
-                        reason="Unlucky individual selected by the randomkick performed by " +
-                        ctx.author.name)
-                    temp = await ctx.send("And the unlucky individual about to be kicked is...")
-                    with ctx.channel.typing():
-                        await asyncio.sleep(2)
-                        await temp.delete()
-                        await ctx.send(embed=discord.Embed(
-                            color=color, title=member.name + "!!!", description=random.choice(
-                                rip_list)))
-                except discord.Forbidden:
-                    await ctx.send(cant_kick)
+
+            try:
+                await member.kick(
+                    reason="Unlucky individual selected by the randomkick performed by " +
+                    ctx.author.name)
+                temp = await ctx.send("And the unlucky individual about to be kicked is...")
+                with ctx.channel.typing():
+                    await asyncio.sleep(2)
+                    await temp.delete()
+                    await ctx.send(embed=discord.Embed(
+                        color=find_color(ctx, ctx.channel.guild), title=member.name + "!!!",
+                        description=random.choice(rip_list)))
+                await ctx.send(
+                    "Now someone's gonna have to go invite them back. I suggest you go, " +
+                    ctx.author.mention)
+            except discord.Forbidden:
+                await ctx.send(cant_kick)
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "

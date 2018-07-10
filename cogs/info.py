@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import __version__
+from mat import __version__, find_color
 from discord.ext import commands
 import discord
 
@@ -31,13 +31,12 @@ class Info:
     @commands.command()
     async def info(self, ctx):
         """Info about me"""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         app = await self.bot.application_info()
 
         embed = discord.Embed(
             title=str(self.bot.user), description=app.description + "\n\n**User/Client ID**: " +
-            str(app.id), color=color)
+            str(app.id), color=find_color(ctx, ctx.channel.guild))
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value=app.owner)
@@ -55,12 +54,10 @@ class Info:
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Info about the server"""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
-
-        s = ctx.channel.guild
 
         embed = discord.Embed(
-            title=s.name, description="Server ID: " + str(s.id), color=color)
+            title=s.name, description="Server ID: " + str(s.id), color=find_color(
+                ctx, ctx.channel.guild))
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(name="Members", value=s.member_count)
         embed.add_field(name="Roles", value=len(s.roles))
@@ -143,7 +140,6 @@ class Info:
     async def userinfo(self, ctx, user=None):
         """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`"""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         if user is None:
             m = ctx.author
@@ -187,7 +183,8 @@ class Info:
             a = "Nothing right now"
 
         embed = discord.Embed(
-            title=str(m), description="User ID: " + str(m.id), color=color)
+            title=str(m), description="User ID: " + str(m.id), color=find_color(
+                ctx, ctx.channel.guild))
         embed.set_thumbnail(url=m.avatar_url)
 
         embed.add_field(name="Display Name", value=m.display_name)

@@ -32,7 +32,6 @@ class NSFW:
     @commands.command()
     async def gonewild(self, ctx):
         """Sends a random post from r/gonewild (Not actually working yet. Heavy WIP)"""
-        color = self.bot.get_guild(ctx.channel.guild.id).me.top_role.color
 
         #* Heavy WIP
         if ctx.channel.is_nsfw():
@@ -43,7 +42,7 @@ class NSFW:
                         {"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
                         page = w.json
 
-                        embed = discord.Embed(color=color)
+                        embed = discord.Embed(color=find_color(ctx, ctx.channel.guild))
                         embed.set_image(url=random.choice(
                             ["https://i.pinimg.com/736x/05/15/cf/0515cf0c3e92d83deae8d0c4d880ebd6"
                              "--honeypot-penny.jpg", "http://ancensored.com/files/images/vthumbs/"

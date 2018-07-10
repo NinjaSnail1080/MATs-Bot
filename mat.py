@@ -20,7 +20,6 @@ __version__ = 0.4
 from discord.ext import commands
 import discord
 import asyncio
-import urllib3
 
 import random
 import os
@@ -36,10 +35,12 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
          "some epic game that you don't have", "with fire", "hard-to-get", "Project X",
          "you like a god damn fiddle", "getting friendzoned by Sigma"]
 
-urllib3.disable_warnings()
 
 if __name__ == "__main__":
     from cogs import *
+    import urllib3
+
+    urllib3.disable_warnings()
 
     initial_extensions = []
     for f in os.listdir("cogs"):
@@ -49,8 +50,15 @@ if __name__ == "__main__":
                 initial_extensions.append("cogs." + f)
 
 
-async def get_prefix(bot, message):
+def find_color(ctx, guild):
+    if guild.me.top_role.color == discord.Color.default():
+        color = discord.Color.from_rgb(255, 255, 255)
+    else:
+        color = guild.me.top_role.color
+    return color
 
+
+async def get_prefix(bot, message):
     prefixes = ["!mat ", "mat/", "mat."]
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
@@ -105,7 +113,7 @@ class MAT(commands.Bot):
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
-            color=color)
+            color=find_color(ctx, ctx.channel.guild))
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
