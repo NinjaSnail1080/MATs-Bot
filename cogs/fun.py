@@ -23,6 +23,7 @@ import discord
 import asyncio
 import aiohttp
 import ascii
+import validators
 
 import random
 import re
@@ -40,8 +41,7 @@ class Fun:
         Converts an image into ascii art. Will work for most images.
         Format like this:`<prefix> ascii <image URL>`
         """
-
-        if image is not None:
+        if image is not None and validators.url(image):
             try:
                 with ctx.channel.typing():
                     art = ascii.loadFromUrl(image, 60, False)
@@ -49,16 +49,19 @@ class Fun:
                         art = "".join(art.split())
                         split_art = re.findall(".{1,1920}", art)
                         for a in split_art:
-                            message = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                            await ctx.send("```\n" + message + "```")
+                            art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
+                            await ctx.send("```\n" + art + "```")
                     else:
                         await ctx.send("```\n" + art + "```")
             except:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this image "
                                "into ascii art. Try again with a different picture.")
-        else:
+        elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
-                           "Format like this: `<prefix> ascii https://www.example.com/image.png`")
+                           "Format like this: `<prefix> ascii <image URL>`")
+        elif not validators.url(image):
+            await ctx.send("Invalid url. The link to your image needs to look something like "
+                           "this: `https://www.example.com/something/image.png`")
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -77,11 +80,10 @@ class Fun:
         Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
         """
-
         if sides is None:
             sides = "6"
         try:
-            if sides == "1":
+            if int(sides) <= 2:
                 raise ValueError
             dice = str(random.randint(1, int(sides)))
             temp = await ctx.send("Rolling a " + sides + "-sided dice...")
@@ -90,7 +92,7 @@ class Fun:
                 await temp.delete()
                 await ctx.send(dice + "!")
         except ValueError:
-            await ctx.send("The number of sides must be an **integer above 1**. Try again.")
+            await ctx.send("The number of sides must be an **integer above 2**. Try again.")
 
     @commands.command()
     async def lenny(self, ctx):
@@ -138,6 +140,8 @@ class Fun:
 
                 await ctx.send(embed=embed)
         except:
+            import traceback
+            print(traceback.format_exc)
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
                            "wasn't able to get a comic. Try again in a little bit.")
 

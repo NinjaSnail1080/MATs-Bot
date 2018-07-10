@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
 def find_color(ctx, guild):
     if guild.me.top_role.color == discord.Color.default():
-        color = discord.Color.from_rgb(255, 255, 255)
+        color = discord.Color.blurple()
     else:
         color = guild.me.top_role.color
     return color
