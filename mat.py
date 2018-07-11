@@ -113,7 +113,7 @@ class MAT(commands.Bot):
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
-            color=find_color(ctx, ctx.channel.guild))
+            color=discord.Color.from_rgb(0, 60, 255))
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
