@@ -72,6 +72,9 @@ class Triggers:
         if message.content.lower() == "jesus":
             await message.channel.send("Christ")
 
+        if message.content.lower() == "good bot":
+            await message.channel.send("Why thank you, human!")
+
 
 def setup(bot):
     bot.add_cog(Triggers(bot))
