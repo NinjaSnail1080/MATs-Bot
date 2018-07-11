@@ -19,6 +19,7 @@
 from mat import find_color
 from discord.ext import commands
 import discord
+import validators
 
 
 class Music:
@@ -26,6 +27,25 @@ class Music:
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command()
+    @commands.guild_only()
+    async def play(self, ctx, audio):
+        """Play something in a voice channel (Heavy WIP, can only accept YouTube links for now)"""
+
+        if validators.url(audio):
+            if ctx.author.voice is not None:
+                voice = ctx.author.voice.channel
+                vc = await voice.connect()
+
+                player = await vc.create_ytdl_player(audio)
+                player.start()
+            else:
+                await ctx.send("You must be in a voice channel to use that command")
+        else:
+            await ctx.send("Unfortunately, this command only accepts YouTube links right now. "
+                           "It's a heavy WIP")
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
