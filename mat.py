@@ -151,11 +151,12 @@ class MAT(commands.Bot):
         await bot.process_commands(message)
 
     async def on_message_delete(self, message):
-        last_delete["author"] = "Sent by " + message.author.display_name
-        last_delete["content"] = "`%s`" % message.clean_content
-        last_delete["channel"] = message.channel.mention
-        last_delete["creation"] = message.created_at.strftime("Sent on %A, %B %-d, %Y at %X UTC")
-        print(last_delete)
+        if message.author != bot.user:
+            last_delete["author"] = "Sent by " + message.author.display_name
+            last_delete["content"] = "`%s`" % message.clean_content
+            last_delete["channel"] = message.channel.mention
+            last_delete["creation"] = message.created_at.strftime(
+                "Sent on %A, %B %-d, %Y at %X UTC")
 
     async def switch_games(self):
         await self.wait_until_ready()
@@ -163,11 +164,11 @@ class MAT(commands.Bot):
             await self.change_presence(activity=discord.Game(random.choice(games)))
             await asyncio.sleep(random.randint(4, 8))
 
-    def run(self):
+    def run(self, token):
         self.loop.create_task(self.switch_games())
-        super().run(config.TOKEN)
+        super().run(token)
 
 
 if __name__ == "__main__":
     bot = MAT()
-    bot.run()
+    bot.run(config.TOKEN)

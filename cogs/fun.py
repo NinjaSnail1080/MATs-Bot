@@ -37,8 +37,7 @@ class Fun:
 
     @commands.command()
     async def ascii(self, ctx, image=None):
-        """
-        Converts an image into ascii art. Will work for most images.
+        """Converts an image into ascii art. Will work for most images.
         Format like this:`<prefix> ascii <image URL>`
         """
         if image is not None and validators.url(image):
@@ -54,8 +53,8 @@ class Fun:
                     else:
                         await ctx.send("```\n" + art + "```")
             except:
-                await ctx.send("Huh, something went wrong. I wasn't able to convert this image "
-                               "into ascii art. Try again with a different picture.")
+                await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
+                               "ascii art. Try again with a different image.")
         elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
                            "Format like this: `<prefix> ascii <image URL>`")
@@ -76,8 +75,7 @@ class Fun:
 
     @commands.command()
     async def diceroll(self, ctx, sides : int=6):
-        """
-        Rolls a dice. By default a 6-sided one though the number of sides can be specified.
+        """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
         """
         try:
@@ -138,8 +136,10 @@ class Fun:
 
                 await ctx.send(embed=embed)
         except:
+            #* Temporary operation to figure out exactly what this exception is and what causes it
             import traceback
             print(traceback.format_exc)
+            #* Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
                            "wasn't able to get a comic. Try again in a little bit.")
 

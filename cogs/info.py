@@ -138,11 +138,9 @@ class Info:
 
     @commands.command()
     async def userinfo(self, ctx, user=None):
-        """
-        Info about a user. By default it'll show your user info, but you can specify a different member of your server.
+        """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`
         """
-
         if user is None:
             m = ctx.author
         else:
