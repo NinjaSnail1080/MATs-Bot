@@ -138,7 +138,7 @@ class Fun:
         except:
             #* Temporary operation to figure out exactly what this exception is and what causes it
             import traceback
-            print(traceback.format_exc)
+            print(traceback.format_exc())
             #* Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
                            "wasn't able to get a comic. Try again in a little bit.")
