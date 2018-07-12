@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color
+from mat import find_color, last_delete
 from discord.ext import commands
 import discord
 import asyncio
@@ -128,6 +128,24 @@ class Moderation:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
                 "whoever's in charge of this server")
+
+    @commands.command()
+    @commands.guild_only()
+    async def restore(self, ctx):
+        """Restores last deleted message. Not working right now"""
+        #TODO: Make this work!
+
+        if ctx.author.permissions_in(ctx.channel).manage_messages:
+            embed = discord.Embed(
+                title=last_delete["author"], description=last_delete["creation"],
+                color=find_color(ctx, ctx.channel.guild))
+            embed.set_author(name="Restored last deleted message")
+            embed.add_field(name="Message", value=last_delete["content"], inline=False)
+            embed.add_field(name="Channel", value=last_delete["channel"])
+            embed.set_footer(text="Restored by " + ctx.author.display_name)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("You need the Manage Messages permission in order to use this command")
 
 
 def setup(bot):
