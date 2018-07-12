@@ -21,6 +21,7 @@ from discord.ext import commands
 import discord
 import asyncio
 
+import logging
 import random
 import os
 import re
@@ -43,12 +44,20 @@ if __name__ == "__main__":
 
     urllib3.disable_warnings()
 
+    #* Load cogs
     initial_extensions = []
     for f in os.listdir("cogs"):
         if f != "__init__.py":
             if f.endswith(".py"):
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
+
+    #* Set up logger
+    logger = logging.getLogger("discord")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.FileHandler(filename="mat.log", encoding="utf-8", mode="w")
+    handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
+    logger.addHandler(handler)
 
 
 def find_color(ctx, guild):
