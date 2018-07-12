@@ -32,9 +32,10 @@ class Music:
     @commands.guild_only()
     async def play(self, ctx, audio):
         """Play something in a voice channel (Heavy WIP, can only accept YouTube links for now)"""
+        #TODO: Make this work!
 
         if validators.url(audio):
-            if ctx.author.voice is not None:
+            if ctx.author.voice.channel is not None:
                 voice = ctx.author.voice.channel
                 vc = await voice.connect()
 
