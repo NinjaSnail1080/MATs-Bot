@@ -55,6 +55,8 @@ class Info:
     async def serverinfo(self, ctx):
         """Info about the server"""
 
+        await ctx.channel.trigger_typing()
+        s = ctx.channel.guild
         embed = discord.Embed(
             title=s.name, description="Server ID: " + str(s.id), color=find_color(
                 ctx, ctx.channel.guild))
@@ -141,6 +143,7 @@ class Info:
         """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`
         """
+        await ctx.channel.trigger_typing()
         if user is None:
             m = ctx.author
         else:
@@ -180,7 +183,7 @@ class Info:
                 a = m.activity.name
         else:
             t = "Playing"
-            a = "Nothing as of now"
+            a = "Nothing"
 
         embed = discord.Embed(
             title=str(m), description="User ID: " + str(m.id), color=find_color(
