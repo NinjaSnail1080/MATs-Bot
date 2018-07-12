@@ -73,8 +73,11 @@ class Triggers:
         if message.content.lower() == "jesus":
             await message.channel.send("Christ")
 
-        if message.content.lower() == "good bot":
-            await message.channel.send("Why thank you, human!")
+        if message.content.lower() == "good bot" or message.content.lower() == "best bot":
+            async for m in message.channel.history(limit=7):
+                if m.author == self.bot.user:
+                    await message.channel.send("Why thank you, human!")
+                    break
 
 
 def setup(bot):

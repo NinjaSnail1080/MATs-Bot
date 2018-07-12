@@ -111,6 +111,16 @@ class Fun:
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
+                               "puts"])
+    async def say(self, ctx, *, stuff):
+        """Make me say something!
+        The commands `print`, `printf`, `System.out.println`, `echo`, `std::cout<<`, and `puts` all also work.
+        (They're references to various programming languages)
+        """
+
+        await ctx.send(stuff)
+
     @commands.command()
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""

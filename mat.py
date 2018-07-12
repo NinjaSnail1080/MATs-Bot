@@ -161,11 +161,11 @@ class MAT(commands.Bot):
 
     async def on_message_delete(self, message):
         if message.author != bot.user:
-            last_delete["author"] = "Sent by " + message.author.display_name
-            last_delete["content"] = "`%s`" % message.clean_content
-            last_delete["channel"] = message.channel.mention
-            last_delete["creation"] = message.created_at.strftime(
-                "Sent on %A, %B %-d, %Y at %X UTC")
+            global last_delete
+            last_delete = {"author": message.author.display_name,
+                           "content": message.clean_content,
+                           "channel": message.channel,
+                           "creation": message.created_at}
 
     async def switch_games(self):
         await self.wait_until_ready()

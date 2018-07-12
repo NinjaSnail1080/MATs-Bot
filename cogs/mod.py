@@ -32,17 +32,15 @@ class Moderation:
 
     @commands.command()
     @commands.guild_only()
-    async def kick(self, ctx, member=None, reason=None):
+    async def kick(self, ctx, member=None, *, reason=None):
         """Kicks a member from the server.
         Format like this: `<prefix> kick <@mention member or memnber's id> <reason for kicking>`
-        Put the reason in \"quotation marks\" if it's more than one word.
         """
         command_failed = False
         if member is None:
             await ctx.send("You didn't format the command correctly. It's supposed to look like "
                            "this:\n`<prefix> kick <@mention member or memnber's id> <reason for "
-                           "kicking>`\nPut the reason in \"quotation marks\" if it's more than "
-                           "one word.")
+                           "kicking>")
             command_failed = True
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
@@ -124,19 +122,20 @@ class Moderation:
                 "You don't have permissions to kick members. You better take this issue to "
                 "whoever's in charge of this server")
 
-    @commands.command()
+    @commands.command(aliases=["snipe"])
     @commands.guild_only()
     async def restore(self, ctx):
         """Restores last deleted message. Not working right now"""
         #TODO: Make this work!
-
+        print(last_delete)
         if ctx.author.permissions_in(ctx.channel).manage_messages:
             embed = discord.Embed(
-                title=last_delete["author"], description=last_delete["creation"],
+                title="Sent by " + last_delete["author"],
+                description=last_delete["creation"].strftime("Sent on %A, %B %-d, %Y at %X UTC"),
                 color=find_color(ctx, ctx.channel.guild))
             embed.set_author(name="Restored last deleted message")
-            embed.add_field(name="Message", value=last_delete["content"], inline=False)
-            embed.add_field(name="Channel", value=last_delete["channel"])
+            embed.add_field(name="Message", value="`%s`" % last_delete["content"], inline=False)
+            embed.add_field(name="Channel", value=last_delete["channel"].mention)
             embed.set_footer(text="Restored by " + ctx.author.display_name)
             await ctx.send(embed=embed)
         else:

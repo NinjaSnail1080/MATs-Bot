@@ -106,6 +106,7 @@ class Help:
             name="diceroll", value=Fun.diceroll.help, inline=False)
         embed.add_field(
             name="lenny", value=Fun.lenny.help, inline=False)
+        embed.add_field(name="say", value=Fun.say.help, inline=False)
         embed.add_field(name="xkcd", value=Fun.xkcd.help, inline=False)
 
         await ctx.send(embed=embed)
@@ -130,19 +131,18 @@ class Help:
     async def mod(self, ctx):
         """Help | Moderation Commands"""
 
+        kick_members = " (Must have the \"kick members\" permission)"
+        manage_messages = " (Must have the \"manage messages\" permission)"
+
         embed = discord.Embed(
             title=self.mod.__doc__, description=list_prefixes, color=find_color(
                 ctx, ctx.channel.guild))
 
+        embed.add_field(name="kick" + kick_members, value=Moderation.kick.help, inline=False)
+        embed.add_field(name="purge" + manage_messages, value=Moderation.purge.help, inline=False)
         embed.add_field(
-            name="kick (Must have the \"kick members\" permission)", value=Moderation.kick.help,
-            inline=False)
-        embed.add_field(
-            name="purge (Must have the \"manage messages\" permission",
-            value=Moderation.purge.help, inline=False)
-        embed.add_field(
-            name="randomkick (Must have the \"kick members\" permission)",
-            value=Moderation.randomkick.help, inline=False)
+            name="randomkick" + kick_members, value=Moderation.randomkick.help, inline=False)
+        embed.add_field(name="restore" + manage_messages, value=Moderation.restore.help)
 
         await ctx.send(embed=embed)
 
