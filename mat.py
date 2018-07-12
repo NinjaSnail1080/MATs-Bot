@@ -35,6 +35,7 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
          "some epic game that you don't have", "with fire", "hard-to-get", "Project X",
          "you like a god damn fiddle", "getting friendzoned by Sigma"]
 
+last_delete = {"author": None, "content": None, "channel": None, "creation": None}
 
 if __name__ == "__main__":
     from cogs import *
@@ -148,6 +149,13 @@ class MAT(commands.Bot):
             return
 
         await bot.process_commands(message)
+
+    async def on_message_delete(self, message):
+        last_delete["author"] = "Sent by " + message.author.display_name
+        last_delete["content"] = "`%s`" % message.clean_content
+        last_delete["channel"] = message.channel.mention
+        last_delete["creation"] = message.created_at.strftime("Sent on %A, %B %-d, %Y at %X UTC")
+        print(last_delete)
 
     async def switch_games(self):
         await self.wait_until_ready()
