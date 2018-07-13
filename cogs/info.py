@@ -176,7 +176,7 @@ class Info:
         if user is None:
             m = ctx.author
         else:
-            if len(ctx.message.mentions) != 0:
+            if not ctx.message.mentions:
                 for member in ctx.message.mentions:
                     m = member
                     break
