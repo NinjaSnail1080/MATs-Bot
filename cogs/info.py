@@ -63,6 +63,11 @@ class Info:
             if m.status != discord.Status.offline:
                 on_members.append(m)
 
+        bots = []
+        for m in s.members:
+            if m.bot:
+                bots.append(m)
+
         anim_emojis = []
         for e in s.emojis:
             if e.animated:
@@ -78,22 +83,33 @@ class Info:
         embed.add_field(name="Text Channels", value=len(s.text_channels))
         embed.add_field(name="Voice Channels", value=len(s.voice_channels))
         embed.add_field(name="Categories", value=len(s.categories))
-        embed.add_field(
-            name="Custom Emojis", value="%d (Animated: %d)" % (len(s.emojis), len(anim_emojis)))
+        if anim_emojis:
+            embed.add_field(
+                name="Custom Emojis", value="%d (Animated: %d)" % (
+                    len(s.emojis), len(anim_emojis)))
+        else:
+            embed.add_field(name="Custom Emojis", value=len(s.emojis))
+        embed.add_field(name="Bots", value=len(bots))
+        embed.add_field(name="Region", value=str(s.region).upper())
         embed.add_field(
             name="Verification Level", value=str(s.verification_level).capitalize())
-        embed.add_field(name="Region", value=str(s.region).upper())
+        embed.add_field(
+            name="Explicit Content Filter", value=str(s.explicit_content_filter).title())
         if s.afk_channel is not None:
+            if s.afk_timeout // 60 == 1:
+                minute_s = " minute"
+            else:
+                minute_s = " minutes"
             embed.add_field(
                 name="AFK Channel", value=s.afk_channel.mention + " after " + str(
-                    s.afk_timeout // 60) + " minutes")
+                    s.afk_timeout // 60) + minute_s)
         else:
             embed.add_field(name="AFK Channel", value="No AFK channel")
         embed.add_field(
             name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
         if s.features:
-            embed.add_field(name="Server Features", value="`" + "`, `".join(s.features) + "`",
-            inline=False)
+            embed.add_field(
+                name="Server Features", value="`" + "`, `".join(s.features) + "`", inline=False)
         embed.add_field(
             name="Server Owner", value=s.owner.mention + " (User ID: " + str(s.owner_id) + ")",
             inline=False)
