@@ -57,16 +57,29 @@ class Info:
 
         await ctx.channel.trigger_typing()
         s = ctx.channel.guild
+
+        on_members = []
+        for m in s.members:
+            if m.status != discord.Status.offline:
+                on_members.append(m)
+
+        anim_emojis = []
+        for e in s.emojis:
+            if e.animated:
+                anim_emojis.append(e)
+
         embed = discord.Embed(
             title=s.name, description="Server ID: " + str(s.id), color=find_color(
                 ctx, ctx.channel.guild))
         embed.set_thumbnail(url=s.icon_url)
-        embed.add_field(name="Members", value=s.member_count)
+        embed.add_field(
+            name="Members", value="%d (Online: %d)" % (s.member_count, len(on_members)))
         embed.add_field(name="Roles", value=len(s.roles))
         embed.add_field(name="Text Channels", value=len(s.text_channels))
         embed.add_field(name="Voice Channels", value=len(s.voice_channels))
         embed.add_field(name="Categories", value=len(s.categories))
-        embed.add_field(name="Custom Emojis", value=len(s.emojis))
+        embed.add_field(
+            name="Custom Emojis", value="%d (Animated: %d)" % (len(s.emojis), len(anim_emojis)))
         embed.add_field(
             name="Verification Level", value=str(s.verification_level).capitalize())
         embed.add_field(name="Region", value=str(s.region).upper())
@@ -79,10 +92,10 @@ class Info:
         embed.add_field(
             name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
         if s.features:
-            embed.add_field(name="Server Features", value=", ".join(s.features),
+            embed.add_field(name="Server Features", value="`" + "`, `".join(s.features) + "`",
             inline=False)
         embed.add_field(
-            name="Server Owner", value=str(s.owner) + " (User ID: " + str(s.owner_id) + ")",
+            name="Server Owner", value=s.owner.mention + " (User ID: " + str(s.owner_id) + ")",
             inline=False)
 
         delta = datetime.datetime.utcnow() - s.created_at
