@@ -32,7 +32,9 @@ class Owner:
         """Quit the bot's program"""
 
         await ctx.message.delete()
+        await self.bot.wait_until_ready()
         await self.bot.logout()
+        await self.bot.close()
         raise SystemExit()
 
 

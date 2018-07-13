@@ -33,7 +33,8 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def kick(self, ctx, member=None, *, reason=None):
-        """Kicks a member from the server.
+        """**Must have the \"kick members\" permission**
+        Kicks a member from the server.
         Format like this: `<prefix> kick <@mention member or memnber's id> <reason for kicking>`
         """
         command_failed = False
@@ -71,7 +72,7 @@ class Moderation:
                     "You don't have permissions to kick members. You better take this issue to "
                     "whoever's in charge of this server")
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.guild_only()
     async def purge(self, ctx, number=None, member=None):
         """HEAVY WIP. Do not use"""
@@ -83,7 +84,8 @@ class Moderation:
     @commands.command()
     @commands.guild_only()
     async def randomkick(self, ctx, members=None):
-        """Kicks a random member, feeling lucky?
+        """**Must have the \"kick members\" permission**
+        Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.
         If you don't mention anyone, I'll randomly select someone from the server.
         """
@@ -122,7 +124,7 @@ class Moderation:
                 "You don't have permissions to kick members. You better take this issue to "
                 "whoever's in charge of this server")
 
-    @commands.command(aliases=["snipe"])
+    @commands.command(aliases=["snipe"], hidden=True)
     @commands.guild_only()
     async def restore(self, ctx):
         """Restores last deleted message. Not working right now"""

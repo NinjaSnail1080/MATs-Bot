@@ -53,7 +53,7 @@ if __name__ == "__main__":
                 initial_extensions.append("cogs." + f)
 
     #* Set up logger
-    logger = logging.getLogger("discord")
+    logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     handler = logging.FileHandler(filename="mat.log", encoding="utf-8", mode="w")
     handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
@@ -80,6 +80,8 @@ class MAT(commands.Bot):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          pm_help=None,
+                         shard_count=1,
+                         shard_id=0,
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
