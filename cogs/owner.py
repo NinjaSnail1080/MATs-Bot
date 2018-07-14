@@ -35,7 +35,6 @@ class Owner:
         await self.bot.wait_until_ready()
         await self.bot.logout()
         await self.bot.close()
-        raise SystemExit()
 
 
 def setup(bot):
