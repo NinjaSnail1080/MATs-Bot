@@ -60,12 +60,16 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
 
-def find_color(ctx, guild):
-    if guild.me.top_role.color == discord.Color.default():
-        color = discord.Color.blurple()
+def find_color(guild=None):
+    if guild is not None:
+        if guild.me.top_role.color == discord.Color.default():
+            color = discord.Color.blurple()
+        else:
+            color = guild.me.top_role.color
+        return color
     else:
-        color = guild.me.top_role.color
-    return color
+        color = discord.Color.blurple()
+        return color
 
 
 async def get_prefix(bot, message):

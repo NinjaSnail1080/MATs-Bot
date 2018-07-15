@@ -26,7 +26,6 @@ import random
 sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-D-Does s-s-she "
                    "have a boyf-f-friend?\nAsking for a friend!", "What a beautiful voice...",
                    "Oh, I hope she doesn't see my Playing status..."]
-#TODO: MAYBE put these into a json file at some point
 
 
 class Triggers:
@@ -42,7 +41,10 @@ class Triggers:
         if message.author.id == 281807963147075584:
             await message.channel.send(random.choice(sigma_responses))
 
-        e = discord.Embed(color=find_color(message, message.channel.guild))
+        if isinstance(message.channel, discord.DMChannel):
+            e = discord.Embed(color=find_color())
+        else:
+            e = discord.Embed(color=find_color(message.channel.guild))
 
         if re.search("pinged", message.content, re.IGNORECASE):
             await message.channel.send(content="Pinged?", embed=e.set_image(
@@ -74,7 +76,7 @@ class Triggers:
             await message.channel.send("Christ")
 
         if message.content.lower() == "good bot" or message.content.lower() == "best bot":
-            async for m in message.channel.history(limit=7):
+            async for m in message.channel.history(limit=3):
                 if m.author == self.bot.user:
                     await message.channel.send("Why thank you, human!")
                     break

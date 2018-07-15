@@ -20,12 +20,6 @@ from mat import find_color
 from discord.ext import commands
 import discord
 
-from cogs.fun import Fun
-from cogs.info import Info
-from cogs.mod import Moderation
-from cogs.music import Music
-from cogs.nsfw import NSFW
-
 # list_prefixes = "**Prefixes**: `" + "` | `".join()) + "`"
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
 
@@ -45,7 +39,7 @@ class Help:
         if cat is None:
             embed = discord.Embed(
                 title="MAT's Bot | Help command", description=list_prefixes + "\n**Categories**:",
-                color=find_color(ctx, ctx.channel.guild))
+                color=find_color(ctx.channel.guild))
 
             embed.add_field(
                 name="<:confetti:464831811558572035> Fun", value="5 commands\n`<prefix> help "
@@ -62,6 +56,7 @@ class Help:
             embed.add_field(
                 name=":wink: NSFW", value="1 command\n`<prefix> help nsfw` for more info",
                 inline=False)
+            embed.set_footer(text="Do \"<prefix> help all\" for a list of all my commands")
 
             await ctx.send(
                 content="**Note**: I can't be on all the time. Since Ninja has no way of hosting "
@@ -69,98 +64,61 @@ class Help:
                 embed=embed)
 
         elif cat == "fun":
-            await self.fun(ctx)
+            embed = discord.Embed(title="Help | Fun Commands", description=list_prefixes,
+                                  color=find_color(ctx.channel.guild))
+
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "Fun" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
 
         elif cat == "image":
-            await self.image(ctx)
+            await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
         elif cat == "info":
-            await self.info(ctx)
+            embed = discord.Embed(title="Help | Information Commands", description=list_prefixes,
+                                  color=find_color(ctx.channel.guild))
+
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "Info" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
 
         elif cat == "mod":
-            await self.mod(ctx)
+            embed = discord.Embed(title="Help | Moderation Commands", description=list_prefixes,
+                                  color=find_color(ctx.channel.guild))
+
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "Moderation" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
 
         elif cat == "music":
-            await self.music(ctx)
+            await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
         elif cat == "nsfw":
-            await self.nsfw(ctx)
+            embed = discord.Embed(title="Help | NSFW Commands", description=list_prefixes,
+                                  color=find_color(ctx.channel.guild))
 
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "NSFW" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
+
+        elif cat == "all":
+            await ctx.send("Work in progress ¯\_(ツ)_/¯")
         else:
             await ctx.send("That's not a category. The ones you can pick are:\n`fun` (Fun "
                            "commands)\n`info` (Information commands)\n`mod` (Moderation commands)"
                            "\n`music` (Music commands)\n`nsfw` (NSFW commands)")
-
-    async def fun(self, ctx):
-        """Help | Fun Commands"""
-
-        embed = discord.Embed(
-            title=self.fun.__doc__, description=list_prefixes, color=find_color(
-                ctx, ctx.channel.guild))
-
-        embed.add_field(
-            name="ascii", value=Fun.ascii.help, inline=False)
-        embed.add_field(
-            name="coinflip", value=Fun.coinflip.help, inline=False)
-        embed.add_field(
-            name="diceroll", value=Fun.diceroll.help, inline=False)
-        embed.add_field(
-            name="lenny", value=Fun.lenny.help, inline=False)
-        embed.add_field(name="say", value=Fun.say.help, inline=False)
-        embed.add_field(name="xkcd", value=Fun.xkcd.help, inline=False)
-
-        await ctx.send(embed=embed)
-
-    async def image(self, ctx):
-
-        await ctx.send("No commands yet ¯\_(ツ)_/¯")
-
-    async def info(self, ctx):
-        """Help | Information Commands"""
-
-        embed = discord.Embed(
-            title=self.info.__doc__, description=list_prefixes, color=find_color(
-                ctx, ctx.channel.guild))
-
-        embed.add_field(name="info", value=Info.info.help, inline=False)
-        embed.add_field(name="serverinfo", value=Info.serverinfo.help, inline=False)
-        embed.add_field(name="userinfo", value=Info.userinfo.help, inline=False)
-
-        await ctx.send(embed=embed)
-
-    async def mod(self, ctx):
-        """Help | Moderation Commands"""
-
-        kick_members = " (Must have the \"kick members\" permission)"
-        manage_messages = " (Must have the \"manage messages\" permission)"
-
-        embed = discord.Embed(
-            title=self.mod.__doc__, description=list_prefixes, color=find_color(
-                ctx, ctx.channel.guild))
-
-        embed.add_field(name="kick" + kick_members, value=Moderation.kick.help, inline=False)
-        embed.add_field(name="purge" + manage_messages, value=Moderation.purge.help, inline=False)
-        embed.add_field(
-            name="randomkick" + kick_members, value=Moderation.randomkick.help, inline=False)
-        embed.add_field(name="restore" + manage_messages, value=Moderation.restore.help)
-
-        await ctx.send(embed=embed)
-
-    async def music(self, ctx):
-        """Help | Music Commands"""
-
-        await ctx.send("No commands yet ¯\_(ツ)_/¯")
-
-    async def nsfw(self, ctx):
-        """Help | NSFW Commands ( ͡° ͜ʖ ͡°)"""
-
-        embed = discord.Embed(
-            title=self.nsfw.__doc__, description=list_prefixes, color=find_color(
-                ctx, ctx.channel.guild))
-
-        embed.add_field(name="gonewild", value=NSFW.gonewild.help)
-
-        await ctx.send(embed=embed)
 
 
 def setup(bot):

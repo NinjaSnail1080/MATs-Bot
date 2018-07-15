@@ -22,6 +22,8 @@ import discord
 
 import datetime
 
+#TODO: Fix the fucking commands that accept either an id or mention
+
 class Info:
     """Information"""
 
@@ -34,9 +36,14 @@ class Info:
 
         app = await self.bot.application_info()
 
-        embed = discord.Embed(
-            title=str(self.bot.user), description=app.description + "\n\n**User/Client ID**: " +
-            str(app.id), color=find_color(ctx, ctx.channel.guild))
+        if isinstance(ctx.channel, discord.DMChannel):
+            embed = discord.Embed(
+                title=str(self.bot.user), description=app.description +
+                "\n\n**User/Client ID**: %d" % app.id, color=find_color())
+        else:
+            embed = discord.Embed(
+                title=str(self.bot.user), description=app.description +
+                "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx.channel.guild))
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value=app.owner)
@@ -74,8 +81,7 @@ class Info:
                 anim_emojis.append(e)
 
         embed = discord.Embed(
-            title=s.name, description="Server ID: " + str(s.id), color=find_color(
-                ctx, ctx.channel.guild))
+            title=s.name, description="Server ID: %d" % s.id, color=find_color(ctx.channel.guild))
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(
             name="Members", value="%d (Online: %d)" % (s.member_count, len(on_members)))
@@ -168,6 +174,7 @@ class Info:
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.guild_only()
     async def userinfo(self, ctx, user=None):
         """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`
@@ -176,20 +183,22 @@ class Info:
         if user is None:
             m = ctx.author
         else:
-            if not ctx.message.mentions:
+            if ctx.message.mentions:
                 for member in ctx.message.mentions:
                     m = member
                     break
             else:
-                m = ctx.channel.guild.get_member(int(user))
+                try:
+                    m = ctx.channel.guild.get_member(int(user))
+                except ValueError:
+                    m = None
                 if m is None:
                     await ctx.send("Huh, something went wrong. You're supposed to format the "
                                    "message like this: `<prefix> userinfo (OPTIONAL)<@mention "
                                    "user or user's id>` If you did format it correctly then "
                                    "the user id you put is probably invalid, or it was for "
-                                   "someone who isn't in this server.\n\nJust so that this "
-                                   "command doesn't go to waste, here's *your* user info:")
-                    m = ctx.author
+                                   "someone who isn't in this server.")
+                    return
 
         roles = []
         for r in m.roles:
@@ -198,13 +207,13 @@ class Info:
         roles = roles[::-1]
 
         if m.activity is not None:
-            if m.activity.type == discord.ActivityType.listening:
+            if m.activity.type is discord.ActivityType.listening:
                 t = "Listening to"
                 a = m.activity.title
-            elif m.activity.type == discord.ActivityType.streaming:
+            elif m.activity.type is discord.ActivityType.streaming:
                 t = "Streaming"
                 a = m.activity.name
-            elif m.activity.type == discord.ActivityType.watching:
+            elif m.activity.type is discord.ActivityType.watching:
                 t = "Watching"
                 a = m.activity.name
             else:
@@ -215,8 +224,7 @@ class Info:
             a = "Nothing"
 
         embed = discord.Embed(
-            title=str(m), description="User ID: " + str(m.id), color=find_color(
-                ctx, ctx.channel.guild))
+            title=str(m), description="User ID: %d" % m.id, color=find_color(ctx.channel.guild))
         embed.set_thumbnail(url=m.avatar_url)
 
         embed.add_field(name="Display Name", value=m.display_name)

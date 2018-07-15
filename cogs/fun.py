@@ -96,7 +96,7 @@ class Fun:
 
         embed = discord.Embed(
             title="A list of Lenny faces for all your copypasting needs",
-            color=find_color(ctx, ctx.channel.guild), url="https://www.lennyfaces.net/")
+            color=find_color(ctx.channel.guild), url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
         embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
@@ -138,7 +138,7 @@ class Fun:
                         caption = comic.img["title"]
 
                 embed = discord.Embed(
-                    title=title + " | #" + number , color=find_color(ctx, ctx.channel.guild),
+                    title=title + " | #" + number , color=find_color(ctx.channel.guild),
                     url=url)
                 embed.set_author(name="xkcd", url="https://xkcd.com/")
                 embed.set_image(url=image)

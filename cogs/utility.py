@@ -19,7 +19,7 @@
 from mat import find_color
 from discord.ext import commands
 import discord
-
+#TODO: Clean up this code, it's messy
 
 class Utility:
     """Utility commands"""
@@ -28,7 +28,7 @@ class Utility:
         self.bot = bot
 
     @commands.command(aliases=["avatar"])
-    async def pfp(self, ctx, user=None):
+    async def pfp(self, ctx, user=None, default=None):
         """Get a user's pfp. By default it retrieves your own but you can specify a different user
         Format like this: `<prefix> pfp (OPTIONAL)<@mention user or user's id>`
         """
@@ -49,10 +49,16 @@ class Utility:
                            "command correctly: `<prefix> pfp (OPTIONAL)<@mention user or user's "
                            "id>`")
         else:
-            embed = discord.Embed(
-                title=m.display_name + "'s Profile Pic", color=find_color(ctx, ctx.channel.guild),
-                url=m.avatar_url)
-            embed.set_image(url=m.avatar_url)
+            if default == "d" or user == "d":
+                embed = discord.Embed(
+                    title=m.display_name + "'s Profile Pic", color=find_color(
+                        ctx.channel.guild), url=m.default_avatar_url)
+                embed.set_image(url=m.default_avatar_url)
+            elif default is None:
+                embed = discord.Embed(
+                    title=m.display_name + "'s Profile Pic", color=find_color(
+                        ctx.channel.guild), url=m.avatar_url)
+                embed.set_image(url=m.avatar_url)
 
             await ctx.send(embed=embed)
 

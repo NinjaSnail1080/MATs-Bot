@@ -22,6 +22,26 @@ import discord
 import asyncio
 
 import random
+import re
+
+
+async def send_log(guild, send_embed):
+    """Creates a #logs channel if it doesn't already exist so people can keep track of what the
+    mods are doing. Then send the embed from a moderation command
+    """
+    try:
+        logs = None
+        for c in guild.text_channels:
+            if re.search("logs", c.name):
+                logs = c
+                break
+        if logs is None:
+            logs = await guild.create_text_channel(
+                "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
+                    send_messages=False)})
+        await logs.send(embed=send_embed)
+    except:
+        pass
 
 
 class Moderation:
@@ -37,40 +57,53 @@ class Moderation:
         Kicks a member from the server.
         Format like this: `<prefix> kick <@mention member or memnber's id> <reason for kicking>`
         """
-        command_failed = False
+        bad_format = ("You didn't format the command correctly. It's supposed to look like this: "
+                     "`<prefix> kick <@mention member or memnber's id> <reason for kicking>")
         if member is None:
-            await ctx.send("You didn't format the command correctly. It's supposed to look like "
-                           "this:\n`<prefix> kick <@mention member or memnber's id> <reason for "
-                           "kicking>")
-            command_failed = True
+            await ctx.send(bad_format)
+            return
 
         if ctx.author.permissions_in(ctx.channel).kick_members:
-            cant_kick = []
             if reason is None:
                 reason = "No reason given"
-            for m in set(ctx.message.mentions):  #TODO: Improve this command
-                if m != self.bot.user:
-                    try:
-                        await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
-                        await ctx.send(embed=discord.Embed(
-                            color=find_color(ctx, ctx.channel.guild), title=m.name +
-                            " kicked by " + ctx.author.name, description="Reason: " + reason))
-                    except discord.Forbidden:
-                        cant_kick.append(m.display_name)
-                else:
-                    await ctx.send("...\n\nVery funny, but I'm not gonna kick myself. You can "
-                                   "do it yourself if you hate me that much.")
-            for i in cant_kick:
+            if ctx.message.mentions:
+                for _member in ctx.message.mentions:
+                    for _member in ctx.message.mentions:
+                        if _member == self.bot.user:
+                            await ctx.send(":rolling_eyes:")
+                            await ctx.send("You really think I'm gonna kick myself?")
+                            return
+                        else:
+                            m = _member
+                            break
+            else:
+                try:
+                    m = ctx.channel.guild.get_member(int(member))
+                    if m is None:
+                        await ctx.send(bad_format + "\n\nIf you did format it correctly then you "
+                                       "probably put in an invalid user id. Try again.")
+                        return
+                except ValueError:
+                    await ctx.send(bad_format)
+                    return
+            embed = discord.Embed(
+                color=find_color(ctx.channel.guild), title=m.name + " was kicked by " +
+                ctx.author.name, description="__Reason__: " + reason)
+            try:
+                await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
+                await ctx.send(embed=embed)
+            except discord.Forbidden:
                 await ctx.send(
-                    "I don't have permissions to kick **" + i + "**. What's the point of having "
+                    "I don't have permissions to kick **%s**. What's the point of having "
                     "all these moderation commmands if I can't use them?\nEither I don't have "
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
-                    "fix that please?")
+                    "fix that please?" % m.display_name)
+                return
+            await send_log(ctx.channel.guild, embed)
         else:
-            if not command_failed:
-                await ctx.send(
-                    "You don't have permissions to kick members. You better take this issue to "
-                    "whoever's in charge of this server")
+            await ctx.send(
+                "You don't have permissions to kick members. You better take this issue to "
+                "whoever's in charge of this server")
 
     @commands.command(hidden=True)
     @commands.guild_only()
@@ -101,24 +134,30 @@ class Moderation:
             if members is None:
                 member = random.choice(ctx.channel.guild.members)
             else:
-                member = random.choice(set(ctx.message.mentions))
+                member = random.choice(ctx.message.mentions)
 
             try:
                 await member.kick(
                     reason="Unlucky individual selected by the randomkick performed by " +
-                    ctx.author.name)
+                    ctx.author.display_name)
                 temp = await ctx.send("And the unlucky individual about to be kicked is...")
                 with ctx.channel.typing():
                     await asyncio.sleep(2)
                     await temp.delete()
                     await ctx.send(embed=discord.Embed(
-                        color=find_color(ctx, ctx.channel.guild), title=member.name + "!!!",
+                        color=find_color(ctx.channel.guild), title=member.name + "!!!",
                         description=random.choice(rip_list)))
-                await ctx.send(
-                    "Now someone's gonna have to go invite them back. I suggest you go, " +
-                    ctx.author.mention)
             except discord.Forbidden:
-                await ctx.send(cant_kick)
+                await ctx.send("Damn, it looks like I don't have permission to kick this person. "
+                               "Could one of you guys check my role to make sure I have either "
+                               "the Kick Members privilege or the Administrator privilege?\n\nIf "
+                               "I already, do, then I probably picked someone with a role higher "
+                               "than mine. So try again, or better yet, put my role above "
+                               "everyone else's. Then we can make this *really* interesting...")
+                return
+            await send_log(ctx.channel.guild, discord.Embed(
+                title="A randomkick was performed by " + ctx.author.display_name,
+                description=member.name + " was kicked", color=find_color(ctx.channel.guild)))
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
@@ -127,14 +166,14 @@ class Moderation:
     @commands.command(aliases=["snipe"], hidden=True)
     @commands.guild_only()
     async def restore(self, ctx):
-        """Restores last deleted message. Not working right now"""
+        """Restores the last deleted message. Not working right now"""
         #TODO: Make this work!
         print(last_delete)
         if ctx.author.permissions_in(ctx.channel).manage_messages:
             embed = discord.Embed(
                 title="Sent by " + last_delete["author"],
                 description=last_delete["creation"].strftime("Sent on %A, %B %-d, %Y at %X UTC"),
-                color=find_color(ctx, ctx.channel.guild))
+                color=find_color(ctx.channel.guild))
             embed.set_author(name="Restored last deleted message")
             embed.add_field(name="Message", value="`%s`" % last_delete["content"], inline=False)
             embed.add_field(name="Channel", value=last_delete["channel"].mention)

@@ -31,7 +31,10 @@ class Owner:
     async def quit(self, ctx):
         """Quit the bot's program"""
 
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            print("Can't delete message in this server")
         await self.bot.wait_until_ready()
         await self.bot.logout()
         await self.bot.close()

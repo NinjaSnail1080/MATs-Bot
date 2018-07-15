@@ -43,7 +43,7 @@ class NSFW:
                         {"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
                         page = w.json
 
-                        embed = discord.Embed(color=find_color(ctx, ctx.channel.guild))
+                        embed = discord.Embed(color=find_color(ctx.channel.guild))
                         embed.set_image(url=random.choice(
                             ["https://i.pinimg.com/736x/05/15/cf/0515cf0c3e92d83deae8d0c4d880ebd6"
                              "--honeypot-penny.jpg", "http://ancensored.com/files/images/vthumbs/"
