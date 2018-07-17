@@ -52,7 +52,10 @@ class Fun:
                             await ctx.send("```" + art + "```")
                     else:
                         await ctx.send("```" + art + "```")
-            except:
+            except OSError:
+                await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
+                               "ascii art. Try again with a different image.")
+            except TypeError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.")
         elif image is None:
@@ -60,7 +63,7 @@ class Fun:
                            "Format like this: `<prefix> ascii <image URL>`")
         elif not validators.url(image):
             await ctx.send("Invalid url. The link to your image needs to look something like "
-                           "this: `https://www.example.com/something/image.png`")
+                           "this:\n\n`https://www.example.com/something/image.png`")
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -130,9 +133,10 @@ class Fun:
         try:
             with ctx.channel.typing():
                 async with aiohttp.ClientSession().get("https://c.xkcd.com/random/comic/") as w:
+                    soup = BeautifulSoup(await w.text(), "lxml")
+
                     url = str(w.url)
                     number = url.replace("https://xkcd.com/", "")[:-1]
-                    soup = BeautifulSoup(await w.text(), "lxml")
                     title = soup.find("div", id="ctitle").get_text()
                     comic = soup.find("div", id="comic")
                     image = "https:" + comic.img["src"]
