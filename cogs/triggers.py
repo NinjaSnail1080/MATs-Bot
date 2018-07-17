@@ -46,20 +46,15 @@ class Triggers:
         else:
             e = discord.Embed(color=find_color(message.channel.guild))
 
+
         if re.search("pinged", message.content, re.IGNORECASE):
             await message.channel.send(content="Pinged?", embed=e.set_image(
                 url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
                 "7792/ping.gif"))
 
-        if re.search("think", message.content, re.IGNORECASE):
-            await message.channel.send(content="Thinking...", embed=e.set_image(
-                url="https://cdn.discordapp.com/attachments/419762316666470401/461276989060546560"
-                "/thinking.gif"))
-
-        elif re.search("hmm", message.content, re.IGNORECASE):
-            await message.channel.send(content="Hmmmmmmmmmmmmmmmm...", embed=e.set_image(
-                url="https://cdn.discordapp.com/attachments/419762316666470401/461277909949218819"
-                "/thonk.gif"))
+        if re.search("think", message.content, re.IGNORECASE) or re.search(
+            "hmm", message.content, re.IGNORECASE):
+            await message.add_reaction(":thonk:468520122848509962")
 
         if message.content.lower() == "k":
             await message.channel.send(

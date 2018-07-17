@@ -61,6 +61,8 @@ if __name__ == "__main__":
 
 
 def find_color(guild=None):
+    """Find the color of the bot's top role in the guild"""
+
     if guild is not None:
         if guild.me.top_role.color == discord.Color.default():
             color = discord.Color.blurple()

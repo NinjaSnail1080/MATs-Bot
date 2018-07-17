@@ -44,14 +44,14 @@ class Fun:
             try:
                 with ctx.channel.typing():
                     art = ascii.loadFromUrl(image, 60, False)
-                    if len(art) > 2000:
+                    if len(art) > 1994:
                         art = "".join(art.split())
                         split_art = re.findall(".{1,1920}", art)
                         for a in split_art:
                             art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                            await ctx.send("```\n" + art + "```")
+                            await ctx.send("```" + art + "```")
                     else:
-                        await ctx.send("```\n" + art + "```")
+                        await ctx.send("```" + art + "```")
             except:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.")
@@ -94,9 +94,14 @@ class Fun:
     async def lenny(self, ctx):
         """A list of Lenny faces for all your copypasting needs"""
 
-        embed = discord.Embed(
-            title="A list of Lenny faces for all your copypasting needs",
-            color=find_color(ctx.channel.guild), url="https://www.lennyfaces.net/")
+        if isinstance(ctx.channel, discord.DMChannel):
+            embed = discord.Embed(
+                title="A list of Lenny faces for all your copypasting needs",
+                color=find_color(), url="https://www.lennyfaces.net/")
+        else:
+            embed = discord.Embed(
+                title="A list of Lenny faces for all your copypasting needs",
+                color=find_color(ctx.channel.guild), url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
         embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
@@ -114,10 +119,7 @@ class Fun:
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
                                "puts"])
     async def say(self, ctx, *, stuff):
-        """Make me say something!
-        The commands `print`, `printf`, `System.out.println`, `echo`, `std::cout<<`, and `puts` all also work.
-        (They're references to various programming languages)
-        """
+        """Make me say something!"""
 
         await ctx.send(stuff)
 
@@ -127,29 +129,32 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession() as session:
-                    async with session.get("https://c.xkcd.com/random/comic/") as w:
-                        url = str(w.url)
-                        number = url.replace("https://xkcd.com/", "")[:-1]
-                        soup = BeautifulSoup(await w.text(), "lxml")
-                        title = soup.find("div", id="ctitle").get_text()
-                        comic = soup.find("div", id="comic")
-                        image = "https:" + comic.img["src"]
-                        caption = comic.img["title"]
+                async with aiohttp.ClientSession().get("https://c.xkcd.com/random/comic/") as w:
+                    url = str(w.url)
+                    number = url.replace("https://xkcd.com/", "")[:-1]
+                    soup = BeautifulSoup(await w.text(), "lxml")
+                    title = soup.find("div", id="ctitle").get_text()
+                    comic = soup.find("div", id="comic")
+                    image = "https:" + comic.img["src"]
+                    caption = comic.img["title"]
 
+            if isinstance(ctx.channel, discord.DMChannel):
                 embed = discord.Embed(
-                    title=title + " | #" + number , color=find_color(ctx.channel.guild),
-                    url=url)
-                embed.set_author(name="xkcd", url="https://xkcd.com/")
-                embed.set_image(url=image)
-                embed.set_footer(text=caption)
+                    title=title + " | #" + number, color=find_color(), url=url)
+            else:
+                embed = discord.Embed(
+                    title=title + " | #" + number , color=find_color(ctx.channel.guild), url=url)
 
-                await ctx.send(embed=embed)
+            embed.set_author(name="xkcd", url="https://xkcd.com/")
+            embed.set_image(url=image)
+            embed.set_footer(text=caption)
+
+            await ctx.send(embed=embed)
         except:
-            #* Temporary operation to figure out exactly what this exception is and what causes it
+            #! Temporary operation to figure out exactly what this exception is and what causes it
             import traceback
             print(traceback.format_exc())
-            #* Temporary operation ^
+            #! Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
                            "wasn't able to get a comic. Try again in a little bit.")
 

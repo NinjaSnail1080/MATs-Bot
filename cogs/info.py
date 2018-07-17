@@ -22,7 +22,6 @@ import discord
 
 import datetime
 
-#TODO: Fix the fucking commands that accept either an id or mention
 
 class Info:
     """Information"""
@@ -32,7 +31,7 @@ class Info:
 
     @commands.command()
     async def info(self, ctx):
-        """Info about me"""
+        """Info about me!"""
 
         app = await self.bot.application_info()
 

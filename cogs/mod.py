@@ -39,6 +39,12 @@ async def send_log(guild, send_embed):
             logs = await guild.create_text_channel(
                 "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
                     send_messages=False)})
+            await logs.send("I created this channel just now to keep a log of all my moderation "
+                            "commands that have been used. Feel free to edit this channel "
+                            "however you'd like, but make sure I always have access to it!"
+                            "\n\nP.S. I don't have to use this channel if you don't want me to. "
+                            "You could make an entirely new channel and as long as it has the "
+                            "word, \"logs\" in its name, I'll be able to use it.")
         await logs.send(embed=send_embed)
     except:
         pass

@@ -50,14 +50,24 @@ class Utility:
                            "id>`")
         else:
             if default == "d" or user == "d":
-                embed = discord.Embed(
-                    title=m.display_name + "'s Profile Pic", color=find_color(
-                        ctx.channel.guild), url=m.default_avatar_url)
+                if isinstance(ctx.channel, discord.DMChannel):
+                    embed = discord.Embed(
+                        title=m.display_name + "'s Profile Pic", color=find_color(),
+                        url=m.default_avatar_url)
+                else:
+                    embed = discord.Embed(
+                        title=m.display_name + "'s Profile Pic", color=find_color(
+                            ctx.channel.guild), url=m.default_avatar_url)
                 embed.set_image(url=m.default_avatar_url)
             elif default is None:
-                embed = discord.Embed(
-                    title=m.display_name + "'s Profile Pic", color=find_color(
-                        ctx.channel.guild), url=m.avatar_url)
+                if isinstance(ctx.channel, discord.DMChannel):
+                    embed = discord.Embed(
+                        title=m.display_name + "'s Profile Pic", color=find_color(),
+                        url=m.avatar_url)
+                else:
+                    embed = discord.Embed(
+                        title=m.display_name + "'s Profile Pic", color=find_color(
+                            ctx.channel.guild), url=m.avatar_url)
                 embed.set_image(url=m.avatar_url)
 
             await ctx.send(embed=embed)
