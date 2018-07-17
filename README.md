@@ -1,37 +1,16 @@
-## Welcome to GitHub Pages
+## MAT's Bot
 
-You can use the [editor on GitHub](https://github.com/NinjaSnail1080/MATs-Bot/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+This bot is open-source, general purpose Discord bot written in Python\
+📕 Library used: [https://discordpy.readthedocs.io/en/rewrite/](discord.py)
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## How to install
 
-### Markdown
+⚠ You need to have at least Python 3.5.2, downloadable at [https://www.python.org/](this page).
+⚠ Check "Add to PATH" at the installation.
+And of course, clone this repository.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+• **Install requirements on YOUR system**
 
-```markdown
-Syntax highlighted code block
+Just go in the folder where you download the bot and execute that command
 
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/NinjaSnail1080/MATs-Bot/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+    pip install -r REQUIREMENTS.txt
