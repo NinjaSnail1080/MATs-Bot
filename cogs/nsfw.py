@@ -18,6 +18,7 @@
 
 from mat import find_color
 from discord.ext import commands
+from bs4 import BeautifulSoup
 import discord
 import aiohttp
 
@@ -31,6 +32,48 @@ class NSFW:
         self.bot = bot
 
     @commands.command()
+    @commands.guild_only()
+    async def girl(self, ctx):
+        """Sends a pic of a (usually nude) girl"""
+
+        if ctx.channel.is_nsfw():
+            try:
+                with ctx.channel.typing():
+                    async with aiohttp.ClientSession().get(
+                        "https://russiasexygirls.com/?random") as w:
+
+                        soup = BeautifulSoup(await w.text(), "lxml")
+                        url = str(w.url)
+                        title = soup.find("span", "entry-title").get_text()
+
+                        pics = []
+                        for p in soup.find_all("p"):
+                            if "https://russiasexygirls.com/" in str(p):
+                                pics.append(p)
+                        del pics[0]
+                        del pics[0]
+                        image = random.choice(pics).a.img["src"]
+
+                    embed = discord.Embed(
+                        title=title, description="Click above for more images from this album",
+                        color=find_color(ctx.channel.guild), url=url)
+                    embed.set_image(url=image)
+                    embed.set_footer(text="From: russiasexygirls.com")
+
+                    await ctx.send(embed=embed)
+            except:
+                #! Temporary operation to figure out exactly what this exception is
+                import traceback
+                print(url)
+                print(traceback.format_exc())
+                #! Temporary operation ^
+                await ctx.send("Huh, something went wrong. It looks like servers are down so I "
+                                "wasn't able to get a picture. Try again in a little bit.")
+        else:
+            await ctx.send("You must be in an NSFW channel to use that command.")
+
+    @commands.command()
+    @commands.guild_only()
     async def gonewild(self, ctx):
         """Sends a random post from r/gonewild (Not actually working yet. Heavy WIP)"""
 
