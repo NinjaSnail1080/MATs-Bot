@@ -56,54 +56,40 @@ class Moderation:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(brief="Member not found. Invalid user id")
     @commands.guild_only()
-    async def kick(self, ctx, member=None, *, reason=None):
+    async def kick(self, ctx, member: discord.Member=None, *, reason=None):
         """**Must have the \"kick members\" permission**
         Kicks a member from the server.
-        Format like this: `<prefix> kick <@mention member or memnber's id> <reason for kicking>`
+        Format like this: `<prefix> kick <member> <reason for kicking>`
         """
-        bad_format = ("You didn't format the command correctly. It's supposed to look like this: "
-                     "`<prefix> kick <@mention member or memnber's id> <reason for kicking>")
-        if member is None:
-            await ctx.send(bad_format)
-            return
-
         if ctx.author.permissions_in(ctx.channel).kick_members:
+            if member is None:
+                await ctx.send("You didn't format the command correctly. It's supposed to look "
+                               "like this: `<prefix> kick <@mention member or member's name> "
+                               "<reason for kicking>`")
+            if member == ctx.channel.guild.me:
+                await ctx.send(":rolling_eyes:")
+                return
+
             if reason is None:
                 reason = "No reason given"
-            if ctx.message.mentions:
-                for _member in ctx.message.mentions:
-                    for _member in ctx.message.mentions:
-                        if _member == self.bot.user:
-                            await ctx.send(":rolling_eyes:")
-                            await ctx.send("You really think I'm gonna kick myself?")
-                            return
-                        else:
-                            m = _member
-                            break
-            else:
-                try:
-                    m = ctx.channel.guild.get_member(int(member))
-                    if m is None:
-                        await ctx.send(bad_format + "\n\nIf you did format it correctly then you "
-                                       "probably put in an invalid user id. Try again.")
-                        return
-                except ValueError:
-                    await ctx.send(bad_format)
-                    return
+            if len(reason) + len(ctx.author.name) + 23 > 512:
+                await ctx.send("Reason is too long. It must be under %d characters" % 512 - (
+                    len(ctx.author.name) + 23))
+
             embed = discord.Embed(
-                color=find_color(ctx.channel.guild), title=m.name + " was kicked by " +
+                color=find_color(ctx.channel.guild), title=member.name + " was kicked by " +
                 ctx.author.name, description="__Reason__: " + reason)
             try:
-                await m.kick(reason=reason + " | Action performed by " + ctx.author.name)
+                await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
                 await ctx.send(embed=embed)
             except discord.Forbidden:
                 await ctx.send(
                     "I don't have permissions to kick **%s**. What's the point of having "
                     "all these moderation commmands if I can't use them?\nEither I don't have "
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
-                    "fix that please?" % m.display_name)
+                    "fix that please?" % member.display_name)
                 return
             await send_log(ctx.channel.guild, embed)
         else:
@@ -111,36 +97,33 @@ class Moderation:
                 "You don't have permissions to kick members. You better take this issue to "
                 "whoever's in charge of this server")
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=["remove"])
     @commands.guild_only()
-    async def purge(self, ctx, number=None, member=None):
+    async def purge(self, ctx, number=None):
         """HEAVY WIP. Do not use"""
 
         if ctx.author.permissions_in(ctx.channel).manage_messages:
             if number is not None:
                 await ctx.channel.purge(limit=int(number) + 1)
 
-    @commands.command()
+    @commands.command(brief="Incorrect formatting. You're supposed to provide a list of "
+                      "@mentions or member names that I'll randomly choose from. Or don't put "
+                      "anything and I'll randomly pick someone from the server")
     @commands.guild_only()
-    async def randomkick(self, ctx, members=None):
+    async def randomkick(self, ctx, **members: discord.Member):
         """**Must have the \"kick members\" permission**
         Kicks a random member, feeling lucky?
-        Format like this: `<prefix> randomkick (OPTIONAL)<list of @mentions you want me to randomly pick from>`.
+        Format like this: `<prefix> randomkick (OPTIONAL)<list of members you want me to randomly pick from>`.
         If you don't mention anyone, I'll randomly select someone from the server.
         """
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                         "RIP in pieces", "Rest in pieces"]
-            cant_kick = ("Damn, it looks like I don't have permission to kick this person. Could "
-                         "one of you guys check my role to make sure I have either the Kick "
-                         "Members privilege or the Administrator privilege?\n\nIf I already, do, "
-                         "then I probably picked someone with a role higher than mine. So try "
-                         "again, or better yet, put my role above everyone else's. Then we can "
-                         "make this *really* interesting...")
-            if members is None:
+
+            try:
+                member = random.choice(list(members))
+            except IndexError:
                 member = random.choice(ctx.channel.guild.members)
-            else:
-                member = random.choice(ctx.message.mentions)
 
             try:
                 await member.kick(
