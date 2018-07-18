@@ -39,7 +39,6 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
 last_delete = {"author": None, "content": None, "channel": None, "creation": None}
 
 if __name__ == "__main__":
-    from cogs import *
     import urllib3
 
     urllib3.disable_warnings()
