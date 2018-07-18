@@ -64,7 +64,6 @@ class NSFW:
             except:
                 #! Temporary operation to figure out exactly what this exception is
                 import traceback
-                print(url)
                 print(traceback.format_exc())
                 #! Temporary operation ^
                 await ctx.send("Huh, something went wrong. It looks like servers are down so I "
