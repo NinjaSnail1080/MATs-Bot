@@ -50,6 +50,9 @@ if __name__ == "__main__":
             if f.endswith(".py"):
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
+    debug = True
+    if debug:
+        initial_extensions.remove("cogs.error_handlers")
 
     #* Set up logger
     logger = logging.getLogger()

@@ -77,7 +77,7 @@ class Fun:
             await ctx.send(coin)
 
     @commands.command()
-    async def diceroll(self, ctx, sides : int=6):
+    async def diceroll(self, ctx, sides:int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
         """
@@ -85,7 +85,7 @@ class Fun:
             if sides <= 2:
                 raise ValueError
             dice = str(random.randint(1, sides))
-            temp = await ctx.send("Rolling a " + str(sides) + "-sided dice...")
+            temp = await ctx.send("Rolling a %d-sided dice..." % sides)
             with ctx.channel.typing():
                 await asyncio.sleep(1.5)
                 await temp.delete()
