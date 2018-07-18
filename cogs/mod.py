@@ -75,8 +75,9 @@ class Moderation:
             if reason is None:
                 reason = "No reason given"
             if len(reason) + len(ctx.author.name) + 23 > 512:
-                await ctx.send("Reason is too long. It must be under %d characters" % 512 - (
-                    len(ctx.author.name) + 23))
+                await ctx.send("Reason is too long. It must be under %d characters" % abs(
+                    len(ctx.author.name) + 23 - 512))
+                return
 
             embed = discord.Embed(
                 color=find_color(ctx.channel.guild), title=member.name + " was kicked by " +
