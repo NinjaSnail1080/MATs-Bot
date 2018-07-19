@@ -64,9 +64,9 @@ class Utility:
         await ctx.send(embed=embed)
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
-                      " Format like this: `<prefix> random <length (defaults to 64)> <level "
-                      "(defaults to 3)>`\nNote: There are 5 levels you can choose from. Do "
-                      "`<prefix> random levels` for more info")
+                      " `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`\n"
+                      "Note: There are 5 levels you can choose from. Do `<prefix> random levels` "
+                      "for more info")
     async def random(self, ctx, length="64", level: int=3):
         """Generates a string of random characters
         Format like this: `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`
