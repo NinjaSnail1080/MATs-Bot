@@ -19,7 +19,9 @@
 from mat import find_color
 from discord.ext import commands
 import discord
-#TODO: Clean up this code, it's messy
+
+import random
+import string
 
 class Utility:
     """Utility commands"""
@@ -27,50 +29,90 @@ class Utility:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=["avatar"])
-    async def pfp(self, ctx, user=None, default=None):
-        """Get a user's pfp. By default it retrieves your own but you can specify a different user
-        Format like this: `<prefix> pfp (OPTIONAL)<@mention user or user's id>`
+    @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
+                      "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>"
+                      "`\n\nNote: If you used `-d`, then you must provide a user for it to work")
+    async def pfp(self, ctx, user: discord.Member=None, default=None):
+        """Get a user's profile pic. By default it retrieves your own but you can specify a different user
+        Format like this: `<prefix> pfp (OPTIONAL)<user>`
+        Add "-d" to the end of the command to get the user's default pfp (Only works if user is provided)
         """
         if user is None:
-            m = ctx.author
-        else:
-            if ctx.message.mentions:
-                for member in ctx.message.mentions:
-                    m = member
-                    break
-            else:
-                try:
-                    m = ctx.channel.guild.get_member(int(user))
-                except:
-                    m = None
-        if m is None:
-            await ctx.send("Invalid user id or incorrect formatting. Make sure you format the "
-                           "command correctly: `<prefix> pfp (OPTIONAL)<@mention user or user's "
-                           "id>`")
-        else:
-            if default == "d" or user == "d":
-                if isinstance(ctx.channel, discord.DMChannel):
-                    embed = discord.Embed(
-                        title=m.display_name + "'s Profile Pic", color=find_color(),
-                        url=m.default_avatar_url)
-                else:
-                    embed = discord.Embed(
-                        title=m.display_name + "'s Profile Pic", color=find_color(
-                            ctx.channel.guild), url=m.default_avatar_url)
-                embed.set_image(url=m.default_avatar_url)
-            elif default is None:
-                if isinstance(ctx.channel, discord.DMChannel):
-                    embed = discord.Embed(
-                        title=m.display_name + "'s Profile Pic", color=find_color(),
-                        url=m.avatar_url)
-                else:
-                    embed = discord.Embed(
-                        title=m.display_name + "'s Profile Pic", color=find_color(
-                            ctx.channel.guild), url=m.avatar_url)
-                embed.set_image(url=m.avatar_url)
+            user = ctx.author
 
-            await ctx.send(embed=embed)
+        if default == "-d":
+            if isinstance(ctx.channel, discord.DMChannel):
+                embed = discord.Embed(
+                    title=user.display_name + "'s Default Profile Pic", color=find_color(),
+                    url=user.default_avatar_url)
+            else:
+                embed = discord.Embed(
+                    title=user.display_name + "'s Default Profile Pic", color=find_color(
+                        ctx.channel.guild), url=user.default_avatar_url)
+            embed.set_image(url=user.default_avatar_url)
+        else:
+            if isinstance(ctx.channel, discord.DMChannel):
+                embed = discord.Embed(
+                    title=user.display_name + "'s Profile Pic", color=find_color(),
+                    url=user.avatar_url)
+            else:
+                embed = discord.Embed(
+                    title=user.display_name + "'s Profile Pic", color=find_color(
+                        ctx.channel.guild), url=user.avatar_url)
+            embed.set_image(url=user.avatar_url)
+
+        await ctx.send(embed=embed)
+
+    @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
+                      " Format like this: `<prefix> random <length (defaults to 64)> <level "
+                      "(defaults to 3)>`\nNote: There are 5 levels you can choose from. Do "
+                      "`<prefix> random levels` for more info")
+    async def random(self, ctx, length="64", level: int=3):
+        """Generates a string of random characters
+        Format like this: `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`
+        There are 5 levels you can choose from. Do `<prefix> random levels` for more info
+        """
+        if length == "levels":
+            await ctx.send("__Random Command Levels__:\n\n**Level 1**: Lowercase letters\n**Level"
+                           " 2**: Lowercase and uppercase letters\n**Level 3**: Letters and "
+                           "numbers\n**Level 4**: Letters, numbers, and symbols\n**Level 5**: All"
+                           " of the above plus whitespace characters")
+            return
+        try:
+            length = int(length)
+            if length > 1500:
+                length = 1500
+
+            if level == 1:
+                await ctx.send(
+                    "```" + "".join(
+                        random.choice(string.ascii_lowercase) for _ in range(length + 1)) + "```")
+            elif level == 2:
+                await ctx.send(
+                    "```" + "".join(
+                        random.choice(string.ascii_letters) for _ in range(length + 1)) + "```")
+            elif level == 3:
+                await ctx.send(
+                    "```" + "".join(random.choice(
+                        string.ascii_letters + string.digits) for _ in range(length + 1)) + "```")
+            elif level == 4:
+                await ctx.send(
+                    "```" + "".join(random.choice(
+                        string.ascii_letters + string.digits + string.punctuation) for _ in range(
+                            length + 1)) + "```")
+            elif level == 5:
+                    await ctx.send("```" + "".join(
+                        random.choice(string.printable) for _ in range(length + 1)) + "```")
+            else:
+                raise commands.BadArgument
+                return
+        except ValueError:
+            raise commands.BadArgument
+            return
+        except: discord.HTTPException:
+            #* In the unlikely event that the whitespaces in Level 5 cause the message length to
+            #* be more than 2000 characters:
+            await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
 
 
 def setup(bot):
