@@ -18,6 +18,7 @@
 
 from discord.ext import commands
 import discord
+import asyncio
 
 
 class Error_Handlers:
@@ -28,15 +29,20 @@ class Error_Handlers:
 
     async def on_command_error(self, ctx, exception):
         exc = exception
-        if isinstance(exc, discord.NotFound):
+        if isinstance(exc, commands.CommandNotFound):
             return
-        if isinstance(exc, commands.BadArgument):
-            await ctx.send(ctx.command.brief)
+        elif isinstance(exc, commands.BadArgument):
+            await ctx.send(ctx.command.brief, delete_after=10.0)
+            await asyncio.sleep(10)
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
             return
-        if isinstance(exc, commands.MissingRequiredArgument):
+        elif isinstance(exc, commands.MissingRequiredArgument):
             return
         else:
-            return
+            print(exc)
 
 
 def setup(bot):
