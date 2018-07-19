@@ -33,6 +33,7 @@ class Help:
         self.bot.remove_command("help")
 
     @commands.command()
+    @commands.guild_only()
     async def help(self, ctx, cat=None):
         """MAT's Bot | Help command"""
 
@@ -101,6 +102,17 @@ class Help:
 
         elif cat == "music":
             await ctx.send("No commands yet ¯\_(ツ)_/¯")
+
+        elif cat == "utility":
+            embed = discord.Embed(title="Help | NSFW Commands", description=list_prefixes,
+                                  color=find_color(ctx.channel.guild))
+
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "Utility" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
 
         elif cat == "nsfw":
             embed = discord.Embed(title="Help | NSFW Commands", description=list_prefixes,
