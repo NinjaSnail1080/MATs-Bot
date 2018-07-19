@@ -109,7 +109,7 @@ class Utility:
         except ValueError:
             raise commands.BadArgument
             return
-        except: discord.HTTPException:
+        except discord.HTTPException:
             #* In the unlikely event that the whitespaces in Level 5 cause the message length to
             #* be more than 2000 characters:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
