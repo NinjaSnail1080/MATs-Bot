@@ -56,7 +56,7 @@ class Moderation:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(brief="Member not found. Invalid user id")
+    @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
     async def kick(self, ctx, member: discord.Member=None, *, reason=None):
         """**Must have the \"kick members\" permission**
@@ -66,8 +66,8 @@ class Moderation:
         if ctx.author.permissions_in(ctx.channel).kick_members:
             if member is None:
                 await ctx.send("You didn't format the command correctly. It's supposed to look "
-                               "like this: `<prefix> kick <@mention member or member's name> "
-                               "<reason for kicking>`")
+                               "like this: `<prefix> kick <@mention member or member's name/id> "
+                               "<reason for kicking>`", delete_after=10.0)
             if member == ctx.channel.guild.me:
                 await ctx.send(":rolling_eyes:")
                 return
@@ -76,7 +76,7 @@ class Moderation:
                 reason = "No reason given"
             if len(reason) + len(ctx.author.name) + 23 > 512:
                 await ctx.send("Reason is too long. It must be under %d characters" % abs(
-                    len(ctx.author.name) + 23 - 512))
+                    len(ctx.author.name) + 23 - 512), delete_after=5.0)
                 return
 
             embed = discord.Embed(
@@ -100,12 +100,12 @@ class Moderation:
 
     @commands.command(hidden=True, aliases=["remove"])
     @commands.guild_only()
-    async def purge(self, ctx, number=None):
+    async def purge(self, ctx, number: int):
         """HEAVY WIP. Do not use"""
 
         if ctx.author.permissions_in(ctx.channel).manage_messages:
             if number is not None:
-                await ctx.channel.purge(limit=int(number) + 1)
+                await ctx.channel.purge(limit=number + 1)
 
     @commands.command(brief="Incorrect formatting. You're supposed to provide a list of "
                       "@mentions or member names that I'll randomly choose from. Or don't put "
@@ -120,7 +120,6 @@ class Moderation:
         if ctx.author.permissions_in(ctx.channel).kick_members:
             rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                         "RIP in pieces", "Rest in pieces"]
-
             try:
                 member = random.choice(list(members))
             except IndexError:
@@ -170,7 +169,8 @@ class Moderation:
             embed.set_footer(text="Restored by " + ctx.author.display_name)
             await ctx.send(embed=embed)
         else:
-            await ctx.send("You need the Manage Messages permission in order to use this command")
+            await ctx.send("You need the Manage Messages permission in order to use this command",
+                           delete_after=5.0)
 
 
 def setup(bot):

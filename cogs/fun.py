@@ -54,16 +54,16 @@ class Fun:
                         await ctx.send("```" + art + "```")
             except OSError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.")
+                               "ascii art. Try again with a different image.", delete_after=5.0)
             except TypeError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.")
+                               "ascii art. Try again with a different image.", delete_after=5.0)
         elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
-                           "Format like this: `<prefix> ascii <image URL>`")
+                           "Format like this: `<prefix> ascii <image URL>`", delete_after=5.0)
         elif not validators.url(image):
-            await ctx.send("Invalid url. The link to your image needs to look something like "
-                           "this:\n\n`https://www.example.com/something/image.png`")
+            await ctx.send("Invalid url. The link to your image needs to look something like this"
+                           ":\n\n`https://www.example.com/something/image.png`", delete_after=5.0)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -91,7 +91,8 @@ class Fun:
                 await temp.delete()
                 await ctx.send(dice + "!")
         except ValueError:
-            await ctx.send("The number of sides must be an **integer above 2**. Try again.")
+            await ctx.send("The number of sides must be an **integer above 2**. Try again.",
+                           delete_after=5.0)
 
     @commands.command()
     async def lenny(self, ctx):
@@ -121,10 +122,14 @@ class Fun:
 
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
                                "puts"])
-    async def say(self, ctx, *, stuff):
+    async def say(self, ctx, *, stuff=None):
         """Make me say something!"""
 
-        await ctx.send(stuff)
+        if stuff is None:
+            await ctx.send("Um, you do realize that you need to give me something to say, right?",
+                           delete_after=5.0)
+        else:
+            await ctx.send(stuff)
 
     @commands.command()
     async def xkcd(self, ctx):
@@ -159,8 +164,8 @@ class Fun:
             import traceback
             print(traceback.format_exc())
             #! Temporary operation ^
-            await ctx.send("Huh, something went wrong. It looks like servers are down so I "
-                           "wasn't able to get a comic. Try again in a little bit.")
+            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
+                           " able to get a comic. Try again in a little bit.", delete_after=5.0)
 
 
 def setup(bot):

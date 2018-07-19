@@ -131,119 +131,103 @@ class Info:
         #! For reasons I don't fully understand, it doesn't work
 
         if y == 1:
-            year_s = " year"
+            year_s = "year"
         else:
-            year_s = " years"
+            year_s = "years"
         if mo == 1:
-            month_s = " month"
+            month_s = "month"
         else:
-            month_s = " months"
+            month_s = "months"
         if d == 1:
-            day_s = " day"
+            day_s = "day"
         else:
-            day_s = " days"
+            day_s = "days"
         if h == 1:
-            hour_s = " hour"
+            hour_s = "hour"
         else:
-            hour_s = " hours"
+            hour_s = "hours"
         if mi == 1:
-            minute_s = " minute"
+            minute_s = "minute"
         else:
-            minute_s = " minutes"
+            minute_s = "minutes"
         if se == 1:
-            second_s = " second"
+            second_s = "second"
         else:
-            second_s = " seconds"
+            second_s = "seconds"
 
         footer = []
         if y != 0:
-            footer.append(str(y) + year_s + ", ")
+            footer.append("%d %s, " % (y, year_s))
         if mo != 0:
-            footer.append(str(mo) + month_s + ", ")
+            footer.append("%d %s, " % (mo, month_s))
         if d != 0:
-            footer.append(str(d) + day_s + ", ")
+            footer.append("%d %s, " % (d, day_s))
         if h != 0:
-            footer.append(str(h) + hour_s + ", ")
+            footer.append("%d %s, " % (h, hour_s))
         if mi != 0:
-            footer.append(str(mi) + minute_s + ", ")
-        footer.append("and " + str(se) + second_s + ".")
+            footer.append("%d %s, " % (mi, minute_s))
+        footer.append("and %d %s." % (se, second_s))
 
         embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(brief="User not found. Try again")
     @commands.guild_only()
-    async def userinfo(self, ctx, user=None):
+    async def userinfo(self, ctx, user: discord.Member=None):
         """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
-        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's id>`
+        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's name/id>`
         """
         await ctx.channel.trigger_typing()
         if user is None:
-            m = ctx.author
-        else:
-            if ctx.message.mentions:
-                for member in ctx.message.mentions:
-                    m = member
-                    break
-            else:
-                try:
-                    m = ctx.channel.guild.get_member(int(user))
-                except ValueError:
-                    m = None
-                if m is None:
-                    await ctx.send("Huh, something went wrong. You're supposed to format the "
-                                   "message like this: `<prefix> userinfo (OPTIONAL)<@mention "
-                                   "user or user's id>` If you did format it correctly then "
-                                   "the user id you put is probably invalid, or it was for "
-                                   "someone who isn't in this server.")
-                    return
+            user = ctx.author
 
         roles = []
-        for r in m.roles:
+        for r in user.roles:
             if r.name != "@everyone":
-                roles.append("`" + r.name + "`")
+                roles.append("`%s`" % r.name)
         roles = roles[::-1]
 
-        if m.activity is not None:
-            if m.activity.type is discord.ActivityType.listening:
+        if user.activity is not None:
+            if user.activity.type is discord.ActivityType.listening:
                 t = "Listening to"
-                a = m.activity.title
-            elif m.activity.type is discord.ActivityType.streaming:
+                a = user.activity.title
+            elif user.activity.type is discord.ActivityType.streaming:
                 t = "Streaming"
-                a = m.activity.name
-            elif m.activity.type is discord.ActivityType.watching:
+                a = user.activity.name
+            elif user.activity.type is discord.ActivityType.watching:
                 t = "Watching"
-                a = m.activity.name
+                a = user.activity.name
             else:
                 t = "Playing"
-                a = m.activity.name
+                a = user.activity.name
         else:
             t = "Playing"
             a = "Nothing"
 
         embed = discord.Embed(
-            title=str(m), description="User ID: %d" % m.id, color=find_color(ctx.channel.guild))
-        embed.set_thumbnail(url=m.avatar_url)
+            title=str(user), description="User ID: %d" % user.id, color=find_color(
+                ctx.channel.guild))
+        embed.set_thumbnail(url=user.avatar_url)
 
-        embed.add_field(name="Display Name", value=m.display_name)
-        embed.add_field(name="Status", value=str(m.status).title())
-        embed.add_field(name="Color", value=str(m.color))
+        embed.add_field(name="Display Name", value=user.display_name)
+        embed.add_field(name="Status", value=str(user.status).title())
+        embed.add_field(name="Color", value=str(user.color))
         embed.add_field(name=t, value=a)
-        embed.add_field(name="Top Role", value=m.top_role)
-        embed.add_field(name="Joined Server", value=m.joined_at.strftime("%b %-d, %Y"))
-        if m.bot:
+        embed.add_field(name="Top Role", value=user.top_role)
+        embed.add_field(name="Joined Server", value=user.joined_at.strftime("%b %-d, %Y"))
+        if user.bot:
             embed.add_field(name="Bot?", value="Yes")
         else:
             embed.add_field(name="Bot?", value="No")
-        embed.add_field(name="Joined Discord", value=m.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(name="Joined Discord", value=user.created_at.strftime("%b %-d, %Y"))
         if roles:
             embed.add_field(
-                name="Roles (" + str(len(roles)) + ")", value=", ".join(roles), inline=False)
+                name="Roles (%d)" % len(roles), value=", ".join(roles), inline=False)
         else:
             embed.add_field(name="Roles", value="`No roles`")
 
-        delta = datetime.datetime.utcnow() - m.created_at
+        delta = datetime.datetime.utcnow() - user.created_at
 
         y = int(delta.total_seconds()) // 31557600  #* Number of seconds in 356.25 days
         mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
@@ -255,45 +239,45 @@ class Info:
         #! For reasons I don't fully understand, it doesn't work
 
         if y == 1:
-            year_s = " year"
+            year_s = "year"
         else:
-            year_s = " years"
+            year_s = "years"
         if mo == 1:
-            month_s = " month"
+            month_s = "month"
         else:
-            month_s = " months"
+            month_s = "months"
         if d == 1:
-            day_s = " day"
+            day_s = "day"
         else:
-            day_s = " days"
+            day_s = "days"
         if h == 1:
-            hour_s = " hour"
+            hour_s = "hour"
         else:
-            hour_s = " hours"
+            hour_s = "hours"
         if mi == 1:
-            minute_s = " minute"
+            minute_s = "minute"
         else:
-            minute_s = " minutes"
+            minute_s = "minutes"
         if se == 1:
-            second_s = " second"
+            second_s = "second"
         else:
-            second_s = " seconds"
+            second_s = "seconds"
 
         footer = []
         if y != 0:
-            footer.append(str(y) + year_s + ", ")
+            footer.append("%d %s, " % (y, year_s))
         if mo != 0:
-            footer.append(str(mo) + month_s + ", ")
+            footer.append("%d %s, " % (mo, month_s))
         if d != 0:
-            footer.append(str(d) + day_s + ", ")
+            footer.append("%d %s, " % (d, day_s))
         if h != 0:
-            footer.append(str(h) + hour_s + ", ")
+            footer.append("%d %s, " % (h, hour_s))
         if mi != 0:
-            footer.append(str(mi) + minute_s + ", ")
-        footer.append("and " + str(se) + second_s + ".")
+            footer.append("%d %s, " % (mi, minute_s))
+        footer.append("and %d %s." % (se, second_s))
 
         embed.set_footer(
-            text=m.name + " has been on Discord for roughly " + "".join(footer))
+            text=user.name + " has been on Discord for roughly " + "".join(footer))
 
         await ctx.send(embed=embed)
 
