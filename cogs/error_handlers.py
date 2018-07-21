@@ -44,7 +44,9 @@ class Error_Handlers:
                 pass
             return
         elif isinstance(exc, commands.NoPrivateMessage):
-            await ctx.send("This command cannot be used in private messages.")
+            await ctx.send("This command cannot be used in private messages")
+        elif isinstance(exc, commands.CheckFailure):
+            await ctx.send("You must be in an NSFW channel to use that command")
         else:
             print(exc)
 
