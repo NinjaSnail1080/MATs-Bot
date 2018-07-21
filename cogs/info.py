@@ -30,7 +30,7 @@ class Info:
         self.bot = bot
 
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
-                      "Discord's default emojis. You must put an custom emoji after the command "
+                      "Discord's default emojis. You must put a custom emoji after the command "
                       "so I can get info on it")
     @commands.guild_only()
     async def emojiinfo(self, ctx, emoji: discord.Emoji=None):
