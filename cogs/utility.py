@@ -61,11 +61,12 @@ class Utility:
         Format like this: `<prefix> qr <text to encode>`
         """
         if content is None:
-            await ctx.send("You need to include some text to convert. Format like this: "
-                           "<prefix> qr <text to encode>`", delete_after=5.0)
+            await ctx.send("You need to include some text to encode. Format like this: "
+                           "`<prefix> qr <text to encode>`", delete_after=5.0)
         else:
             qrcode.make(content).save("qr.png")
-            await ctx.send(content="`%s` as a QR code:" % content, file=discord.File("qr.png"))
+            await ctx.send(
+                content="```%s``` as a QR code:" % content, file=discord.File("qr.png"))
             os.remove("qr.png")
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
