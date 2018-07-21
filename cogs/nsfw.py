@@ -94,11 +94,6 @@ class NSFW:
                                 "command will send a random post from r/gonewild.\n\nFor "
                                 "now, please enjoy this picture of Penny Baker", embed=embed)
 
-    @commands.command()
-    @commands.is_nsfw()
-    async def test(self, ctx):
-        await ctx.send("test")
-
 
 def setup(bot):
     bot.add_cog(NSFW(bot))

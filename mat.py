@@ -50,7 +50,7 @@ if __name__ == "__main__":
             if f.endswith(".py"):
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
-    initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
+    # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
     #* Set up logger
     logger = logging.getLogger()
@@ -65,10 +65,10 @@ def find_color(ctx):
     return Discord's "blurple" color
     """
     try:
-        if ctx.channel.guild.me.top_role.color == discord.Color.default():
+        if ctx.guild.me.top_role.color == discord.Color.default():
             color = discord.Color.blurple()
         else:
-            color = ctx.channel.guild.me.top_role.color
+            color = ctx.guild.me.top_role.color
         return color
     except AttributeError:  #* If it's a DM channel
         color = discord.Color.blurple()

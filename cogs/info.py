@@ -96,7 +96,7 @@ class Info:
         """Info about the server"""
 
         await ctx.channel.trigger_typing()
-        s = ctx.channel.guild
+        s = ctx.guild
 
         on_members = []
         for m in s.members:

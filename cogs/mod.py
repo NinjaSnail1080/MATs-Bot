@@ -65,7 +65,7 @@ class Moderation:
                 await ctx.send("You didn't format the command correctly. It's supposed to look "
                                "like this: `<prefix> kick <@mention member or member's name/id> "
                                "<reason for kicking>`", delete_after=10.0)
-            if member == ctx.channel.guild.me:
+            if member == ctx.guild.me:
                 await ctx.send(":rolling_eyes:")
                 return
 
@@ -89,7 +89,7 @@ class Moderation:
                     "perms to kick, period, or my role is too low. Can one of you guys in charge "
                     "fix that please?" % member.display_name)
                 return
-            await send_log(ctx.channel.guild, embed)
+            await send_log(ctx.guild, embed)
         else:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
 
@@ -118,7 +118,7 @@ class Moderation:
             try:
                 member = random.choice(list(members))
             except IndexError:
-                member = random.choice(ctx.channel.guild.members)
+                member = random.choice(ctx.guild.members)
 
             try:
                 await member.kick(
@@ -139,7 +139,7 @@ class Moderation:
                                "than mine. So try again, or better yet, put my role above "
                                "everyone else's. Then we can make this *really* interesting...")
                 return
-            await send_log(ctx.channel.guild, discord.Embed(
+            await send_log(ctx.guild, discord.Embed(
                 title="A randomkick was performed by " + ctx.author.display_name,
                 description=member.name + " was kicked", color=find_color(ctx)))
         else:
