@@ -36,7 +36,7 @@ class Fun:
         self.bot = bot
 
     @commands.command()
-    async def ascii(self, ctx, image=None):
+    async def ascii(self, ctx, *, image=None):
         """Converts an image into ascii art. Will work for most images.
         Format like this:`<prefix> ascii <image URL>`
         """

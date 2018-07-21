@@ -50,7 +50,7 @@ if __name__ == "__main__":
             if f.endswith(".py"):
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
-    # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
+    initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
     #* Set up logger
     logger = logging.getLogger()
@@ -61,8 +61,9 @@ if __name__ == "__main__":
 
 
 def find_color(ctx):
-    """Find the color of the bot's top role in the guild"""
-
+    """Find the color of the bot's top role in the guild. Or if it's a DM,
+    return Discord's "blurple" color
+    """
     try:
         if ctx.channel.guild.me.top_role.color == discord.Color.default():
             color = discord.Color.blurple()
