@@ -29,9 +29,51 @@ class Info:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def info(self, ctx):
-        """Info about me!"""
+    @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
+                      "Discord's default emojis. You must put an custom emoji after the command "
+                      "so I can get info on it")
+    async def emojiinfo(self, ctx, emoji: discord.Emoji=None):
+        """Info about an emoji. Only works with custom emojis.
+        Format like this: `<prefix> emojiinfo <emoji>`
+        """
+        if emoji is None:
+            await ctx.send("You need to include an emoji after the command. Keep in mind that it "
+                           "only works with custom emojis.")
+            return
+
+        if isinstance(ctx.channel, discord.DMChannel):
+            embed = discord.Embed(
+                title="Info on the %s emoji" % str(emoji), description=str(emoji),
+                color=find_color())
+        else:
+            embed = discord.Embed(
+                title="Info on the %s emoji" % emoji.name, description=str(emoji),
+                color=find_color(ctx.channel.guild))
+
+        embed.set_thumbnail(url=emoji.url)
+        embed.add_field(name="Name", value=emoji.name)
+        embed.add_field(name="ID", value=emoji.id)
+        if emoji.require_colons:
+            embed.add_field(name="Requires Colons?", value="Yes")
+        else:
+            embed.add_field(name="Requires Colons?", value="No")
+        if emoji.animated:
+            embed.add_field(name="Animated?", value="Yes")
+        else:
+            embed.add_field(name="Animated?", value="No")
+        if emoji.managed:
+            embed.add_field(name="Managed by integration?", value="Yes")
+        else:
+            embed.add_field(name="Managed by integration?", value="No")
+        embed.add_field(
+            name="Created", value=emoji.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(name="URL", value=emoji.url, inline=False)
+
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=["info"])
+    async def about(self, ctx):
+        """About me!"""
 
         app = await self.bot.application_info()
 
