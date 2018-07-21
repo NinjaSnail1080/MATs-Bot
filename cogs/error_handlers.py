@@ -33,6 +33,8 @@ class Error_Handlers:
             return
         elif isinstance(exc, discord.Forbidden):
             return
+        elif isinstance(exc, commands.MissingRequiredArgument):
+            return
         elif isinstance(exc, commands.BadArgument):
             await ctx.send(ctx.command.brief, delete_after=15.0)
             await asyncio.sleep(15)
@@ -41,8 +43,8 @@ class Error_Handlers:
             except discord.Forbidden:
                 pass
             return
-        elif isinstance(exc, commands.MissingRequiredArgument):
-            return
+        elif isinstance(exc, commands.NoPrivateMessage):
+            await ctx.send("This command cannot be used in private messages.")
         else:
             print(exc)
 
