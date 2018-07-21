@@ -128,6 +128,11 @@ class MAT(commands.Bot):
         support_server = self.get_guild(463959531807047700)
         joins = support_server.get_channel(465393762512797696)
 
+        bots = []
+        for m in guild.members:
+            if m.bot:
+                bots.append(m)
+
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
@@ -139,9 +144,12 @@ class MAT(commands.Bot):
         embed.add_field(name="Voice Channels", value=len(guild.voice_channels))
         embed.add_field(name="Categories", value=len(guild.categories))
         embed.add_field(name="Custom Emojis", value=len(guild.emojis))
+        embed.add_field(name="Bots", value=len(bots))
+        embed.add_field(name="Region", value=str(guild.region).upper())
         embed.add_field(
             name="Verification Level", value=str(guild.verification_level).capitalize())
-        embed.add_field(name="Region", value=str(guild.region).upper())
+        embed.add_field(
+            name="Explicit Content Filter", value=str(guild.explicit_content_filter).title())
         if guild.afk_channel is not None:
             embed.add_field(
                 name="AFK Channel", value=guild.afk_channel.mention + " after " + str(
@@ -151,8 +159,9 @@ class MAT(commands.Bot):
         embed.add_field(
             name="Server Created", value=guild.created_at.strftime("%b %-d, %Y"))
         if guild.features:
-            embed.add_field(name="Server Features", value=", ".join(guild.features),
-                            inline=False)
+            embed.add_field(
+                name="Server Features", value="`" + "`, `".join(guild.features) + "`",
+                inline=False)
         embed.add_field(
             name="Server Owner", value=str(guild.owner) + " (User ID: " + str(
                 guild.owner_id) + ")", inline=False)

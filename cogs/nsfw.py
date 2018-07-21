@@ -41,8 +41,8 @@ class NSFW:
                 with ctx.channel.typing():
                     async with aiohttp.ClientSession().get(
                         "https://russiasexygirls.com/?random") as w:
-
                         soup = BeautifulSoup(await w.text(), "lxml")
+
                         url = str(w.url)
                         title = soup.find("span", "entry-title").get_text()
 

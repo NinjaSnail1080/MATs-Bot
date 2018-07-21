@@ -31,9 +31,11 @@ class Error_Handlers:
         exc = exception
         if isinstance(exc, commands.CommandNotFound):
             return
+        elif isinstance(exc, discord.Forbidden):
+            return
         elif isinstance(exc, commands.BadArgument):
-            await ctx.send(ctx.command.brief, delete_after=10.0)
-            await asyncio.sleep(10)
+            await ctx.send(ctx.command.brief, delete_after=15.0)
+            await asyncio.sleep(15)
             try:
                 await ctx.message.delete()
             except discord.Forbidden:
