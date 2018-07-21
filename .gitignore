@@ -123,6 +123,7 @@ idna_ssl.py
 /PIL
 /pycares
 /pycparser
+/qrcode
 six.py
 /urllib3
 /validators
