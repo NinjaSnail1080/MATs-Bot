@@ -48,8 +48,8 @@ class Help:
                 name="<:info:464831966382915584> Info", value="5 commands\n`<prefix> help info` "
                 "for more info")
             embed.add_field(
-                name="<:Fist:464833337983500289> Moderation", value="2 commands\n`<prefix> help "
-                "mod` for more info")
+                name="<:raisedfist:470319397291163678> Moderation", value="2 commands\n`<prefix> "
+                "help mod` for more info")
             embed.add_field(
                 name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
@@ -140,7 +140,7 @@ class Help:
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands if c.cog_name == "Info"
                                  and not c.hidden]), inline=False)
             embed.add_field(
-                name="<:Fist:464833337983500289> Moderation",
+                name="<:raisedfist:470319397291163678> Moderation",
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands
                                  if c.cog_name == "Moderation" and not c.hidden]), inline=False)
             embed.add_field(
