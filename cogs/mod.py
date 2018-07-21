@@ -80,8 +80,8 @@ class Moderation:
                 return
 
             embed = discord.Embed(
-                color=find_color(ctx.channel.guild), title=member.name + " was kicked by " +
-                ctx.author.name, description="__Reason__: " + reason)
+                color=find_color(ctx), title=member.name + " was kicked by " + ctx.author.name,
+                description="__Reason__: " + reason)
             try:
                 await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
                 await ctx.send(embed=embed)
@@ -134,7 +134,7 @@ class Moderation:
                     await asyncio.sleep(2)
                     await temp.delete()
                     await ctx.send(embed=discord.Embed(
-                        color=find_color(ctx.channel.guild), title=member.name + "!!!",
+                        color=find_color(ctx), title=member.name + "!!!",
                         description=random.choice(rip_list)))
             except discord.Forbidden:
                 await ctx.send("Damn, it looks like I don't have permission to kick this person. "
@@ -146,7 +146,7 @@ class Moderation:
                 return
             await send_log(ctx.channel.guild, discord.Embed(
                 title="A randomkick was performed by " + ctx.author.display_name,
-                description=member.name + " was kicked", color=find_color(ctx.channel.guild)))
+                description=member.name + " was kicked", color=find_color(ctx)))
         else:
             await ctx.send(
                 "You don't have permissions to kick members. You better take this issue to "
@@ -162,7 +162,7 @@ class Moderation:
             embed = discord.Embed(
                 title="Sent by " + last_delete["author"],
                 description=last_delete["creation"].strftime("Sent on %A, %B %-d, %Y at %X UTC"),
-                color=find_color(ctx.channel.guild))
+                color=find_color(ctx))
             embed.set_author(name="Restored last deleted message")
             embed.add_field(name="Message", value="`%s`" % last_delete["content"], inline=False)
             embed.add_field(name="Channel", value=last_delete["channel"].mention)

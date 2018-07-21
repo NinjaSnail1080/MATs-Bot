@@ -41,11 +41,7 @@ class Triggers:
         if message.author.id == 281807963147075584:
             await message.channel.send(random.choice(sigma_responses))
 
-        if isinstance(message.channel, discord.DMChannel):
-            e = discord.Embed(color=find_color())
-        else:
-            e = discord.Embed(color=find_color(message.channel.guild))
-
+        e = discord.Embed(color=find_color(message))
 
         if re.search("pinged", message.content, re.IGNORECASE):
             await message.channel.send(content="Pinged?", embed=e.set_image(

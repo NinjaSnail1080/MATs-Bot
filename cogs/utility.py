@@ -41,24 +41,14 @@ class Utility:
             user = ctx.author
 
         if default == "-d":
-            if isinstance(ctx.channel, discord.DMChannel):
-                embed = discord.Embed(
-                    title=user.display_name + "'s Default Profile Pic", color=find_color(),
-                    url=user.default_avatar_url)
-            else:
-                embed = discord.Embed(
-                    title=user.display_name + "'s Default Profile Pic", color=find_color(
-                        ctx.channel.guild), url=user.default_avatar_url)
+            embed = discord.Embed(
+                title=user.display_name + "'s Default Profile Pic", color=find_color(ctx),
+                url=user.default_avatar_url)
             embed.set_image(url=user.default_avatar_url)
         else:
-            if isinstance(ctx.channel, discord.DMChannel):
-                embed = discord.Embed(
-                    title=user.display_name + "'s Profile Pic", color=find_color(),
-                    url=user.avatar_url)
-            else:
-                embed = discord.Embed(
-                    title=user.display_name + "'s Profile Pic", color=find_color(
-                        ctx.channel.guild), url=user.avatar_url)
+            embed = discord.Embed(
+                title=user.display_name + "'s Profile Pic", color=find_color(ctx),
+                url=user.avatar_url)
             embed.set_image(url=user.avatar_url)
 
         await ctx.send(embed=embed)

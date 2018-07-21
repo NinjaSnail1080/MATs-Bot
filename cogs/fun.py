@@ -92,12 +92,7 @@ class Fun:
                     comic = soup.find("div", "entry-content")
                     image = comic.p.img["src"]
 
-            if isinstance(ctx.channel, discord.DMChannel):
-                embed = discord.Embed(
-                    title=title, color=find_color(), url=url)
-            else:
-                embed = discord.Embed(
-                    title=title, color=find_color(ctx.channel.guild), url=url)
+            embed = discord.Embed(title=title, color=find_color(ctx), url=url)
 
             embed.set_author(name="CommitStrip", url="http://www.commitstrip.com/en/?")
             embed.set_image(url=image)
@@ -142,14 +137,9 @@ class Fun:
     async def lenny(self, ctx):
         """A list of Lenny faces for all your copypasting needs"""
 
-        if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(
-                title="A list of Lenny faces for all your copypasting needs",
-                color=find_color(), url="https://www.lennyfaces.net/")
-        else:
-            embed = discord.Embed(
-                title="A list of Lenny faces for all your copypasting needs",
-                color=find_color(ctx.channel.guild), url="https://www.lennyfaces.net/")
+        embed = discord.Embed(
+            title="A list of Lenny faces for all your copypasting needs",
+            color=find_color(ctx), url="https://www.lennyfaces.net/")
 
         embed.add_field(name="Classic", value="( ͡° ͜ʖ ͡°)")
         embed.add_field(name="Pissed Off", value="( ͠° ͟ʖ ͡°)")
@@ -191,12 +181,8 @@ class Fun:
                     image = "https:" + comic.img["src"]
                     caption = comic.img["title"]
 
-            if isinstance(ctx.channel, discord.DMChannel):
-                embed = discord.Embed(
-                    title=title + " | #" + number, color=find_color(), url=url)
-            else:
-                embed = discord.Embed(
-                    title=title + " | #" + number , color=find_color(ctx.channel.guild), url=url)
+            embed = discord.Embed(
+                title=title + " | #" + number, color=find_color(ctx), url=url)
 
             embed.set_author(name="xkcd", url="https://xkcd.com/")
             embed.set_image(url=image)

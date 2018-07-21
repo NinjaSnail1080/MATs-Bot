@@ -32,6 +32,7 @@ class Info:
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
                       "Discord's default emojis. You must put an custom emoji after the command "
                       "so I can get info on it")
+    @commands.guild_only()
     async def emojiinfo(self, ctx, emoji: discord.Emoji=None):
         """Info about an emoji. Only works with custom emojis.
         Format like this: `<prefix> emojiinfo <emoji>`
@@ -41,14 +42,9 @@ class Info:
                            "only works with custom emojis.")
             return
 
-        if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(
-                title="Info on the %s emoji" % str(emoji), description=str(emoji),
-                color=find_color())
-        else:
-            embed = discord.Embed(
-                title="Info on the %s emoji" % emoji.name, description=str(emoji),
-                color=find_color(ctx.channel.guild))
+        embed = discord.Embed(
+            title="Info on the :%s: emoji" % emoji.name, description=str(emoji),
+            color=find_color(ctx))
 
         embed.set_thumbnail(url=emoji.url)
         embed.add_field(name="Name", value=emoji.name)
@@ -77,14 +73,10 @@ class Info:
 
         app = await self.bot.application_info()
 
-        if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(
-                title=str(self.bot.user), description=app.description +
-                "\n\n**User/Client ID**: %d" % app.id, color=find_color())
-        else:
-            embed = discord.Embed(
-                title=str(self.bot.user), description=app.description +
-                "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx.channel.guild))
+        embed = discord.Embed(
+            title=str(self.bot.user), description=app.description +
+            "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx))
+
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value=app.owner)
@@ -122,7 +114,8 @@ class Info:
                 anim_emojis.append(e)
 
         embed = discord.Embed(
-            title=s.name, description="Server ID: %d" % s.id, color=find_color(ctx.channel.guild))
+            title=s.name, description="Server ID: %d" % s.id, color=find_color(ctx))
+
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(
             name="Members", value="%d (Online: %d)" % (s.member_count, len(on_members)))
@@ -248,8 +241,8 @@ class Info:
             a = "Nothing"
 
         embed = discord.Embed(
-            title=str(user), description="User ID: %d" % user.id, color=find_color(
-                ctx.channel.guild))
+            title=str(user), description="User ID: %d" % user.id, color=find_color(ctx))
+
         embed.set_thumbnail(url=user.avatar_url)
 
         embed.add_field(name="Display Name", value=user.display_name)

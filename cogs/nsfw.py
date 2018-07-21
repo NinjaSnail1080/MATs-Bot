@@ -56,7 +56,7 @@ class NSFW:
 
                     embed = discord.Embed(
                         title=title, description="Click above for more images from this album",
-                        color=find_color(ctx.channel.guild), url=url)
+                        color=find_color(ctx), url=url)
                     embed.set_image(url=image)
                     embed.set_footer(text="From: russiasexygirls.com")
 
@@ -85,7 +85,7 @@ class NSFW:
                         {"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
                         page = w.json
 
-                        embed = discord.Embed(color=find_color(ctx.channel.guild))
+                        embed = discord.Embed(color=find_color(ctx))
                         embed.set_image(url=random.choice(
                             ["https://i.pinimg.com/736x/05/15/cf/0515cf0c3e92d83deae8d0c4d880ebd6"
                              "--honeypot-penny.jpg", "http://ancensored.com/files/images/vthumbs/"
@@ -95,7 +95,7 @@ class NSFW:
                              "ies-bubble-baths.jpg"]))
                         await ctx.send("**Heavily WIP. Not working yet**. When finished, this "
                                     "command will send a random post from r/gonewild.\n\nFor "
-                                    "now, enjoy this picture of Penny Baker", embed=embed)
+                                    "now, please enjoy this picture of Penny Baker", embed=embed)
         else:
             await ctx.send("You must be in an NSFW channel to use that command.")
 
