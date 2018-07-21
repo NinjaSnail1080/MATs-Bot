@@ -65,8 +65,9 @@ class Utility:
         if length == "levels":
             await ctx.send("__Random Command Levels__:\n\n**Level 1**: Lowercase letters\n**Level"
                            " 2**: Lowercase and uppercase letters\n**Level 3**: Letters and "
-                           "numbers\n**Level 4**: Letters, numbers, and symbols\n**Level 5**: All"
-                           " of the above plus whitespace characters")
+                           "numbers\n**Level 4**: Letters, numbers, and symbols\n**Level 5**: "
+                           "All of the above plus whitespace characters (spaces, tabs, newlines, "
+                           "etc.")
             return
         try:
             length = int(length)

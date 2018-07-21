@@ -39,7 +39,7 @@ class Info:
         """
         if emoji is None:
             await ctx.send("You need to include an emoji after the command. Keep in mind that it "
-                           "only works with custom emojis.")
+                           "only works with custom emojis.", delete_after=7.0)
             return
 
         embed = discord.Embed(

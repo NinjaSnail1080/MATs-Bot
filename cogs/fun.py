@@ -54,16 +54,16 @@ class Fun:
                         await ctx.send("```" + art + "```")
             except OSError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.", delete_after=5.0)
+                               "ascii art. Try again with a different image.", delete_after=7.0)
             except TypeError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.", delete_after=5.0)
+                               "ascii art. Try again with a different image.", delete_after=7.0)
         elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
-                           "Format like this: `<prefix> ascii <image URL>`", delete_after=5.0)
+                           "Format like this: `<prefix> ascii <image URL>`", delete_after=10.0)
         elif not validators.url(image):
             await ctx.send("Invalid url. The link to your image needs to look something like this"
-                           ":\n\n`https://www.example.com/something/image.png`", delete_after=5.0)
+                           ":\n\n`http://www.example.com/something/image.png`", delete_after=10.0)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -108,7 +108,7 @@ class Fun:
                            " able to get a comic. Try again in a little bit.", delete_after=5.0)
 
     @commands.command()
-    async def diceroll(self, ctx, sides:int=6):
+    async def diceroll(self, ctx, sides: int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
         """

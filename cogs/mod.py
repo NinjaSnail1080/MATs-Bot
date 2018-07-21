@@ -29,25 +29,22 @@ async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
     mods are doing. Then send the embed from a moderation command
     """
-    try:
-        logs = None
-        for c in guild.text_channels:
-            if re.search("logs", c.name):
-                logs = c
-                break
-        if logs is None:
-            logs = await guild.create_text_channel(
-                "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
-                    send_messages=False)})
-            await logs.send("I created this channel just now to keep a log of all my moderation "
-                            "commands that have been used. Feel free to edit this channel "
-                            "however you'd like, but make sure I always have access to it!"
-                            "\n\nP.S. I don't have to use this channel if you don't want me to. "
-                            "You could make an entirely new channel and as long as it has the "
-                            "word, \"logs\" in its name, I'll be able to use it.")
-        await logs.send(embed=send_embed)
-    except:
-        pass
+    logs = None
+    for c in guild.text_channels:
+        if re.search("logs", c.name):
+            logs = c
+            break
+    if logs is None:
+        logs = await guild.create_text_channel(
+            "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
+                send_messages=False)})
+        await logs.send("I created this channel just now to keep a log of all my moderation "
+                        "commands that have been used. Feel free to edit this channel "
+                        "however you'd like, but make sure I always have access to it!"
+                        "\n\nP.S. I don't have to use this channel if you don't want me to. "
+                        "You could make an entirely new channel and as long as it has the "
+                        "word, \"logs\" in its name, I'll be able to use it.")
+    await logs.send(embed=send_embed)
 
 
 class Moderation:
@@ -94,9 +91,7 @@ class Moderation:
                 return
             await send_log(ctx.channel.guild, embed)
         else:
-            await ctx.send(
-                "You don't have permissions to kick members. You better take this issue to "
-                "whoever's in charge of this server")
+            await ctx.send("You don't have permission to kick members", delete_after=5.0)
 
     @commands.command(hidden=True, aliases=["remove"])
     @commands.guild_only()
@@ -148,9 +143,7 @@ class Moderation:
                 title="A randomkick was performed by " + ctx.author.display_name,
                 description=member.name + " was kicked", color=find_color(ctx)))
         else:
-            await ctx.send(
-                "You don't have permissions to kick members. You better take this issue to "
-                "whoever's in charge of this server")
+            await ctx.send("You don't have permission to kick members", delete_after=5.0)
 
     @commands.command(aliases=["snipe"], hidden=True)
     @commands.guild_only()
