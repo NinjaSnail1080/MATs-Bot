@@ -19,9 +19,11 @@
 from mat import find_color
 from discord.ext import commands
 import discord
+import qrcode
 
 import random
 import string
+import os
 
 class Utility:
     """Utility commands"""
@@ -33,7 +35,7 @@ class Utility:
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>"
                       "`\n\nNote: If you used `-d`, then you must provide a user for it to work")
     async def pfp(self, ctx, user: discord.Member=None, default=None):
-        """Get a user's profile pic. By default it retrieves your own but you can specify a different user
+        """Get a user's profile pic. By default it retrieves your own but you can specify a different user.
         Format like this: `<prefix> pfp (OPTIONAL)<user>`
         Add "-d" to the end of the command to get the user's default pfp (Only works if user is provided)
         """
@@ -53,12 +55,25 @@ class Utility:
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["qrcode"])
+    async def qr(self, ctx, *, content=None):
+        """Encode text into a QR code.
+        Format like this: `<prefix> qr <text to encode>`
+        """
+        if content is None:
+            await ctx.send("You need to include some text to convert. Format like this: "
+                           "<prefix> qr <text to encode>`", delete_after=5.0)
+        else:
+            qrcode.make(content).save("qr.png")
+            await ctx.send(content="`%s` as a QR code:" % content, file=discord.File("qr.png"))
+            os.remove("qr.png")
+
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
                       " `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`\n"
                       "Note: There are 5 levels you can choose from. Do `<prefix> random levels` "
                       "for more info")
     async def random(self, ctx, length="64", level: int=3):
-        """Generates a string of random characters
+        """Generates a string of random characters.
         Format like this: `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`
         There are 5 levels you can choose from. Do `<prefix> random levels` for more info
         """
