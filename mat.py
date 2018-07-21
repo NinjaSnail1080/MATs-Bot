@@ -60,16 +60,16 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
 
-def find_color(guild=None):
+def find_color(ctx):
     """Find the color of the bot's top role in the guild"""
 
-    if guild is not None:
-        if guild.me.top_role.color == discord.Color.default():
+    try:
+        if ctx.channel.guild.me.top_role.color == discord.Color.default():
             color = discord.Color.blurple()
         else:
-            color = guild.me.top_role.color
+            color = ctx.channel.guild.me.top_role.color
         return color
-    else:
+    except AttributeError:  #* If it's a DM channel
         color = discord.Color.blurple()
         return color
 
