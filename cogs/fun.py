@@ -77,6 +77,42 @@ class Fun:
             await ctx.send(coin)
 
     @commands.command()
+    async def commitstrip(self, ctx):
+        """Posts a random CommitStrip comic (Only for programmers)"""
+
+        try:
+            with ctx.channel.typing():
+                async with aiohttp.ClientSession().get(
+                    "http://www.commitstrip.com/?random=1") as w:
+                    soup = BeautifulSoup(await w.text(), "lxml")
+
+                    url = str(w.url)
+                    title = soup.find("h1", "entry-title").get_text()
+                    date = soup.find("time", "entry-date").get_text()
+                    comic = soup.find("div", "entry-content")
+                    image = comic.p.img["src"]
+
+            if isinstance(ctx.channel, discord.DMChannel):
+                embed = discord.Embed(
+                    title=title, color=find_color(), url=url)
+            else:
+                embed = discord.Embed(
+                    title=title, color=find_color(ctx.channel.guild), url=url)
+
+            embed.set_author(name="CommitStrip", url="http://www.commitstrip.com/en/?")
+            embed.set_image(url=image)
+            embed.set_footer(text="Published: " + date)
+
+            await ctx.send(embed=embed)
+        except:
+            #! Temporary operation to figure out exactly what this exception is and what causes it
+            import traceback
+            print(traceback.format_exc())
+            #! Temporary operation ^
+            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
+                           " able to get a comic. Try again in a little bit.", delete_after=5.0)
+
+    @commands.command()
     async def diceroll(self, ctx, sides:int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
@@ -93,6 +129,14 @@ class Fun:
         except ValueError:
             await ctx.send("The number of sides must be an **integer above 2**. Try again.",
                            delete_after=5.0)
+
+    @commands.command()
+    async def f(self, ctx):
+        """Pay your respects"""
+
+        msg = await ctx.send(
+            "%s has paid their respects. Press F to pay yours." % ctx.author.mention)
+        await msg.add_reaction("\U0001f1eb")
 
     @commands.command()
     async def lenny(self, ctx):
