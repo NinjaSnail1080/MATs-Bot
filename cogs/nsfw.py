@@ -80,7 +80,7 @@ class NSFW:
                 async with session.get(
                     "https://www.reddit.com/r/gonewild/hot.json?sort=hot", headers=
                     {"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
-                    page = w.json
+                    page = await w.json()
 
                     embed = discord.Embed(color=find_color(ctx))
                     embed.set_image(url=random.choice(
