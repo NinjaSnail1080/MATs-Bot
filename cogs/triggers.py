@@ -52,29 +52,43 @@ class Triggers:
                 url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
                 "7792/ping.gif"))
 
-        if re.search("think", message.content, re.IGNORECASE) or re.search(
-            "hmm", message.content, re.IGNORECASE):
+        elif re.search("think", message.content, re.IGNORECASE) or re.search(
+            "thonk", message.content, re.IGNORECASE) or re.search(
+                "thunk", message.content, re.IGNORECASE) or re.search(
+                    "thenk", message.content, re.IGNORECASE) or re.search(
+                        "hmm", message.content, re.IGNORECASE):
             await message.add_reaction(":thonk:468520122848509962")
 
-        if message.content.lower() == "k":
+        elif message.content.lower() == "k":
             await message.channel.send(
                 message.author.mention + " This is an auto-response. The person you are trying "
                 "to reach has no idea what \"k\" is meant to represent. They assume you wanted "
                 "to type \"ok\" but could not expand the energy to type two whole letters since "
                 "you were stabbed. The police have been notified.")
 
-        if re.search("can't", message.content, re.IGNORECASE) and re.search(
+        elif re.search("can't", message.content, re.IGNORECASE) and re.search(
             "believe", message.content, re.IGNORECASE):
             await message.channel.send("You better believe it, scrub")
 
-        if message.content.lower() == "jesus":
+        elif message.content.lower() == "jesus":
             await message.channel.send("Christ")
 
-        if message.content.lower() == "good bot" or message.content.lower() == "best bot":
+        elif message.content.lower() == "good bot" or message.content.lower() == "best bot":
             async for m in message.channel.history(limit=4):
                 if m.author == self.bot.user:
                     await message.channel.send("Why thank you, human!")
                     break
+
+        elif re.search("thank you", message.content, re.IGNORECASE) or re.search(
+            "thanks", message.content, re.IGNORECASE):
+            async for m in message.channel.history(limit=4):
+                if m.author == self.bot.user:
+                    await message.channel.send("You're welcome!")
+                    break
+
+        elif message.content.lower() == "f" or re.search(
+            "press f", message.content, re.IGNORECASE):
+            await message.channel.send("F")
 
 
 def setup(bot):
