@@ -7,5 +7,6 @@ decorator==3.4.0
 lxml==4.2.3
 pycares==2.3.0
 Pillow==5.2.0
+qrcode==6.0
 urllib3==1.23
 validators==0.12.2
