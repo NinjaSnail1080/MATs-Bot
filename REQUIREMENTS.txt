@@ -3,11 +3,14 @@ aiodns>=1.1.1
 ascii>=3.6
 beautifulsoup4>=4.6.0
 cchardet>=2.1.1
+certifi>=2018.4.16
 decorator>=3.4.0
 lxml>=4.2.3
 pycares>=2.3.0
 Pillow>=5.2.0
+pyshorteners>=0.6.1
 qrcode>=6.0
+requests>=2.19.1
 urllib3>=1.23
 validators>=0.12.2
 #
