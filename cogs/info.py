@@ -19,6 +19,7 @@
 from mat import __version__, find_color
 from discord.ext import commands
 import discord
+import asyncio
 
 import datetime
 
@@ -40,7 +41,8 @@ class Info:
         if emoji is None:
             await ctx.send("You need to include an emoji after the command. Keep in mind that it "
                            "only works with custom emojis.", delete_after=7.0)
-            return
+            await asyncio.sleep(7)
+            return await ctx.message.delete()
 
         embed = discord.Embed(
             title="Info on the :%s: emoji" % emoji.name, description=str(emoji),
