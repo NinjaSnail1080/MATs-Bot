@@ -112,6 +112,7 @@ venv.bak/
 /attr
 /bs4
 /cchardet
+/certifi
 /cffi
 decorator.py
 /discord
@@ -123,7 +124,9 @@ idna_ssl.py
 /PIL
 /pycares
 /pycparser
+/pyshorteners
 /qrcode
+/requests
 six.py
 /urllib3
 /validators
