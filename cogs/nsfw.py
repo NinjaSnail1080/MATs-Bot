@@ -61,10 +61,6 @@ class NSFW:
 
                 await ctx.send(embed=embed)
         except:
-            #! Temporary operation to figure out exactly what this exception is
-            import traceback
-            print(traceback.format_exc())
-            #! Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I "
                             "wasn't able to get a picture. Try again in a little bit.")
 

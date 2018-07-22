@@ -55,15 +55,50 @@ class Fun:
             except OSError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.", delete_after=7.0)
+                await asyncio.sleep(7)
+                await ctx.message.delete()
             except TypeError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.", delete_after=7.0)
+                await asyncio.sleep(7)
+                await ctx.message.delete()
         elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
                            "Format like this: `<prefix> ascii <image URL>`", delete_after=10.0)
+            await asyncio.sleep(10)
+            await ctx.message.delete()
         elif not validators.url(image):
             await ctx.send("Invalid url. The link to your image needs to look something like this"
                            ":\n\n`http://www.example.com/something/image.png`", delete_after=10.0)
+            await asyncio.sleep(10)
+            await ctx.message.delete()
+
+    @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
+    async def cyhap(self, ctx):
+        """Posts a random Cyanide & Happiness comic"""
+
+        try:
+            with ctx.channel.typing():
+                async with aiohttp.ClientSession().get("http://explosm.net/comics/random") as w:
+                    soup = BeautifulSoup(await w.text(), "lxml")
+
+                    url = str(w.url)
+                    number = url.replace("http://explosm.net/comics/", "")[:-1]
+                    image = "http:" + soup.find("img", id="main-comic")["src"]
+                    info = soup.find("div", id="comic-author").get_text()
+
+                    embed = discord.Embed(
+                        title=f"#{number}", url=url, color=find_color(ctx))
+                    embed.set_author(name="Explosm", url="http://explosm.net/")
+                    embed.set_image(url=image)
+                    embed.set_footer(text=info)
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
+                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
+            await asyncio.sleep(6)
+            await ctx.message.delete()
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -100,12 +135,10 @@ class Fun:
 
             await ctx.send(embed=embed)
         except:
-            #! Temporary operation to figure out exactly what this exception is and what causes it
-            import traceback
-            print(traceback.format_exc())
-            #! Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
-                           " able to get a comic. Try again in a little bit.", delete_after=5.0)
+                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
+            await asyncio.sleep(6)
+            await ctx.message.delete()
 
     @commands.command()
     async def diceroll(self, ctx, sides: int=6):
@@ -124,6 +157,8 @@ class Fun:
         except ValueError:
             await ctx.send("The number of sides must be an **integer above 2**. Try again.",
                            delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command()
     async def f(self, ctx):
@@ -162,6 +197,8 @@ class Fun:
         if stuff is None:
             await ctx.send("Um, you do realize that you need to give me something to say, right?",
                            delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
         else:
             await ctx.send(stuff)
 
@@ -190,12 +227,10 @@ class Fun:
 
             await ctx.send(embed=embed)
         except:
-            #! Temporary operation to figure out exactly what this exception is and what causes it
-            import traceback
-            print(traceback.format_exc())
-            #! Temporary operation ^
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
-                           " able to get a comic. Try again in a little bit.", delete_after=5.0)
+                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
+            await asyncio.sleep(6)
+            await ctx.message.delete()
 
 
 def setup(bot):

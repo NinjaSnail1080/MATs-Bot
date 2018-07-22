@@ -65,16 +65,18 @@ class Moderation:
                 await ctx.send("You didn't format the command correctly. It's supposed to look "
                                "like this: `<prefix> kick <@mention member or member's name/id> "
                                "<reason for kicking>`", delete_after=10.0)
-            if member == ctx.guild.me:
-                await ctx.send(":rolling_eyes:")
-                return
+                await asyncio.sleep(10)
+                return await ctx.message.delete()
+            elif member == ctx.guild.me:
+                return await ctx.send(":rolling_eyes:")
 
             if reason is None:
                 reason = "No reason given"
             if len(reason) + len(ctx.author.name) + 23 > 512:
                 await ctx.send("Reason is too long. It must be under %d characters" % abs(
                     len(ctx.author.name) + 23 - 512), delete_after=5.0)
-                return
+                await asyncio.sleep(5)
+                return await ctx.message.delete()
 
             embed = discord.Embed(
                 color=find_color(ctx), title=member.name + " was kicked by " + ctx.author.name,
@@ -92,6 +94,8 @@ class Moderation:
             await send_log(ctx.guild, embed)
         else:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command(hidden=True, aliases=["remove"])
     @commands.guild_only()
@@ -164,6 +168,8 @@ class Moderation:
         else:
             await ctx.send("You need the Manage Messages permission in order to use this command",
                            delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
 
 def setup(bot):

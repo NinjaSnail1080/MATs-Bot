@@ -19,17 +19,67 @@
 from mat import find_color
 from discord.ext import commands
 import discord
+import asyncio
 import qrcode
+import pyshorteners
+import validators
 
 import random
 import string
 import os
+
+import config
+
 
 class Utility:
     """Utility commands"""
 
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(aliases=["shorten"])
+    async def bitly(self, ctx, *, url=None):
+        """Shortens a link with Bitly.
+        Format like this: `<prefix> bitly <URL to shorten>`
+        You can also put an existing bit.ly link and I'll expand it into the original URL!
+        """
+        if url is None:
+            await ctx.send("You need to include a link to shorten. Format like this: `<prefix> "
+                           "bitly <URL to shorten>`\n\nAlternatively, you can also put an "
+                           "existing bit.ly link and I'll expand it back into the original URL",
+                           delete_after=10.0)
+            await asyncio.sleep(10)
+            await ctx.message.delete()
+        else:
+            if validators.url(url):
+                await ctx.channel.trigger_typing()
+                try:
+                    s = pyshorteners.Shortener(
+                        engine=pyshorteners.Shorteners.BITLY, bitly_token=config.BITLY)
+
+                    if "bit.ly" not in url:
+                        title = "MAT's Link Shortener"
+                        link = s.short(url)
+                    else:
+                        title = "MAT's Link Expander"
+                        link = s.expand(url)
+
+                    embed = discord.Embed(
+                        title=title, description="Powered by Bitly", color=find_color(ctx))
+                    embed.add_field(name="Before", value=url, inline=False)
+                    embed.add_field(name="After", value=link, inline=False)
+
+                    await ctx.send(embed=embed)
+                except:
+                    await ctx.send("Oh, something went wrong trying to shorten this URL. "
+                                   "Try again", delete_after=5.0)
+                    await asyncio.sleep(5)
+                    await ctx.message.delete()
+            else:
+                await ctx.send("Invalid URL. The link must look something like this: `http://www."
+                               "example.com/something.html`.\nTry again", delete_after=6.0)
+                await asyncio.sleep(6)
+                await ctx.message.delete()
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>"
@@ -63,6 +113,8 @@ class Utility:
         if content is None:
             await ctx.send("You need to include some text to encode. Format like this: "
                            "`<prefix> qr <text to encode>`", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
         else:
             qrcode.make(content).save("qr.png")
             await ctx.send(
@@ -120,6 +172,8 @@ class Utility:
             #* In the unlikely event that the whitespaces in Level 5 cause the message length to
             #* be more than 2000 characters:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
 
 def setup(bot):
