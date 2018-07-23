@@ -114,17 +114,19 @@ class MAT(commands.Bot):
                    "automatically change my role's color to that. So it'd be great if one of you "
                    "guys in charge could do it for me.\n\nAnyway, I can do many things! Type "
                    "!mat help to get started")
-        sent = False
-        for c in guild.text_channels:
-            if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
-                "general", c.name):
-                await c.send(message)
-                sent = True
-                break
-        if not sent:
-            c = random.choice(guild.text_channels)
-            await c.send("~~Damn, you guys must have a really strange system for naming your "
-                         "channels~~\n\n" + message)
+        try:
+            sent = False
+            for c in guild.text_channels:
+                if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
+                    "general", c.name):
+                    await c.send(message)
+                    sent = True
+                    break
+            if not sent:
+                c = random.choice(guild.text_channels)
+                await c.send("~~Damn, you guys must have a really strange system for naming your "
+                            "channels~~\n\n" + message)
+        except: pass
 
         support_server = self.get_guild(463959531807047700)
         joins = support_server.get_channel(465393762512797696)
