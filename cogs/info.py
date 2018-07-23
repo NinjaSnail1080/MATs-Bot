@@ -242,9 +242,22 @@ class Info:
             t = "Playing"
             a = "Nothing"
 
-        embed = discord.Embed(
-            title=str(user), description="User ID: %d" % user.id, color=find_color(ctx))
+        if user.status is discord.Status.online:
+            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271724585451"
+                      "73/online.png")
+        elif user.status is discord.Status.idle:
+            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271691070341"
+                      "12/idle.png")
+        elif user.status is discord.Status.dnd:
+            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271674544783"
+                      "36/dnd.png")
+        else:
+            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271699584778"
+                      "34/offline.png")
 
+        embed = discord.Embed(description="User ID: %d" % user.id, color=find_color(ctx))
+
+        embed.set_author(name=str(user), icon_url=status)
         embed.set_thumbnail(url=user.avatar_url)
 
         embed.add_field(name="Display Name", value=user.display_name)
