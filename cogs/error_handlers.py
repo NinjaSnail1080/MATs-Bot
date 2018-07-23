@@ -20,6 +20,8 @@ from discord.ext import commands
 import discord
 import asyncio
 
+import random
+
 
 class Error_Handlers:
     """Error Handlers for commands"""
@@ -29,24 +31,30 @@ class Error_Handlers:
 
     async def on_command_error(self, ctx, exception):
         exc = exception
-        if isinstance(exc, commands.CommandNotFound):
+        if str(exc) == ("Command raised an exception: Forbidden: FORBIDDEN (status code: 403): "
+                        "Missing Permissions"):
             return
-        elif isinstance(exc, discord.Forbidden):
-            return
-        elif isinstance(exc, commands.MissingRequiredArgument):
-            return
+        elif isinstance(exc, commands.CommandNotFound):
+            return await ctx.message.add_reaction(random.choice(
+                ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
         elif isinstance(exc, commands.BadArgument):
             await ctx.send(ctx.command.brief, delete_after=15.0)
             await asyncio.sleep(15)
             try:
                 await ctx.message.delete()
-            except discord.Forbidden:
-                pass
+            except: pass
             return
         elif isinstance(exc, commands.NoPrivateMessage):
-            await ctx.send("This command cannot be used in private messages")
-        elif isinstance(exc, commands.CheckFailure):
-            await ctx.send("You must be in an NSFW channel to use that command")
+            await ctx.send("This command cannot be used in private messages", delete_after=5.0)
+            await asyncio.sleep(5)
+            try:
+                await ctx.message.delete()
+            except: pass
+            return
+        elif isinstance(exc, discord.Forbidden):
+            return
+        elif isinstance(exc, commands.MissingRequiredArgument):
+            return
         else:
             print(exc)
 
