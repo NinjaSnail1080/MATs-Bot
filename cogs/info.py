@@ -30,6 +30,29 @@ class Info:
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(aliases=["info"])
+    async def about(self, ctx):
+        """About me!"""
+
+        app = await self.bot.application_info()
+
+        embed = discord.Embed(
+            title=str(self.bot.user), description=app.description +
+            "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx))
+
+        embed.set_thumbnail(url=app.icon_url)
+        embed.add_field(name="Version", value=__version__)
+        embed.add_field(name="Author", value=app.owner)
+        embed.add_field(name="Server Count", value=len(self.bot.guilds))
+        embed.add_field(name="Language", value="Python 3.6.4")
+        embed.add_field(name="Library", value="discord.py (rewrite)")
+        embed.add_field(name="License", value="GPL v3.0")
+        embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot",
+                        inline=False)
+        embed.set_footer(text="Dedicated to WooMAT1417#1142")
+
+        await ctx.send(embed=embed)
+
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
                       "Discord's default emojis. You must put a custom emoji after the command "
                       "so I can get info on it")
@@ -66,29 +89,6 @@ class Info:
         embed.add_field(
             name="Created", value=emoji.created_at.strftime("%b %-d, %Y"))
         embed.add_field(name="URL", value=emoji.url, inline=False)
-
-        await ctx.send(embed=embed)
-
-    @commands.command(aliases=["info"])
-    async def about(self, ctx):
-        """About me!"""
-
-        app = await self.bot.application_info()
-
-        embed = discord.Embed(
-            title=str(self.bot.user), description=app.description +
-            "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx))
-
-        embed.set_thumbnail(url=app.icon_url)
-        embed.add_field(name="Version", value=__version__)
-        embed.add_field(name="Author", value=app.owner)
-        embed.add_field(name="Server Count", value=len(self.bot.guilds))
-        embed.add_field(name="Language", value="Python 3.6.4")
-        embed.add_field(name="Library", value="discord.py (rewrite)")
-        embed.add_field(name="License", value="GPL v3.0")
-        embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot",
-                        inline=False)
-        embed.set_footer(text="Dedicated to WooMAT1417#1142")
 
         await ctx.send(embed=embed)
 

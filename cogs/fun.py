@@ -88,7 +88,7 @@ class Fun:
                     info = soup.find("div", id="comic-author").get_text()
 
                     embed = discord.Embed(
-                        title=f"#{number}", url=url, color=find_color(ctx))
+                        title=f"Cyanide and Happiness #{number}", url=url, color=find_color(ctx))
                     embed.set_author(name="Explosm", url="http://explosm.net/")
                     embed.set_image(url=image)
                     embed.set_footer(text=info)

@@ -34,6 +34,11 @@ class Error_Handlers:
         if str(exc) == ("Command raised an exception: Forbidden: FORBIDDEN (status code: 403): "
                         "Missing Permissions"):
             return
+        elif "The check functions for command" in str(exc):
+            return await ctx.send("This command can only be used in NSFW channels")
+        elif str(exc) == "You do not own this bot.":
+            app = await self.bot.application_info()
+            return await ctx.send(f"Only my owner, **{app.owner.name}**, can use that command")
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
@@ -45,12 +50,8 @@ class Error_Handlers:
             except: pass
             return
         elif isinstance(exc, commands.NoPrivateMessage):
-            await ctx.send("This command cannot be used in private messages", delete_after=5.0)
-            await asyncio.sleep(5)
-            try:
-                await ctx.message.delete()
-            except: pass
-            return
+            return await ctx.send(
+                "This command cannot be used in private messages", delete_after=5.0)
         elif isinstance(exc, discord.Forbidden):
             return
         elif isinstance(exc, commands.MissingRequiredArgument):
