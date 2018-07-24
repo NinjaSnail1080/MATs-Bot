@@ -9,6 +9,7 @@ lxml>=4.2.3
 pycares>=2.3.0
 Pillow>=5.2.0
 pyshorteners>=0.6.1
+python-rapidjson>=0.6.3
 qrcode>=6.0
 requests>=2.19.1
 urllib3>=1.23
