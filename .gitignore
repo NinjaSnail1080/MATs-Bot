@@ -103,6 +103,10 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+####################################################################
+
+#Ignore .json files
+*.json
 
 # Ignore requirments
 /aiodns
