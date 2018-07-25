@@ -86,9 +86,10 @@ class NSFW:
                          "net/pics/P/3309Penny%20Baker%20(Mens%20Club).jpg", "https://i.pinim"
                          "g.com/736x/e0/26/3c/e0263c9fca451d3779dc6d409ddeb896--bathing-beaut"
                          "ies-bubble-baths.jpg"]))
-                    await ctx.send("**Heavily WIP. Not working yet**. When finished, this "
-                                "command will send a random post from r/gonewild.\n\nFor "
-                                "now, please enjoy this picture of Penny Baker", embed=embed)
+                    await ctx.send(
+                        "**Heavily WIP. Not working yet**. When finished, this command will send "
+                        "a random post from r/gonewild.\n\nFor now, please enjoy this picture of "
+                        "Penny Baker", embed=embed)
 
 
 def setup(bot):

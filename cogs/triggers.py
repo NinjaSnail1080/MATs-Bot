@@ -35,7 +35,7 @@ class Triggers:
         self.bot = bot
 
     async def on_message(self, message):
-        if message.author == self.bot.user:
+        if message.author.bot:
             return
 
         if message.author.id == 281807963147075584:
