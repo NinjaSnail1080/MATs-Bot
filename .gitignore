@@ -105,8 +105,8 @@ venv.bak/
 
 ####################################################################
 
-#Ignore .json files
-*.json
+#Ignore .data.json files
+*.data.json
 
 # Ignore requirments
 /aiodns
