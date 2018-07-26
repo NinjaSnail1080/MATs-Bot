@@ -1,0 +1,6 @@
+The "config.py" module, which is hidden from this GitHub repo, contains several variables that help the bot perform various duties. These variables are assigned to strings that contain credentials, so you'll have to provide your own should you wish to run an instance of this bot by yourself.
+
+Here are all of the variables stored in the "config" module:
+
+- TOKEN: Assigned to a string that contains the bot's token. It's needed in order to run the bot.
+- BITLY: Assigned to a string containing my bitly.com access token for the API. It's needed for the "bitly" command to work.
