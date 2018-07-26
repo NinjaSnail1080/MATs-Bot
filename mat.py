@@ -29,8 +29,11 @@ import os
 import re
 
 import config
-#* This module contains a single variable called "TOKEN", which is assigned to a string that
-#* contains the bot's token. It's needed in order to run the bot.
+#* This module contains a variable called "TOKEN", which is assigned to a string that contains
+#* the bot's token. It's needed in order to run the bot.
+#*
+#* It also contains a few more variables required to perform certain commands on the bot.
+#* See "config_info.txt" for information on all the variables stored in this module.
 
 games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
          "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick",
