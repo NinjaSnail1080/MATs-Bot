@@ -42,20 +42,20 @@ class Help:
                 color=find_color(ctx))
 
             embed.add_field(
-                name="<:confetti:464831811558572035> Fun", value="8 commands\n`<prefix> help "
+                name="<:confetti:464831811558572035> Fun", value="9 commands\n`<prefix> help "
                 "fun` for more info")
             embed.add_field(
-                name="<:info:464831966382915584> Info", value="5 commands\n`<prefix> help info` "
+                name="<:info:464831966382915584> Info", value="4 commands\n`<prefix> help info` "
                 "for more info")
             embed.add_field(
-                name="<:raisedfist:470319397291163678> Moderation", value="2 commands\n`<prefix> "
+                name="<:raisedfist:470319397291163678> Moderation", value="4 commands\n`<prefix> "
                 "help mod` for more info")
             embed.add_field(
                 name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
                 name=":wink: NSFW", value="2 commands\n`<prefix> help nsfw` for more info")
             embed.add_field(
-                name=":tools: Utility", value="2 commands\n`<prefix> help nsfw` for more info")
+                name=":tools: Utility", value="4 commands\n`<prefix> help nsfw` for more info")
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 
             await ctx.send(
