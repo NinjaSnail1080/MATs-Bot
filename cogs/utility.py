@@ -81,6 +81,15 @@ class Utility:
                 await asyncio.sleep(6)
                 await ctx.message.delete()
 
+    @commands.command(hidden=True)
+    @commands.is_owner()  #* Temporary
+    async def invite(self, ctx):
+        """Generates an invite link so you can add me to your own server!"""
+
+        await ctx.send(
+            "Here's my invite link so you can add me to your own server!\nhttps://discordapp.com/"
+            "oauth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591")
+
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>"
                       "`\n\nNote: If you used `-d`, then you must provide a user for it to work")
