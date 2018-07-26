@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color
+from mat import find_color, get_data
 from discord.ext import commands
 import discord
 
@@ -36,6 +36,10 @@ class Triggers:
 
     async def on_message(self, message):
         if message.author.bot:
+            return
+
+        if get_data(
+            "server")[str(message.guild.id)]["triggers"][str(message.channel.id)] == "false":
             return
 
         if message.author.id == 281807963147075584:
