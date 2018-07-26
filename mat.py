@@ -15,11 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = 0.4
+__version__ = 0.5
 
 from discord.ext import commands
 import discord
 import asyncio
+import collections
+import rapidjson as json
 
 import logging
 import random
@@ -35,8 +37,6 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
          "with the server owner's pussy", "with you", "dead", "with myself",
          "some epic game that you don't have", "with fire", "hard-to-get", "Project X",
          "you like a god damn fiddle", "getting friendzoned by Sigma"]
-
-last_delete = {"author": None, "content": None, "channel": None, "creation": None}
 
 if __name__ == "__main__":
     import urllib3
@@ -58,6 +58,54 @@ if __name__ == "__main__":
     handler = logging.FileHandler(filename="mat.log", encoding="utf-8", mode="w")
     handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
     logger.addHandler(handler)
+
+
+def get_data(_return=None):
+    """Gets data from all of the .data.json file"""
+
+    global botdata
+    if os.path.exists("bot.data.json"):
+        with open("bot.data.json", "r") as f:
+            botdata = dict(json.load(f))
+    else:
+        with open("bot.data.json", "w") as f:
+            botdata = {"messages_read": {}, "commands_used": {}}
+            json.dump(botdata, f)
+
+    global serverdata
+    if os.path.exists("server.data.json"):
+        with open("server.data.json", "r") as f:
+            serverdata = dict(json.load(f))
+    else:
+        with open("server.data.json", "w") as f:
+            serverdata = {}
+            json.dump(serverdata, f)
+
+    if _return is None:
+        return
+    elif _return == "bot":
+        return botdata
+    elif _return == "server":
+        return serverdata
+    else:
+        raise TypeError("\"_return\" param must be either \"bot\" or \"server\"")
+
+
+def dump_data(to_dump, file):
+    """Dumps data to the .data.json files"""
+    #TODO: Fix this!!!!
+
+    import rapidjson as json
+
+    if file == "server":
+        with open("server.data.json", "w") as f:
+            json.dump(to_dump, f, indent=4)
+
+    elif file == "bot":
+        with open("bot.data.json", "w") as f:
+            json.dump(to_dump, f, indent=4)
+    else:
+        raise TypeError("\"file\" param must be either \"bot\" or \"server\"")
 
 
 def find_color(ctx):
@@ -96,7 +144,19 @@ class MAT(commands.Bot):
         for extention in initial_extensions:
             self.load_extension(extention)
 
+        get_data()
+
+        self.commands_used = collections.Counter()
+        self.messages_read = collections.Counter()
+
     async def on_ready(self):
+        for g in self.guilds:
+            if str(g.id) not in serverdata:
+                serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
+                for c in g.channels:
+                    serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
+        dump_data(serverdata, "server")
+
         print("\nLogged in as")
         print(bot.user)
         print(bot.user.id)
@@ -104,29 +164,35 @@ class MAT(commands.Bot):
         print("Shards: " + str(self.shard_count))
         print("Servers: " + str(len(self.guilds)))
         print("Users: " + str(len(set(self.get_all_members()))))
-        print("-----------------")
+        print("-----------------\n")
         await self.change_presence(status=discord.Status.online)
 
     async def on_guild_join(self, guild):
-        message = ("Hello everyone, it's good to be here!\n\nHey, as a favor, could one of you "
-                   "change my role's color to **#003cff**? It's kinda my signature color, but "
-                   "due to an issue with how Discord's permission system works, I can't "
-                   "automatically change my role's color to that. So it'd be great if one of you "
-                   "guys in charge could do it for me.\n\nAnyway, I can do many things! Type "
-                   "!mat help to get started")
+        message = ("Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
+                   "NinjaSnail1080#8581. I can do a bunch of stuff, but I'm still in "
+                   "developement, so even more features are coming soon!\n\nDo `!mat help` to "
+                   "get started!")
         try:
             sent = False
             for c in guild.text_channels:
                 if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
                     "general", c.name):
-                    await c.send(message)
+                    await c.send(
+                        embed=discord.Embed(description=message, color=discord.Color.blurple()))
                     sent = True
                     break
             if not sent:
                 c = random.choice(guild.text_channels)
-                await c.send("~~Damn, you guys must have a really strange system for naming your "
-                            "channels~~\n\n" + message)
+                await c.send(
+                    content="~~Damn, you guys must have a really strange system for naming your "
+                    "channels~~", embed=discord.Embed(description=message,
+                    color=discord.Color.blurple()))
         except: pass
+
+        serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
+        for c in g.channels:
+            serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
+        dump_data(serverdata, "server")
 
         support_server = self.get_guild(463959531807047700)
         joins = support_server.get_channel(465393762512797696)
@@ -173,19 +239,35 @@ class MAT(commands.Bot):
             content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
                 len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
+    async def on_command(self, ctx):
+        self.commands_used["TOTAL"] += 1
+        self.commands_used[ctx.command.name] += 1
+
+        botdata["commands_used"] = dict(self.commands_used)
+        dump_data(botdata, "bot")
+
     async def on_message(self, message):
-        if message.author == bot.user:
+        if message.author.bot:
             return
+
+        self.messages_read["TOTAL"] += 1
+        self.messages_read[str(message.guild.id)] += 1
+
+        botdata["messages_read"] = dict(self.messages_read)
+        dump_data(botdata, "bot")
 
         await bot.process_commands(message)
 
     async def on_message_delete(self, message):
-        if message.author != bot.user:
-            global last_delete
-            last_delete = {"author": message.author.display_name,
+        if not message.author.bot:
+            last_delete = {"author": message.author.mention,
                            "content": message.clean_content,
-                           "channel": message.channel,
-                           "creation": message.created_at}
+                           "channel": message.channel.mention,
+                           "creation": message.created_at.strftime(
+                               "**Sent on:** %A, %B %-d, %Y at %X UTC")}
+
+            serverdata[str(message.guild.id)]["last_delete"] = last_delete
+            dump_data(serverdata, "server")
 
     async def switch_games(self):
         await self.wait_until_ready()
