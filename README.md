@@ -4,7 +4,7 @@
 
 ## How to install
 
-⚠ You need to have at least Python 3.5.2, downloadable at [https://www.python.org/](this page).
+⚠ You need to have at least Python 3.5.2, downloadable at [https://www.python.org/](this page).\
 ⚠ Check "Add to PATH" at the installation.
 And of course, clone this repository.
 
