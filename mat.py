@@ -192,13 +192,12 @@ class MAT(commands.Bot):
                     color=discord.Color.blurple()))
         except: pass
 
-        serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
-        for c in g.channels:
-            serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
+        serverdata[str(guild.id)] = {"name": guild.name, "triggers": {}}
+        for c in guild.channels:
+            serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
 
-        support_server = self.get_guild(463959531807047700)
-        joins = support_server.get_channel(465393762512797696)
+        joins = self.get_guild(463959531807047700).get_channel(465393762512797696)
 
         bots = []
         for m in guild.members:
