@@ -253,7 +253,8 @@ class MAT(commands.Bot):
             return
 
         self.messages_read["TOTAL"] += 1
-        self.messages_read[str(message.guild.id)] += 1
+        if message.guild is not None:
+            self.messages_read[str(message.guild.id)] += 1
 
         botdata["messages_read"] = dict(self.messages_read)
         dump_data(botdata, "bot")
@@ -261,15 +262,16 @@ class MAT(commands.Bot):
         await bot.process_commands(message)
 
     async def on_message_delete(self, message):
-        if not message.author.bot:
-            last_delete = {"author": message.author.mention,
-                           "content": message.clean_content,
-                           "channel": message.channel.mention,
-                           "creation": message.created_at.strftime(
-                               "**Sent on:** %A, %B %-d, %Y at %X UTC")}
+        if not isinstance(message.channel, discord.DMChannel):
+            if not message.author.bot:
+                last_delete = {"author": message.author.mention,
+                            "content": message.clean_content,
+                            "channel": message.channel.mention,
+                            "creation": message.created_at.strftime(
+                                "**Sent on:** %A, %B %-d, %Y at %X UTC")}
 
-            serverdata[str(message.guild.id)]["last_delete"] = last_delete
-            dump_data(serverdata, "server")
+                serverdata[str(message.guild.id)]["last_delete"] = last_delete
+                dump_data(serverdata, "server")
 
     async def switch_games(self):
         await self.wait_until_ready()

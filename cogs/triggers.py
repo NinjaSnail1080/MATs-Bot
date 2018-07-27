@@ -38,9 +38,10 @@ class Triggers:
         if message.author.bot:
             return
 
-        if get_data(
-            "server")[str(message.guild.id)]["triggers"][str(message.channel.id)] == "false":
-            return
+        if message.guild is not None:
+            if get_data(
+                "server")[str(message.guild.id)]["triggers"][str(message.channel.id)] == "false":
+                return
 
         if message.author.id == 281807963147075584:
             await message.channel.send(random.choice(sigma_responses))
