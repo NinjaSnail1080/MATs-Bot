@@ -59,7 +59,7 @@ class Moderation:
     @commands.guild_only()
     async def kick(self, ctx, member: discord.Member=None, *, reason=None):
         """**Must have the "kick members" permission**
-        Kicks a member from the server.
+        Kicks a member from the server
         Format like this: `<prefix> kick <member> <reason for kicking>`
         """
         if not ctx.author.permissions_in(ctx.channel).kick_members:
@@ -102,7 +102,8 @@ class Moderation:
     @commands.group(aliases=["remove", "delete"])
     @commands.guild_only()
     async def purge(self, ctx):
-        """HEAVY WIP. Do not use"""
+        """**Must have the "Manage Messages" permission**
+        Mass-deletes messages from a certain channel"""
 
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use that command",
@@ -143,7 +144,7 @@ class Moderation:
                             "emoji", inline=False)
             embed.add_field(name="reactions", value="Removes all reactions from messages that "
                             "have them", inline=False)
-            embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Removes all "
+            embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Unpins all "
                             "pinned messages in this channel. You can also specify a certain "
                             "number of messages to leave pinned.", inline=False)
 
