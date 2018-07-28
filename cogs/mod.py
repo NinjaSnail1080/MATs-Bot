@@ -22,6 +22,7 @@ import discord
 import asyncio
 
 import random
+import collections
 import re
 
 
@@ -98,20 +99,189 @@ class Moderation:
                 "charge fix that please?")
         await send_log(ctx.guild, embed)
 
-    @commands.command(hidden=True, aliases=["remove"])
+    @commands.group(aliases=["remove", "delete"])
     @commands.guild_only()
-    async def purge(self, ctx, number: int):
+    async def purge(self, ctx):
         """HEAVY WIP. Do not use"""
 
-        if ctx.author.permissions_in(ctx.channel).manage_messages:
-            if number is not None:
-                await ctx.channel.purge(limit=number + 1)
+        if not ctx.author.permissions_in(ctx.channel).manage_messages:
+            await ctx.send("You need the Manage Messages permission in order to use that command",
+                           delete_after=5.0)
+            await asyncio.sleep(5)
+            return await ctx.message.delete()
+
+        if (not ctx.guild.me.permissions_in(ctx.channel).manage_messages or
+                not ctx.guild.me.permissions_in(ctx.channel).read_message_history):
+            return await ctx.send(
+                "I don't have the proper permissions to execute this command. I need the Manage "
+                "Messages perm and the Read Message History perm. Could one of you guys in "
+                "charge fix that and then get back to me?")
+
+        if ctx.invoked_subcommand is None:
+            embed = discord.Embed(
+                title="MAT's Purge Command | Help", description="An easy way to mass-delete "
+                "messages from a channel!\n\nAdd **one** of these to the command to purge "
+                "messages that fit a certain criteria:", color=find_color(ctx))
+
+            embed.add_field(name="all (OPTIONAL)<number>", value="Deletes all messages in the "
+                            "channel. If you also put in a number, it'll only delete that many "
+                            "messages", inline=False)
+            embed.add_field(name="member <mention user(s) or username(s)>", value="Deletes all "
+                            "messages by a certain member or members of the server", inline=False)
+            embed.add_field(name="contains <substring>", value="Deletes all messages that "
+                            "contain a substring, which must be specified", inline=False)
+            embed.add_field(name="files", value="Deletes all messages with files attached to "
+                            "them", inline=False)
+            embed.add_field(name="embeds", value="Deletes all messages with embeds (The messages "
+                            "with a colored line off to the side, like this one. This means a "
+                            "lot of bot messages will be deleted, along with any links and/or "
+                            "videos that were posted)", inline=False)
+            embed.add_field(name="bot (OPTIONAL)<bot prefix>", value="Deletes all messages by "
+                            "bots. If you add in a bot's prefix I'll also delete all messages "
+                            "that contain that prefix", inline=False)
+            embed.add_field(name="emoji", value="Deletes all messages that contain a custom "
+                            "emoji", inline=False)
+            embed.add_field(name="reactions", value="Removes all reactions from messages that "
+                            "have them", inline=False)
+            embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Removes all "
+                            "pinned messages in this channel. You can also specify a certain "
+                            "number of messages to leave pinned.", inline=False)
+
+            await ctx.send(embed=embed)
+
+    async def remove(self, ctx, limit, check, description: str):
+        purged = await ctx.channel.purge(limit=limit, check=check, before=ctx.message)
+        await ctx.message.delete()
+
+        messages = collections.Counter()
+        embed = discord.Embed(
+            title=ctx.author.display_name + " ran a purge command",
+            description=f"{len(purged)} {description} in {ctx.channel.mention}",
+            color=find_color(ctx))
+        if len(purged) > 0:
+            await send_log(ctx.guild, embed)
+
+        for m in purged:
+            messages[m.author.display_name] += 1
+        for a, m in messages.items():
+            embed.add_field(name=a, value=f"{m} messages")
+
+        await ctx.send(embed=embed)
+
+    @purge.command(brief="Invalid formatting. You must format the command like this: `<prefix> "
+                   "purge all (OPTIONAL)<number of messages to delete>`", name="all")
+    async def _all(self, ctx, limit: int=None):
+
+        await self.remove(ctx, limit, None, "messages were deleted")
+
+    @purge.command(name="bot", aliases=["bots"])
+    async def _bot(self, ctx, *, prefix=None):
+
+        def check(m):
+            return m.webhook_id is None and m.author.bot or (
+                prefix and m.content.startswith(prefix))
+
+        if prefix is None:
+            await self.remove(ctx, None, check, "messages by bots were deleted")
+        else:
+            await self.remove(ctx, None, check, "messages by bots and messages containing the "
+                              "prefix `{}` were deleted".format(prefix))
+
+    @purge.command()
+    async def contains(self, ctx, *, substr):
+
+        await self.remove(ctx, None, lambda m: substr in m.content,
+                          f"messages containing `{substr}` were deleted")
+
+    @purge.command()
+    async def embeds(self, ctx):
+
+        await self.remove(
+            ctx, None, lambda m: len(m.embeds), "messages containing embeds were deleted")
+
+    @purge.command(aliases=["emojis", "emote", "emotes"])
+    async def emoji(self, ctx):
+
+        def check(m):
+            custom_emoji = re.compile(r'<:(\w+):(\d+)>')
+            return custom_emoji.search(m.content)
+
+        await self.remove(ctx, None, check, "messages containing custom emojis were deleted")
+
+    @purge.command(aliases=["attachments"])
+    async def files(self, ctx):
+
+        await self.remove(ctx, None, lambda m: len(m.attachments),
+                          "messages containing attachments were deleted")
+
+    @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
+                   "format the command like this: `<prefix> purge member <@memtion user(s) or "
+                   "username(s)>`")
+    async def member(self, ctx, *users: discord.Member):
+
+        users = list(u.display_name for u in users)
+        if not users:
+            raise commands.BadArgument
+
+        await self.remove(ctx, None, lambda m: m.author.display_name in users,
+                          "messages by __{}__ were deleted".format("__, __".join(list(users))))
+
+    @purge.command(brief="Invalid formatting. You're supposed to format the command like this: "
+                   "`<prefix> purge pins (OPTIONAL)<number to leave pinned>`")
+    async def pins(self, ctx, leave: int=None):
+
+        all_pins = await ctx.channel.pins()
+        if len(all_pins) == 0:
+            return await ctx.send("This channel has no pinned messages!")
+
+        temp = await ctx.send("Please wait... This could take some time...")
+        with ctx.channel.typing():
+            for m in all_pins:
+                await m.unpin()
+                if leave is not None:
+                    if len(await ctx.channel.pins()) <= leave:
+                        break
+
+        embed = discord.Embed(
+            title=ctx.author.display_name + " ran a purge command",
+            description=f"{len(all_pins)} messages were unpinned in {ctx.channel.mention}",
+            color=find_color(ctx))
+
+        await ctx.message.delete()
+        await temp.delete()
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
+
+    @purge.command()
+    async def reactions(self, ctx):
+
+        temp = await ctx.send("Please wait... This could take some time...")
+
+        with ctx.channel.typing():
+            total_reactions = 0
+            total_messages = 0
+            async for m in ctx.channel.history(limit=None, before=ctx.message):
+                if len(m.reactions):
+                    total_reactions += sum(r.count for r in m.reactions)
+                    total_messages += 1
+                    await m.clear_reactions()
+
+        embed = discord.Embed(
+            title=ctx.author.display_name + " ran a purge command",
+            description=f"{total_reactions} reactions were removed from {total_messages} "
+            "messages", color=find_color(ctx))
+
+        await ctx.message.delete()
+        await temp.delete()
+        await ctx.send(embed=embed)
+        if total_reactions > 0:
+            await send_log(ctx.guild, embed)
 
     @commands.command(brief="Incorrect formatting. You're supposed to provide a list of "
                       "@mentions or member names that I'll randomly choose from. Or don't put "
                       "anything and I'll randomly pick someone from the server")
     @commands.guild_only()
-    async def randomkick(self, ctx, **members: discord.Member):
+    async def randomkick(self, ctx, *members: discord.Member):
         """**Must have the "kick members" permission**
         Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of members you want me to randomly pick from>`.
@@ -125,7 +295,7 @@ class Moderation:
         rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                     "RIP in pieces", "Rest in pieces"]
         try:
-            member = random.choice(list(members))
+            member = random.choice(members)
         except IndexError:
             member = random.choice(ctx.guild.members)
 
