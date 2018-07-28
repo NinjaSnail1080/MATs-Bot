@@ -140,25 +140,23 @@ class Fun:
             await asyncio.sleep(6)
             await ctx.message.delete()
 
-    @commands.command()
+    @commands.command(brief="The number of sides must be an **integer above 2**. Try again.")
     async def diceroll(self, ctx, sides: int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
         Format like this: `<prefix> diceroll (OPTIONAL)<# of sides>`
         """
-        try:
-            if sides <= 2:
-                raise ValueError
-            dice = str(random.randint(1, sides))
-            temp = await ctx.send("Rolling a %d-sided dice..." % sides)
-            with ctx.channel.typing():
-                await asyncio.sleep(1.5)
-                await temp.delete()
-                await ctx.send(dice + "!")
-        except ValueError:
+        if sides <= 2:
             await ctx.send("The number of sides must be an **integer above 2**. Try again.",
                            delete_after=5.0)
             await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await ctx.message.delete()
+
+        dice = str(random.randint(1, sides))
+        temp = await ctx.send("Rolling a %d-sided dice..." % sides)
+        with ctx.channel.typing():
+            await asyncio.sleep(1.5)
+            await temp.delete()
+            await ctx.send(dice + "!")
 
     @commands.command()
     async def f(self, ctx):
