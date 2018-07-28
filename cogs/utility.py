@@ -144,7 +144,7 @@ class Utility:
                            " 2**: Lowercase and uppercase letters\n**Level 3**: Letters and "
                            "numbers\n**Level 4**: Letters, numbers, and symbols\n**Level 5**: "
                            "All of the above plus whitespace characters (spaces, tabs, newlines, "
-                           "etc.")
+                           "etc.)")
             return
         try:
             length = int(length)
