@@ -103,9 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-####################################################################
+###############################################################################
 
-#Ignore .data.json files
+# Ignore .data.json files
 *.data.json
 
 # Ignore requirments
