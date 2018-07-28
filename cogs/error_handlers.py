@@ -50,22 +50,20 @@ class Error_Handlers:
                 await ctx.message.delete()
             except: pass
             return
-        # elif isinstance(exc, commands.NoPrivateMessage):
-            # return await ctx.send(
-                # "This command cannot be used in private messages", delete_after=5.0)
+        elif isinstance(exc, commands.NoPrivateMessage):
+            return await ctx.send("This command cannot be used in private messages")
         elif isinstance(exc, discord.Forbidden):
-            return
-        elif isinstance(exc, commands.MissingRequiredArgument):
             return
         else:
             print("This exception was raised on %s:\n\n%s\n\n" %
                   (datetime.datetime.now().strftime("%b %-d, %Y at %X"), exc))
             app = await self.bot.application_info()
             await ctx.send(
-                "```%s```An unknown error occured and I wasn't able to complete that "
-                "command. Sorry!\n\nPlease get in touch with my owner, %s, and tell him what "
-                "happened so he can try and fix this issue. You can reach him at my support "
-                "server: https://discord.gg/zQjtXVm" % (exc, app.owner.name))
+                "```Command: %s\n%s```An unknown error occured and I wasn't able to complete "
+                "that command. Sorry!\n\nPlease get in touch with my owner, %s, and tell him "
+                "what happened so he can try and fix this issue. You can reach him at my "
+                "support server: https://discord.gg/P4Fp3jA" % (
+                    ctx.command.name, exc, app.owner.name))
 
 
 def setup(bot):
