@@ -12,4 +12,4 @@ And of course, clone this repository.
 
 Just go in the folder where you downloaded the bot and execute this command:
 
-    pip install -r REQUIREMENTS.txt
+    pip install -U -r REQUIREMENTS.txt
