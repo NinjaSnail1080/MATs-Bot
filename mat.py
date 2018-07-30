@@ -27,6 +27,7 @@ import logging
 import random
 import os
 import re
+import sys
 
 import config
 #* This module contains a variable called "TOKEN", which is assigned to a string that contains
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
 
-def get_data(_return=None):
+def get_data(to_return=None):
     """Gets data from all of the .data.json file"""
 
     global botdata
@@ -84,19 +85,29 @@ def get_data(_return=None):
             serverdata = {}
             json.dump(serverdata, f)
 
-    if _return is None:
-        return
-    elif _return == "bot":
-        return botdata
-    elif _return == "server":
-        return serverdata
+    global userdata
+    if os.path.exists("user.data.json"):
+        with open("user.data.json", "r") as f:
+            serverdata = dict(json.load(f))
     else:
-        raise TypeError("\"_return\" param must be either \"bot\" or \"server\"")
+        with open("user.data.json", "w") as f:
+            serverdata = {}
+            json.dump(serverdata, f)
+
+    if to_return is None:
+        return
+    elif to_return == "bot":
+        return botdata
+    elif to_return == "server":
+        return serverdata
+    elif to_return == "user":
+        return userdata
+    else:
+        raise TypeError("\"to_return\" param must be either \"bot\", \"server\", or \"user\"")
 
 
 def dump_data(to_dump, file):
     """Dumps data to the .data.json files"""
-    #TODO: Fix this!!!!
 
     import rapidjson as json
 
@@ -107,8 +118,12 @@ def dump_data(to_dump, file):
     elif file == "bot":
         with open("bot.data.json", "w") as f:
             json.dump(to_dump, f, indent=4)
+
+    elif file == "user":
+        with open("user.data.json", "w") as f:
+            json.dump(to_dump, f, indent=4)
     else:
-        raise TypeError("\"file\" param must be either \"bot\" or \"server\"")
+        raise TypeError("\"file\" param must be either \"bot\", \"server\", or \"user\"")
 
 
 def find_color(ctx):
@@ -155,7 +170,7 @@ class MAT(commands.Bot):
     async def on_ready(self):
         for g in self.guilds:
             if str(g.id) not in serverdata:
-                serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
+                serverdata[str(g.id)] = {"name": g.name, "logs": "null", "triggers": {}}
                 for c in g.channels:
                     serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
@@ -192,7 +207,7 @@ class MAT(commands.Bot):
                     color=discord.Color.blurple()))
         except: pass
 
-        serverdata[str(guild.id)] = {"name": guild.name, "triggers": {}}
+        serverdata[str(guild.id)] = {"name": guild.name, "logs": "null", "triggers": {}}
         for c in guild.channels:
             serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
@@ -241,6 +256,12 @@ class MAT(commands.Bot):
             content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
                 len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
+    async def on_error(self, event, *args, **kwargs):
+        exc = sys.exc_info()
+        print(exc)
+        with open("traceback.txt", "a") as f:
+            f.write("\n" + exc)
+
     async def on_command(self, ctx):
         self.commands_used["TOTAL"] += 1
         self.commands_used[ctx.command.name] += 1
@@ -272,6 +293,16 @@ class MAT(commands.Bot):
 
                 serverdata[str(message.guild.id)]["last_delete"] = last_delete
                 dump_data(serverdata, "server")
+
+    async def on_guild_channel_create(self, channel):
+        serverdata[str(channel.guild.id)]["triggers"][str(channel.id)] = "true"
+        dump_data(serverdata, "server")
+
+    async def on_guild_channel_delete(self, channel):
+        serverdata[str(channel.guild.id)]["triggers"].pop(str(channel.id), None)
+        if serverdata[str(channel.guild.id)]["logs"] == str(channel.id):
+            serverdata[str(channel.guild.id)]["logs"] = "null"
+        dump_data(serverdata, "server")
 
     async def switch_games(self):
         await self.wait_until_ready()
