@@ -187,14 +187,55 @@ class Fun:
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["weirdspeak"])
+    async def mock(self, ctx, *, stuff: str=None):
+        """Say something and I'll mock you"""
+
+        if stuff is None:
+            await ctx.send("Dude, you need to say something for me to mock", delete_after=5.0)
+            await asyncio.sleep(5)
+            return await ctx.message.delete()
+
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_image(url="https://media.discordapp.net/attachments/452928801093976064/"
+                        "473376642069299201/mock.jpg")
+        stuff = list(stuff.lower())
+        mock = []
+        for i in stuff:
+            if i.lower() == "c":
+                if random.randint(1, 2) == 1:
+                    i = "k"
+            if i.lower() == "k":
+                if random.randint(1, 2) == 1:
+                    i = "c"
+            elif i.lower() == "x":
+                if random.randint(1, 2) == 1:
+                    i = "ks"
+            if random.randint(1, 2) == 1:
+                i = i.upper()
+            mock.append(i)
+
+        await ctx.channel.trigger_typing()
+        await ctx.send(content="".join(mock), embed=embed)
+
+    @commands.command()
+    async def reverse(self, ctx, *, stuff: str=None):
+        """Reverse the text you give me!"""
+
+        if stuff is None:
+            await ctx.send("Dude, you need to give me some text to reverse", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
+        else:
+            await ctx.send(stuff[::-1])
+
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
                                "puts"])
     async def say(self, ctx, *, stuff=None):
         """Make me say something!"""
 
         if stuff is None:
-            await ctx.send("Um, you do realize that you need to give me something to say, right?",
-                           delete_after=5.0)
+            await ctx.send("Dude, you need to give me something to say", delete_after=5.0)
             await asyncio.sleep(5)
             await ctx.message.delete()
         else:
