@@ -256,12 +256,6 @@ class MAT(commands.Bot):
             content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
                 len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
-    async def on_error(self, event, *args, **kwargs):
-        exc = sys.exc_info()
-        print(exc)
-        with open("traceback.txt", "a") as f:
-            f.write("\n" + exc)
-
     async def on_command(self, ctx):
         self.commands_used["TOTAL"] += 1
         self.commands_used[ctx.command.name] += 1
