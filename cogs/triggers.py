@@ -19,6 +19,7 @@
 from mat import find_color, get_data
 from discord.ext import commands
 import discord
+import asyncio
 
 import re
 import random
@@ -90,6 +91,13 @@ class Triggers:
         elif message.content.lower() == "f" or re.search(
             "press f", message.content, re.IGNORECASE):
             await message.channel.send("F")
+
+        elif message.content.lower() == "first":
+            await message.channel.send("second")
+            await asyncio.sleep(1.5)
+            await message.channel.send("third")
+            await asyncio.sleep(1.5)
+            await message.channel.send("∞th")
 
 
 def setup(bot):
