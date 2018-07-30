@@ -27,25 +27,27 @@ import re
 
 
 async def send_log(guild, send_embed):
-    #TODO: Implement the server.data.json file into this
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
     mods are doing. Then send the embed from a moderation command
     """
-    logs = None
-    for c in guild.text_channels:
-        if re.search("logs", c.name):
-            logs = c
-            break
-    if logs is None:
+    serverdata = get_data("server")
+    if serverdata[str(guild.id)]["logs"] == "false":
+        return
+    elif serverdata[str(guild.id)]["logs"] == "null":
         logs = await guild.create_text_channel(
             "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
                 send_messages=False)})
         await logs.send("I created this channel just now to keep a log of all my moderation "
                         "commands that have been used. Feel free to edit this channel "
                         "however you'd like, but make sure I always have access to it!"
-                        "\n\nP.S. I don't have to use this channel if you don't want me to. "
-                        "You could make an entirely new channel and as long as it has the "
-                        "word, \"logs\" in its name, I'll be able to use it.")
+                        "\n\nP.S. I don't have to use this channel if you don't want me to. You "
+                        "can use the `setlogs` command to set a different logs channel or "
+                        "the `nologs` command to disable logging moderation commands entirely.")
+    else:
+        logs = guild.get_channel(int(serverdata[str(guild.id)]["logs"]))
+
+    serverdata[str(guild.id)]["logs"] = str(logs.id)
+    dump_data(serverdata, "server")
     await logs.send(embed=send_embed)
 
 
@@ -99,12 +101,33 @@ class Moderation:
                 "charge fix that please?")
         await send_log(ctx.guild, embed)
 
+    @commands.command()
+    @commands.guild_only()
+    async def nologs(self, ctx):
+        """**Must have the "Manage Server" permission**
+        Disables the logs channel
+        """
+        if not ctx.author.permissions_in(ctx.channel).manage_guild:
+            await ctx.send("You need the Manage Server permission in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        serverdata = get_data("server")
+        serverdata[str(ctx.guild.id)]["logs"] = "false"
+        dump_data(serverdata, "server")
+
+        await ctx.send(
+            "Logging moderation commands has been turned off for this server "
+            "by {}. To turn them back on, just use the `setlogs` command.".format(
+                ctx.author.mention))
+
     @commands.group(aliases=["remove", "delete"])
     @commands.guild_only()
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**
-        Mass-deletes messages from a certain channel"""
-
+        Mass-deletes messages from a certain channel
+        """
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use that command",
                            delete_after=5.0)
@@ -124,13 +147,18 @@ class Moderation:
                 "messages from a channel!\n\nAdd **one** of these to the command to purge "
                 "messages that fit a certain criteria:", color=find_color(ctx))
 
-            embed.add_field(name="all (OPTIONAL)<number>", value="Deletes all messages in the "
-                            "channel. If you also put in a number, it'll only delete that many "
-                            "messages", inline=False)
+            embed.add_field(name="all (OPTIONAL)<number>", value="Deletes all "
+                            "messages in the channel. If you also put in a number, it'll only "
+                            "delete that many messages. I default to 1000, and I can't go over "
+                            "2000.", inline=False)
+            embed.add_field(name="clear", value="Completely clears a channel by deleting and "
+                            "replacing it with an identical one. I need the Manage Channels "
+                            "permission in order to do this.", inline=False)
             embed.add_field(name="member <mention user(s) or username(s)>", value="Deletes all "
                             "messages by a certain member or members of the server", inline=False)
             embed.add_field(name="contains <substring>", value="Deletes all messages that "
-                            "contain a substring, which must be specified", inline=False)
+                            "contain a substring, which must be specified (not case-sensitive)",
+                            inline=False)
             embed.add_field(name="files", value="Deletes all messages with files attached to "
                             "them", inline=False)
             embed.add_field(name="embeds", value="Deletes all messages with embeds (The messages "
@@ -151,7 +179,16 @@ class Moderation:
             await ctx.send(embed=embed)
 
     async def remove(self, ctx, limit, check, description: str):
-        purged = await ctx.channel.purge(limit=limit, check=check, before=ctx.message)
+        if limit > 2000:
+            await ctx.send("I can't purge more than 2000 messages. Put in a smaller number.",
+                           delete_after=10.0)
+            await asyncio.sleep(10)
+            return await ctx.message.delete()
+
+        temp = await ctx.send("Purging...")
+        with ctx.channel.typing():
+            purged = await ctx.channel.purge(limit=limit, check=check, before=ctx.message)
+        await temp.delete()
         await ctx.message.delete()
 
         messages = collections.Counter()
@@ -159,19 +196,23 @@ class Moderation:
             title=ctx.author.display_name + " ran a purge command",
             description=f"{len(purged)} {description} in {ctx.channel.mention}",
             color=find_color(ctx))
-        if len(purged) > 0:
+        if len(purged) >= 10:
             await send_log(ctx.guild, embed)
 
         for m in purged:
-            messages[m.author.display_name] += 1
+            messages[m.author.name] += 1
         for a, m in messages.items():
             embed.add_field(name=a, value=f"{m} messages")
 
+        if len(purged) < 10:
+            if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
+                embed.set_footer(text="The number of messages purged was less than 10, so a log "
+                                 "wasn't sent to the logs channel")
         await ctx.send(embed=embed)
 
-    @purge.command(brief="Invalid formatting. You must format the command like this: `<prefix> "
-                   "purge all (OPTIONAL)<number of messages to delete>`", name="all")
-    async def _all(self, ctx, limit: int=None):
+    @purge.command(name="all", brief="Invalid formatting. You must format the command like this: "
+                   "`<prefix> purge all (OPTIONAL)<number of messages to delete>`")
+    async def _all(self, ctx, limit: int=1000):
 
         await self.remove(ctx, limit, None, "messages were deleted")
 
@@ -183,22 +224,43 @@ class Moderation:
                 prefix and m.content.startswith(prefix))
 
         if prefix is None:
-            await self.remove(ctx, None, check, "messages by bots were deleted")
+            await self.remove(ctx, 1000, check, "messages by bots were deleted")
         else:
-            await self.remove(ctx, None, check, "messages by bots and messages containing the "
+            await self.remove(ctx, 1000, check, "messages by bots and messages containing the "
                               "prefix `{}` were deleted".format(prefix))
 
     @purge.command()
-    async def contains(self, ctx, *, substr):
+    async def clear(self, ctx):
+        if not ctx.guild.me.permissions_in(ctx.channel).manage_channels:
+                return await ctx.send("I need the Manage Channels permission in order to do this "
+                                      "command. Hey mods! You mind fixing that?")
+        name = ctx.channel.name
+        perms = dict(ctx.channel.overwrites)
+        cat = ctx.channel.category
+        pos = ctx.channel.position
 
-        await self.remove(ctx, None, lambda m: substr in m.content,
-                          f"messages containing `{substr}` were deleted")
+        await ctx.channel.delete(reason=ctx.author.display_name + " cleared the channel")
+        cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
+        await cleared.edit(position=pos)
+
+        embed = discord.Embed(
+            title=ctx.author.display_name + " ran a purge command",
+            description=cleared.mention + " was completely cleared", color=find_color(ctx))
+
+        await cleared.send(embed=embed)
+        # await send_log(ctx.guild, embed)
+
+    @purge.command()
+    async def contains(self, ctx, *, substr: str):
+
+        await self.remove(ctx, 1000, lambda m: re.search(substr, m.content, re.IGNORECASE),
+                          f"messages containing the string, `{substr}`, were deleted")
 
     @purge.command()
     async def embeds(self, ctx):
 
         await self.remove(
-            ctx, None, lambda m: len(m.embeds), "messages containing embeds were deleted")
+            ctx, 1000, lambda m: len(m.embeds), "messages containing embeds were deleted")
 
     @purge.command(aliases=["emojis", "emote", "emotes"])
     async def emoji(self, ctx):
@@ -207,12 +269,12 @@ class Moderation:
             custom_emoji = re.compile(r'<:(\w+):(\d+)>')
             return custom_emoji.search(m.content)
 
-        await self.remove(ctx, None, check, "messages containing custom emojis were deleted")
+        await self.remove(ctx, 1000, check, "messages containing custom emojis were deleted")
 
     @purge.command(aliases=["attachments"])
     async def files(self, ctx):
 
-        await self.remove(ctx, None, lambda m: len(m.attachments),
+        await self.remove(ctx, 1000, lambda m: len(m.attachments),
                           "messages containing attachments were deleted")
 
     @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
@@ -220,12 +282,13 @@ class Moderation:
                    "username(s)>`")
     async def member(self, ctx, *users: discord.Member):
 
-        users = list(u.display_name for u in users)
+        users = list(users)
         if not users:
             raise commands.BadArgument
 
-        await self.remove(ctx, None, lambda m: m.author.display_name in users,
-                          "messages by __{}__ were deleted".format("__, __".join(list(users))))
+        await self.remove(ctx, 1000, lambda m: m.author in users,
+                          "messages by {} were deleted".format(
+                              ", ".join(list(u.mention for u in users))))
 
     @purge.command(brief="Invalid formatting. You're supposed to format the command like this: "
                    "`<prefix> purge pins (OPTIONAL)<number to leave pinned>`")
@@ -233,14 +296,16 @@ class Moderation:
 
         all_pins = await ctx.channel.pins()
         if len(all_pins) == 0:
-            return await ctx.send("This channel has no pinned messages!")
+            await ctx.send("This channel has no pinned messages", delete_after=5.0)
+            await asyncio.sleep(5)
+            return await ctx.message.delete()
 
         temp = await ctx.send("Please wait... This could take some time...")
         with ctx.channel.typing():
             for m in all_pins:
                 await m.unpin()
                 if leave is not None:
-                    if len(await ctx.channel.pins()) <= leave:
+                    if len(await ctx.channel.pins()) == leave:
                         break
 
         embed = discord.Embed(
@@ -257,11 +322,10 @@ class Moderation:
     async def reactions(self, ctx):
 
         temp = await ctx.send("Please wait... This could take some time...")
-
         with ctx.channel.typing():
             total_reactions = 0
             total_messages = 0
-            async for m in ctx.channel.history(limit=None, before=ctx.message):
+            async for m in ctx.channel.history(limit=2000, before=ctx.message):
                 if len(m.reactions):
                     total_reactions += sum(r.count for r in m.reactions)
                     total_messages += 1
@@ -358,14 +422,45 @@ class Moderation:
                 name="Message", value=f"```{last_delete['content']}```", inline=False)
         else:
             embed.add_field(
-                name="Message", value="*The message was too long to put here, so I'll send "
-                "it after this embed.*", inline=False)
-        embed.add_field(name="Channel", value=last_delete["channel"])
+                name="Message", value="*The message was too long to put here*", inline=False)
         embed.set_footer(text="Restored by " + ctx.author.display_name)
+
         await ctx.send(embed=embed)
         if len(f"```{last_delete['content']}```") > 1024:
-            await ctx.send(f"```{last_delete['content']}```")
-        # await send_log(ctx.guild, embed)
+            await ctx.send(f"The restored message that was too long to send in the above embed"
+                           ":```{}```".format(last_delete['content']))
+
+        embed.add_field(name="Channel", value=last_delete["channel"])
+        await send_log(ctx.guild, embed)
+
+    @commands.command(brief="Invalid formatting. Format like this: `<prefix> setlogs <mention "
+                      "channel or channel name>`.\nTo turn off the logs channel, use "
+                      "the `nologs` command")
+    @commands.guild_only()
+    async def setlogs(self, ctx, channel: discord.TextChannel=None):
+        """**Must have the "Manage Server" permission**
+        Sets a "logs" channel for me to keep a log of all of my moderation commands.
+        Format like this: `<prefix> setlogs <mention channel or channel name>`
+        To turn off the logs channel, use the `nologs` command
+        """
+        if not ctx.author.permissions_in(ctx.channel).manage_guild:
+            await ctx.send("You need the Manage Server permission in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        if channel is None:
+            raise commands.BadArgument
+
+        serverinfo = get_data("server")
+        serverinfo[str(ctx.guild.id)]["logs"] = str(channel.id)
+        dump_data(serverinfo, "server")
+
+        await ctx.send(f"The logs channel is now set to {channel.mention}!")
+        await channel.send(
+            f"This is now the new logs channel, set by {ctx.author.mention}. Whenever "
+            "someone uses one of my moderation commands, a message will be sent here to keep "
+            "a log of them.")
 
     @commands.command()
     @commands.guild_only()
