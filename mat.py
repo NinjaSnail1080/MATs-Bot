@@ -88,11 +88,11 @@ def get_data(to_return=None):
     global userdata
     if os.path.exists("user.data.json"):
         with open("user.data.json", "r") as f:
-            serverdata = dict(json.load(f))
+            userdata = dict(json.load(f))
     else:
         with open("user.data.json", "w") as f:
-            serverdata = {}
-            json.dump(serverdata, f)
+            userdata = {}
+            json.dump(userdata, f)
 
     if to_return is None:
         return
@@ -280,10 +280,10 @@ class MAT(commands.Bot):
         if not isinstance(message.channel, discord.DMChannel):
             if not message.author.bot:
                 last_delete = {"author": message.author.mention,
-                            "content": message.clean_content,
-                            "channel": message.channel.mention,
-                            "creation": message.created_at.strftime(
-                                "**Sent on:** %A, %B %-d, %Y at %X UTC")}
+                               "content": message.clean_content,
+                               "channel": message.channel.mention,
+                               "creation": message.created_at.strftime(
+                                   "**Sent on:** %A, %B %-d, %Y at %X UTC")}
 
                 serverdata[str(message.guild.id)]["last_delete"] = last_delete
                 dump_data(serverdata, "server")
