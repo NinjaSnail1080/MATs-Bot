@@ -27,6 +27,7 @@ import validators
 
 import random
 import re
+import os
 
 
 class Fun:
@@ -73,33 +74,6 @@ class Fun:
             await asyncio.sleep(10)
             await ctx.message.delete()
 
-    @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
-    async def cyhap(self, ctx):
-        """Posts a random Cyanide & Happiness comic"""
-
-        try:
-            with ctx.channel.typing():
-                async with aiohttp.ClientSession().get("http://explosm.net/comics/random") as w:
-                    soup = BeautifulSoup(await w.text(), "lxml")
-
-                    url = str(w.url)
-                    number = url.replace("http://explosm.net/comics/", "")[:-1]
-                    image = "http:" + soup.find("img", id="main-comic")["src"]
-                    info = soup.find("div", id="comic-author").get_text()
-
-                    embed = discord.Embed(
-                        title=f"Cyanide and Happiness #{number}", url=url, color=find_color(ctx))
-                    embed.set_author(name="Explosm", url="http://explosm.net/")
-                    embed.set_image(url=image)
-                    embed.set_footer(text=info)
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
-                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
-            await asyncio.sleep(6)
-            await ctx.message.delete()
-
     @commands.command()
     async def coinflip(self, ctx):
         """Flips a coin, pretty self-explanatory"""
@@ -140,6 +114,47 @@ class Fun:
             await asyncio.sleep(6)
             await ctx.message.delete()
 
+    @commands.command()
+    async def copypasta(self, ctx):
+        """Posts a copypasta
+        (Randomly selects from a list of 21)
+        """
+        with open(os.path.join(
+            os.path.dirname(__file__), "data" + os.sep + "copypastas.txt"), "r") as f:
+
+            copypastas = f.read()
+            copypastas = copypastas.split("\n\n\n\n")
+            copypastas = list(filter(None, copypastas))
+
+        await ctx.send(random.choice(copypastas))
+
+    @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
+    async def cyhap(self, ctx):
+        """Posts a random Cyanide & Happiness comic"""
+
+        try:
+            with ctx.channel.typing():
+                async with aiohttp.ClientSession().get("http://explosm.net/comics/random") as w:
+                    soup = BeautifulSoup(await w.text(), "lxml")
+
+                    url = str(w.url)
+                    number = url.replace("http://explosm.net/comics/", "")[:-1]
+                    image = "http:" + soup.find("img", id="main-comic")["src"]
+                    info = soup.find("div", id="comic-author").get_text()
+
+                    embed = discord.Embed(
+                        title=f"Cyanide and Happiness #{number}", url=url, color=find_color(ctx))
+                    embed.set_author(name="Explosm", url="http://explosm.net/")
+                    embed.set_image(url=image)
+                    embed.set_footer(text=info)
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
+                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
+            await asyncio.sleep(6)
+            await ctx.message.delete()
+
     @commands.command(brief="The number of sides must be an **integer above 2**. Try again.")
     async def diceroll(self, ctx, sides: int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
@@ -152,7 +167,7 @@ class Fun:
             return await ctx.message.delete()
 
         dice = str(random.randint(1, sides))
-        temp = await ctx.send("Rolling a %d-sided dice..." % sides)
+        temp = await ctx.send(f"Rolling a {sides}-sided dice...")
         with ctx.channel.typing():
             await asyncio.sleep(1.5)
             await temp.delete()
@@ -258,7 +273,7 @@ class Fun:
                     caption = comic.img["title"]
 
             embed = discord.Embed(
-                title=title + " | #" + number, color=find_color(ctx), url=url)
+                title=f"{title} | #{number}", color=find_color(ctx), url=url)
 
             embed.set_author(name="xkcd", url="https://xkcd.com/")
             embed.set_image(url=image)
