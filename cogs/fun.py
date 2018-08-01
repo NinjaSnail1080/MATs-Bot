@@ -39,7 +39,7 @@ class Fun:
     @commands.command()
     async def ascii(self, ctx, *, image=None):
         """Converts an image into ascii art. Will work for most images.
-        Format like this:`<prefix> ascii <image URL>`
+        Format like this: `<prefix> ascii <image URL>`
         """
         if image is not None and validators.url(image):
             try:
