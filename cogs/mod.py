@@ -31,6 +31,8 @@ async def send_log(guild, send_embed):
     mods are doing. Then send the embed from a moderation command
     """
     serverdata = get_data("server")
+    import pprint
+    pprint.pprint(serverdata, indent=4)
     if serverdata[str(guild.id)]["logs"] == "false":
         return
     elif serverdata[str(guild.id)]["logs"] == "null":
@@ -43,11 +45,11 @@ async def send_log(guild, send_embed):
                         "\n\nP.S. I don't have to use this channel if you don't want me to. You "
                         "can use the `setlogs` command to set a different logs channel or "
                         "the `nologs` command to disable logging moderation commands entirely.")
+        serverdata[str(guild.id)]["logs"] = str(logs.id)
+        dump_data(serverdata, "server")
     else:
         logs = guild.get_channel(int(serverdata[str(guild.id)]["logs"]))
 
-    serverdata[str(guild.id)]["logs"] = str(logs.id)
-    dump_data(serverdata, "server")
     await logs.send(embed=send_embed)
 
 
@@ -181,8 +183,8 @@ class Moderation:
     async def remove(self, ctx, limit, check, description: str):
         if limit > 2000:
             await ctx.send("I can't purge more than 2000 messages. Put in a smaller number.",
-                           delete_after=10.0)
-            await asyncio.sleep(10)
+                           delete_after=7.0)
+            await asyncio.sleep(7)
             return await ctx.message.delete()
 
         temp = await ctx.send("Purging...")
@@ -205,7 +207,8 @@ class Moderation:
             embed.add_field(name=a, value=f"{m} messages")
 
         if len(purged) < 10:
-            if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
+            serverdata = get_data("server")
+            if serverdata[str(ctx.guild.id)]["logs"] != "false":
                 embed.set_footer(text="The number of messages purged was less than 10, so a log "
                                  "wasn't sent to the logs channel")
         await ctx.send(embed=embed)
@@ -237,18 +240,20 @@ class Moderation:
         name = ctx.channel.name
         perms = dict(ctx.channel.overwrites)
         cat = ctx.channel.category
+        topic = ctx.channel.topic
         pos = ctx.channel.position
+        nsfw = ctx.channel.is_nsfw()
 
         await ctx.channel.delete(reason=ctx.author.display_name + " cleared the channel")
         cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
-        await cleared.edit(position=pos)
+        await cleared.edit(topic=topic, position=pos, nsfw=nsfw)
 
         embed = discord.Embed(
             title=ctx.author.display_name + " ran a purge command",
             description=cleared.mention + " was completely cleared", color=find_color(ctx))
 
         await cleared.send(embed=embed)
-        # await send_log(ctx.guild, embed)
+        await send_log(ctx.guild, embed)
 
     @purge.command()
     async def contains(self, ctx, *, substr: str):
@@ -266,7 +271,7 @@ class Moderation:
     async def emoji(self, ctx):
 
         def check(m):
-            custom_emoji = re.compile(r'<:(\w+):(\d+)>')
+            custom_emoji = re.compile(r"<:(\w+):(\d+)>")
             return custom_emoji.search(m.content)
 
         await self.remove(ctx, 1000, check, "messages containing custom emojis were deleted")
