@@ -53,6 +53,95 @@ class Info:
 
         await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.guild_only()
+    async def allchannels(self, ctx):
+        """Sends a list of all the channels in the server"""
+
+        await ctx.channel.trigger_typing()
+        tchannels = ctx.guild.text_channels
+        vchannels = ctx.guild.voice_channels
+
+        embed = discord.Embed(title=f"All of the channels in {ctx.guild.name}",
+                              description=f"Command performed by {ctx.author.mention}",
+                              color=find_color(ctx))
+
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.set_footer(text="To get information on these channels, use the \"channelinfo\" "
+                         "command and I'll provide some basic info on it as long as I have "
+                         "access to the channel")
+        embed.add_field(
+            name=f"Text Channels ({len(tchannels)})",
+            value=", ".join(c.mention for c in tchannels), inline=False)
+        if vchannels:
+            embed.add_field(
+                name=f"Voice Channels ({len(vchannels)})",
+                value=", ".join(c.name for c in vchannels), inline=False)
+        else:
+            embed.add_field(
+                name=f"Voice Channels ({len(vchannels)})", value="None", inline=False)
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.guild_only()
+    async def allroles(self, ctx):
+        """Sends a list of all the roles in the server"""
+
+        await ctx.channel.trigger_typing()
+        embed = discord.Embed(title=f"All of the roles in {ctx.guild.name}",
+                              description=f"Command performed by {ctx.author.mention}",
+                              color=find_color(ctx))
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.add_field(
+            name=f"Roles ({len(ctx.guild.roles)})",
+            value=", ".join(r.mention for r in ctx.guild.role_hierarchy), inline=False)
+
+        await ctx.send(embed=embed)
+
+    @commands.command(brief="Invalid formatting. You need to format the command like this: "
+                      "`<prefix> channelinfo (OPTIONAL)<#mention text channel or channel name>`"
+                      "\n\nIf you don't provide a channel, I'll default to this one. Keep in "
+                      "mind that this command only works with text channels")
+    @commands.guild_only()
+    async def channelinfo(self, ctx, channel: discord.TextChannel=None):
+        """Info about a text channel. By default I'll show info about the channel the command was performed in, although you can specify a different one.
+        Format like this: `<prefix> channelinfo (OPTIONAL)<#mention text channel or channel name>`
+        """
+        await ctx.channel.trigger_typing()
+        if channel is None:
+            c = ctx.channel
+        else:
+            c = channel
+
+        embed = discord.Embed(
+            title=c.name, description=f"**Channel ID**: {c.id}", color=find_color(ctx))
+
+        try:
+            embed.add_field(name="Channel", value=c.mention)
+            embed.add_field(name="Server", value=c.guild.name)
+            embed.add_field(name="Category", value=str(c.category))
+            embed.add_field(name="Messages pinned", value=len(await c.pins()))
+            embed.add_field(name="Position", value=c.position)
+            if c.is_nsfw():
+                embed.add_field(name="NSFW?", value="Yes")
+            else:
+                embed.add_field(name="NSFW?", value="No")
+            embed.add_field(name="Members with access", value=len(c.members))
+            embed.add_field(name="Roles overwritten", value=len(c.changed_roles))
+            embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
+            if c.topic is None or c.topic == "":
+                embed.add_field(name="Channel topic", value=f"```No topic```", inline=False)
+            else:
+                embed.add_field(name="Channel topic", value=f"```{c.topic}```", inline=False)
+        except discord.Forbidden:
+            await ctx.send("Unfortunately, I don't have access to that channel, so I wasn't able "
+                           "to get information from it", delete_after=7.0)
+            await asyncio.sleep(7)
+            return await ctx.message.delete()
+
+        await ctx.send(embed=embed)
+
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
                       "Discord's default emojis. You must put a custom emoji after the command "
                       "so I can get info on it")
@@ -68,7 +157,7 @@ class Info:
             return await ctx.message.delete()
 
         embed = discord.Embed(
-            title="Info on the :%s: emoji" % emoji.name, description=str(emoji),
+            title=f"Info on the :{emoji.name}: emoji", description=str(emoji),
             color=find_color(ctx))
 
         embed.set_thumbnail(url=emoji.url)
@@ -116,7 +205,7 @@ class Info:
                 anim_emojis.append(e)
 
         embed = discord.Embed(
-            title=s.name, description="Server ID: %d" % s.id, color=find_color(ctx))
+            title=s.name, description=f"Server ID: {s.id}", color=find_color(ctx))
 
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(
@@ -212,7 +301,7 @@ class Info:
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
     async def userinfo(self, ctx, user: discord.Member=None):
-        """Info about a user. By default it'll show your user info, but you can specify a different member of your server.
+        """Info about a user. By default I'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's name/id>`
         """
         await ctx.channel.trigger_typing()
