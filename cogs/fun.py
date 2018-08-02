@@ -117,8 +117,9 @@ class Fun:
     @commands.command()
     async def copypasta(self, ctx):
         """Posts a copypasta
-        (Randomly selects from a list of 21)
+        (Randomly selects from a list of 30)
         """
+        await ctx.channel.trigger_typing()
         with open(os.path.join(
             os.path.dirname(__file__), "data" + os.sep + "copypastas.txt"), "r") as f:
 
