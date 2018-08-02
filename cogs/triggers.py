@@ -94,8 +94,10 @@ class Triggers:
 
         elif message.content.lower() == "first":
             await message.channel.send("second")
+            await message.channel.trigger_typing()
             await asyncio.sleep(1.5)
             await message.channel.send("third")
+            await message.channel.trigger_typing()
             await asyncio.sleep(1.5)
             await message.channel.send("∞th")
 
