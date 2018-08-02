@@ -25,6 +25,8 @@ import random
 import collections
 import re
 
+#TODO: Fix the many problems I'm facing rn with how the commands interact with the json data files
+
 
 async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
