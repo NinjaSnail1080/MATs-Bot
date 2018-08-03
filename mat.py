@@ -17,12 +17,15 @@
 """
 __version__ = "0.5.2"
 
+#TODO: Fix this: the .data.json files reset every time the bot runs
+
 from discord.ext import commands
 import discord
 import asyncio
-import collections
+import psutil
 import rapidjson as json
 
+import collections
 import logging
 import random
 import os
@@ -111,12 +114,12 @@ def dump_data(to_dump, file):
 
     import rapidjson as json
 
-    if file == "server":
-        with open("server.data.json", "w") as f:
+    if file == "bot":
+        with open("bot.data.json", "w") as f:
             json.dump(to_dump, f, indent=4)
 
-    elif file == "bot":
-        with open("bot.data.json", "w") as f:
+    elif file == "server":
+        with open("server.data.json", "w") as f:
             json.dump(to_dump, f, indent=4)
 
     elif file == "user":
@@ -124,6 +127,20 @@ def dump_data(to_dump, file):
             json.dump(to_dump, f, indent=4)
     else:
         raise TypeError("\"file\" param must be either \"bot\", \"server\", or \"user\"")
+
+
+def restart_program():
+    """Restarts the current program after cleaning up file objects and descriptors"""
+
+    try:
+        p = psutil.Process(os.getpid())
+        for handler in p.get_open_files() + p.connections():
+            os.close(handler.fd)
+    except Exception as exc:
+        logging.error(exc)
+
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
 
 
 def find_color(ctx):
@@ -184,6 +201,14 @@ class MAT(commands.Bot):
         print("Users: " + str(len(set(self.get_all_members()))))
         print("-----------------\n")
         await self.change_presence(status=discord.Status.online)
+
+        if os.path.exists("restart"):
+            with open("restart", "r") as f:
+                _id = int(f.read())
+            os.remove("restart")
+            channel = self.get_channel(_id)
+            await channel.send("And we're back!")
+            self.loop.create_task(self.switch_games())
 
     async def on_guild_join(self, guild):
         message = ("Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
@@ -257,11 +282,12 @@ class MAT(commands.Bot):
                 len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
     async def on_command(self, ctx):
-        self.commands_used["TOTAL"] += 1
-        self.commands_used[ctx.command.name] += 1
+        if not ctx.command.hidden:
+            self.commands_used["TOTAL"] += 1
+            self.commands_used[ctx.command.name] += 1
 
-        botdata["commands_used"] = dict(self.commands_used)
-        dump_data(botdata, "bot")
+            botdata["commands_used"] = dict(self.commands_used)
+            dump_data(botdata, "bot")
 
     async def on_message(self, message):
         if message.author.bot:
