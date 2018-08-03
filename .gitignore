@@ -126,6 +126,7 @@ idna_ssl.py
 /multidict
 /nacl
 /PIL
+/psutil
 /pycares
 /pycparser
 /pyshorteners
