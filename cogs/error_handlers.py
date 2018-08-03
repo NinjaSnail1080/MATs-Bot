@@ -36,10 +36,23 @@ class Error_Handlers:
                         "Missing Permissions"):
             return
         elif "The check functions for command" in str(exc):
-            return await ctx.send("This command can only be used in NSFW channels")
+            await ctx.send("This command can only be used in NSFW channels", delete_after=7.0)
+            await asyncio.sleep(7)
+            try:
+                await ctx.message.delete()
+            except:
+                pass
+            return
         elif str(exc) == "You do not own this bot.":
             app = await self.bot.application_info()
-            return await ctx.send(f"Only my owner, **{app.owner.name}**, can use that command")
+            await ctx.send(
+                f"Only my owner, **{app.owner.name}**, can use that command", delete_after=7.0)
+            await asyncio.sleep(7)
+            try:
+                await ctx.message.delete()
+            except:
+                pass
+            return
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
@@ -58,7 +71,7 @@ class Error_Handlers:
             print("This exception was raised on %s:\n\n%s\n\n" %
                   (datetime.datetime.now().strftime("%b %-d, %Y at %X"), exc))
             app = await self.bot.application_info()
-            await ctx.send(
+            return await ctx.send(
                 "```Command: %s\n%s```An unknown error occured and I wasn't able to complete "
                 "that command. Sorry!\n\nPlease get in touch with my owner, %s, and tell him "
                 "what happened so he can try and fix this issue. You can reach him at my "
