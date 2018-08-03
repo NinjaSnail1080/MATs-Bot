@@ -16,13 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from mat import restart_program
 from discord.ext import commands
 import discord
 import asyncio
 
+import logging
 import time
-
-import mat
+import os
 
 
 class Owner:
@@ -31,20 +32,7 @@ class Owner:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    @commands.is_owner()
-    async def quit(self, ctx):
-        """Quit the bot's program"""
-
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            print("Can't delete message in this server")
-        await self.bot.wait_until_ready()
-        await self.bot.logout()
-        await self.bot.close()
-
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def armageddon(self, ctx, runtime: float=3.0):
         """Unleash hell upon a Discord server"""
@@ -57,7 +45,7 @@ class Owner:
             await ctx.send("The world is about to meet its demise")
             await asyncio.sleep(2)
             await ctx.send("Armageddon, Judgement Day, The Apocalypse")
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
             await ctx.send("It's upon us")
             await asyncio.sleep(2)
             await ctx.send("It will happen")
@@ -81,10 +69,57 @@ class Owner:
             t = time.time()
             while time.time() < t + runtime:
                 await ctx.send("@everyone")
-                await asyncio.sleep(0.5)
 
         self.bot.loop.create_task(the_end(ctx, runtime * 60))
 
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def quit(self, ctx, *, arg: str=None):
+        """Quit the bot's program"""
+
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            print("Can't delete message in this server")
+        await self.bot.wait_until_ready()
+
+        if arg is None:
+            pass
+        elif arg == "-r":
+            os.remove("bot.data.json")
+            os.remove("server.data.json")
+            os.remove("user.data.json")
+        else:
+            raise TypeError("\"arg\" param must be either \"-r\" or None")
+
+        logging.info(f"Bot closed by {ctx.author.name} via \"quit\" command")
+        await self.bot.logout()
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def restart(self, ctx, *, arg: str=None):
+        """Restart the bot's program"""
+
+        await self.bot.change_presence(
+            activity=discord.Game("Restarting..."), status=discord.Status.dnd)
+
+        if arg is None:
+            pass
+        elif arg == "-r":
+            os.remove("bot.data.json")
+            os.remove("server.data.json")
+            os.remove("user.data.json")
+        else:
+            raise TypeError("\"arg\" param must be either \"-r\" or None")
+
+        await ctx.send("*Restarting*...")
+        await self.bot.wait_until_ready()
+        self.bot.clear()
+
+        with open("restart", "w") as f:
+            f.write(str(ctx.channel.id))
+
+        restart_program()
 
 def setup(bot):
     bot.add_cog(Owner(bot))
