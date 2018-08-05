@@ -197,7 +197,7 @@ class MAT(commands.Bot):
         print(bot.user)
         print(bot.user.id)
         print("-----------------")
-        print(datetime.datetime.now())
+        print(datetime.datetime.now().strftime("%m/%d/%Y %X"))
         print("-----------------")
         print("Shards: " + str(self.shard_count))
         print("Servers: " + str(len(self.guilds)))
