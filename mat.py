@@ -26,6 +26,7 @@ import psutil
 import rapidjson as json
 
 import collections
+import datetime
 import logging
 import random
 import os
@@ -195,6 +196,8 @@ class MAT(commands.Bot):
         print("\nLogged in as")
         print(bot.user)
         print(bot.user.id)
+        print("-----------------")
+        print(datetime.datetime.now())
         print("-----------------")
         print("Shards: " + str(self.shard_count))
         print("Servers: " + str(len(self.guilds)))

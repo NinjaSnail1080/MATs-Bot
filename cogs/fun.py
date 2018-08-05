@@ -50,9 +50,9 @@ class Fun:
                         split_art = re.findall(".{1,1920}", art)
                         for a in split_art:
                             art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                            await ctx.send("```" + art + "```")
+                            await ctx.send(f"```{art}```")
                     else:
-                        await ctx.send("```" + art + "```")
+                        await ctx.send(f"```{art}```")
             except OSError:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.", delete_after=7.0)
