@@ -86,7 +86,7 @@ class Moderation:
             reason = "No reason given"
         if len(reason) + len(ctx.author.name) + 23 > 512:
             await ctx.send(
-                f"Reason is too long. It must be under {abs(len(ctx.author.name) + 23 - 512))} "
+                f"Reason is too long. It must be under {abs(len(ctx.author.name) + 23 - 512)} "
                 "characters", delete_after=5.0)
             await asyncio.sleep(5)
             return await ctx.message.delete()
@@ -123,8 +123,7 @@ class Moderation:
 
         await ctx.send(
             "Logging moderation commands has been turned off for this server "
-            "by {}. To turn them back on, just use the `setlogs` command.".format(
-                ctx.author.mention))
+            f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
 
     @commands.group(aliases=["remove", "delete"])
     @commands.guild_only()
@@ -232,7 +231,7 @@ class Moderation:
             await self.remove(ctx, 1000, check, "messages by bots were deleted")
         else:
             await self.remove(ctx, 1000, check, "messages by bots and messages containing the "
-                              "prefix `{}` were deleted".format(prefix))
+                              f"prefix `{prefix}` were deleted")
 
     @purge.command()
     async def clear(self, ctx):
@@ -294,8 +293,7 @@ class Moderation:
             raise commands.BadArgument
 
         await self.remove(ctx, 1000, lambda m: m.author in users,
-                          "messages by {} were deleted".format(
-                              ", ".join(list(u.mention for u in users))))
+                          f"messages by {', '.join(u.mention for u in users)} were deleted")
 
     @purge.command(brief="Invalid formatting. You're supposed to format the command like this: "
                    "`<prefix> purge pins (OPTIONAL)<number to leave pinned>`")
@@ -434,8 +432,8 @@ class Moderation:
 
         await ctx.send(embed=embed)
         if len(f"```{last_delete['content']}```") > 1024:
-            await ctx.send(f"The restored message that was too long to send in the above embed"
-                           ":```{}```".format(last_delete['content']))
+            await ctx.send("The restored message that was too long to send in the above embed"
+                           f":```{last_delete['content']}```")
 
         embed.add_field(name="Channel", value=last_delete["channel"])
         await send_log(ctx.guild, embed)

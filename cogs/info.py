@@ -257,16 +257,16 @@ class Info:
 
         footer = []
         if y != 0:
-            footer.append(f"{y} {"year" if y == 1 else "years"}, ")
+            footer.append(f"{y} {('year' if y == 1 else 'years')}, ")
         if mo != 0:
-            footer.append(f"{mo} {"month" if mo == 1 else "months"}, ")
+            footer.append(f"{mo} {'month' if mo == 1 else 'months'}, ")
         if d != 0:
-            footer.append(f"{d} {"day" if d == 1 else "days"}, ")
+            footer.append(f"{d} {'day' if d == 1 else 'days'}, ")
         if h != 0:
-            footer.append(f"{h} {"hour" if h == 1 else "hours"}, ")
+            footer.append(f"{h} {'hour' if h == 1 else 'hours'}, ")
         if mi != 0:
-            footer.append(f"{mi} {"minute" if mi == 1 else "minutes"}, ")
-        footer.append(f"and {se} {"second" if se == 1 else "seconds"}.")
+            footer.append(f"{mi} {'minute' if mi == 1 else 'minutes'}, ")
+        footer.append(f"and {se} {'second' if se == 1 else 'seconds'}.")
 
         embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
 
@@ -353,16 +353,16 @@ class Info:
 
         footer = []
         if y != 0:
-            footer.append(f"{y} {"year" if y == 1 else "years"}, ")
+            footer.append(f"{y} {'year' if y == 1 else 'years'}, ")
         if mo != 0:
-            footer.append(f"{mo} {"month" if mo == 1 else "months"}, ")
+            footer.append(f"{mo} {'month' if mo == 1 else 'months'}, ")
         if d != 0:
-            footer.append(f"{d} {"day" if d == 1 else "days"}, ")
+            footer.append(f"{d} {'day' if d == 1 else 'days'}, ")
         if h != 0:
-            footer.append(f"{h} {"hour" if h == 1 else "hours"}, ")
+            footer.append(f"{h} {'hour' if h == 1 else 'hours'}, ")
         if mi != 0:
-            footer.append(f"{mi} {"minute" if mi == 1 else "minutes"}, ")
-        footer.append(f"and {se} {"second" if se == 1 else "seconds"}.")
+            footer.append(f"{mi} {'minute' if mi == 1 else 'minutes'}, ")
+        footer.append(f"and {se} {'second' if se == 1 else 'seconds'}.")
 
         embed.set_footer(
             text=user.name + " has been on Discord for roughly " + "".join(footer))

@@ -69,7 +69,7 @@ class Error_Handlers:
             return
         else:
             print("This exception was raised "
-                  f"on {datetime.datetime.now().strftime("%b %-d, %Y at %X")}:\n\n{exc}\n\n")
+                  f"on {datetime.datetime.now().strftime('%b %-d, %Y at %X')}:\n\n{exc}\n\n")
             app = await self.bot.application_info()
             return await ctx.send(
                 f"```Command: {ctx.command.name}\n{exc}```An unknown error occured and I wasn't "
