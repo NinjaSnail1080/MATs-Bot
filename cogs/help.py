@@ -157,11 +157,10 @@ class Help:
             await ctx.send(embed=embed)
 
         else:
-            sent = False
             for cmd in self.bot.commands:
                 if cat == cmd.name:
                     embed = discord.Embed(
-                        title="Help | %s Command" % cmd.name, description=cmd.help,
+                        title=f"Help | {cmd.name} Command", description=cmd.help,
                         color=find_color(ctx))
                     embed.set_author(name="MAT's Bot")
 
@@ -169,10 +168,10 @@ class Help:
                         embed.add_field(name="Aliases", value="`" + ", ".join(cmd.aliases) + "`")
 
                     await ctx.send(embed=embed)
-                    sent = True
                     break
-            if not sent:
-                await ctx.send("That's not a category. The ones you can pick are:\n\n`fun` (Fun "
+                    return
+
+            await ctx.send("That's not a category. The ones you can pick are:\n\n`fun` (Fun "
                             "commands)\n`info` (Information commands)\n`mod` (Moderation commands"
                             ")\n`music` (Music commands)\n`nsfw` (NSFW commands)\n\nYou can also "
                             "put the name of a command for help on that command only")

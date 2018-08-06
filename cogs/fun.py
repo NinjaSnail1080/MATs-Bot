@@ -53,12 +53,7 @@ class Fun:
                             await ctx.send(f"```{art}```")
                     else:
                         await ctx.send(f"```{art}```")
-            except OSError:
-                await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.", delete_after=7.0)
-                await asyncio.sleep(7)
-                await ctx.message.delete()
-            except TypeError:
+            except:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.", delete_after=7.0)
                 await asyncio.sleep(7)
@@ -179,7 +174,7 @@ class Fun:
         """Pay your respects"""
 
         msg = await ctx.send(
-            "%s has paid their respects. Press F to pay yours." % ctx.author.mention)
+            f"{ctx.author.mention} has paid their respects. Press F to pay yours.")
         await msg.add_reaction("\U0001f1eb")
 
     @commands.command()
@@ -212,26 +207,27 @@ class Fun:
             await asyncio.sleep(5)
             return await ctx.message.delete()
 
+        await ctx.channel.trigger_typing()
+
         embed = discord.Embed(color=find_color(ctx))
         embed.set_image(url="https://media.discordapp.net/attachments/452928801093976064/"
                         "473376642069299201/mock.jpg")
         stuff = list(stuff.lower())
         mock = []
         for i in stuff:
-            if i.lower() == "c":
+            if i == "c":
                 if random.randint(1, 2) == 1:
                     i = "k"
-            if i.lower() == "k":
+            elif i == "k":
                 if random.randint(1, 2) == 1:
                     i = "c"
-            elif i.lower() == "x":
+            elif i == "x":
                 if random.randint(1, 2) == 1:
                     i = "ks"
             if random.randint(1, 2) == 1:
                 i = i.upper()
             mock.append(i)
 
-        await ctx.channel.trigger_typing()
         await ctx.send(content="".join(mock), embed=embed)
 
     @commands.command()

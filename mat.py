@@ -54,8 +54,8 @@ if __name__ == "__main__":
     #* Load cogs
     initial_extensions = []
     for f in os.listdir("cogs"):
-        if f != "__init__.py":
-            if f.endswith(".py"):
+        if f.endswith(".py"):
+            if f != "__init__.py":
                 f = f[:-3]
                 initial_extensions.append("cogs." + f)
     # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
@@ -99,7 +99,7 @@ def get_data(to_return=None):
             json.dump(userdata, f)
 
     if to_return is None:
-        return
+        return None
     elif to_return == "bot":
         return botdata
     elif to_return == "server":

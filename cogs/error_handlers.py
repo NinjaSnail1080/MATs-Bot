@@ -68,15 +68,14 @@ class Error_Handlers:
         elif isinstance(exc, discord.Forbidden):
             return
         else:
-            print("This exception was raised on %s:\n\n%s\n\n" %
-                  (datetime.datetime.now().strftime("%b %-d, %Y at %X"), exc))
+            print("This exception was raised "
+                  f"on {datetime.datetime.now().strftime("%b %-d, %Y at %X")}:\n\n{exc}\n\n")
             app = await self.bot.application_info()
             return await ctx.send(
-                "```Command: %s\n%s```An unknown error occured and I wasn't able to complete "
-                "that command. Sorry!\n\nPlease get in touch with my owner, %s, and tell him "
-                "what happened so he can try and fix this issue. You can reach him at my "
-                "support server: https://discord.gg/P4Fp3jA" % (
-                    ctx.command.name, exc, app.owner.name))
+                f"```Command: {ctx.command.name}\n{exc}```An unknown error occured and I wasn't "
+                "able to complete that command. Sorry!\n\nPlease get in touch with my "
+                f"owner, {app.owner.name}, and tell him what happened so he can try and fix this "
+                "issue. You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
 
 def setup(bot):

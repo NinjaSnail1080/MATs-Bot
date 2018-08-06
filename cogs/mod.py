@@ -32,9 +32,8 @@ async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
     mods are doing. Then send the embed from a moderation command
     """
+    return  #! Temporary while I fix these issues
     serverdata = get_data("server")
-    import pprint
-    pprint.pprint(serverdata, indent=4)
     if serverdata[str(guild.id)]["logs"] == "false":
         return
     elif serverdata[str(guild.id)]["logs"] == "null":
@@ -86,8 +85,9 @@ class Moderation:
         if reason is None:
             reason = "No reason given"
         if len(reason) + len(ctx.author.name) + 23 > 512:
-            await ctx.send("Reason is too long. It must be under %d characters" % abs(
-                len(ctx.author.name) + 23 - 512), delete_after=5.0)
+            await ctx.send(
+                f"Reason is too long. It must be under {abs(len(ctx.author.name) + 23 - 512))} "
+                "characters", delete_after=5.0)
             await asyncio.sleep(5)
             return await ctx.message.delete()
 

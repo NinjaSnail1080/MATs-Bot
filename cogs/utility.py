@@ -127,7 +127,7 @@ class Utility:
         else:
             qrcode.make(content).save("qr.png")
             await ctx.send(
-                content="```%s``` as a QR code:" % content, file=discord.File("qr.png"))
+                content=f"```{content}``` as a QR code:", file=discord.File("qr.png"))
             os.remove("qr.png")
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"

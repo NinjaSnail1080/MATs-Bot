@@ -38,7 +38,7 @@ class Info:
 
         embed = discord.Embed(
             title=str(self.bot.user), description=app.description +
-            "\n\n**User/Client ID**: %d" % app.id, color=find_color(ctx))
+            f"\n\n**User/Client ID**: {app.id}", color=find_color(ctx))
 
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
@@ -76,7 +76,7 @@ class Info:
         if vchannels:
             embed.add_field(
                 name=f"Voice Channels ({len(vchannels)})",
-                value=", ".join(c.name for c in vchannels), inline=False)
+                value=", ".join(c.mention for c in vchannels), inline=False)
         else:
             embed.add_field(
                 name=f"Voice Channels ({len(vchannels)})", value="None", inline=False)
@@ -209,15 +209,14 @@ class Info:
 
         embed.set_thumbnail(url=s.icon_url)
         embed.add_field(
-            name="Members", value="%d (Online: %d)" % (s.member_count, len(on_members)))
+            name="Members", value=f"{s.member_count} (Online: {len(on_members)})")
         embed.add_field(name="Roles", value=len(s.roles))
         embed.add_field(name="Text Channels", value=len(s.text_channels))
         embed.add_field(name="Voice Channels", value=len(s.voice_channels))
         embed.add_field(name="Categories", value=len(s.categories))
         if anim_emojis:
             embed.add_field(
-                name="Custom Emojis", value="%d (Animated: %d)" % (
-                    len(s.emojis), len(anim_emojis)))
+                name="Custom Emojis", value=f"{len(s.emojis)} (Animated: {len(anim_emojis)})")
         else:
             embed.add_field(name="Custom Emojis", value=len(s.emojis))
         embed.add_field(name="Bots", value=len(bots))
@@ -251,48 +250,23 @@ class Info:
         mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
         d = int(delta.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
         h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
-        mi = int(delta.total_seconds()) // 60 % 60
+        mi = int(delta.total_seconds()) // 60 % 60  #* etc.
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
         #! For reasons I don't fully understand, it doesn't work
 
-        if y == 1:
-            year_s = "year"
-        else:
-            year_s = "years"
-        if mo == 1:
-            month_s = "month"
-        else:
-            month_s = "months"
-        if d == 1:
-            day_s = "day"
-        else:
-            day_s = "days"
-        if h == 1:
-            hour_s = "hour"
-        else:
-            hour_s = "hours"
-        if mi == 1:
-            minute_s = "minute"
-        else:
-            minute_s = "minutes"
-        if se == 1:
-            second_s = "second"
-        else:
-            second_s = "seconds"
-
         footer = []
         if y != 0:
-            footer.append("%d %s, " % (y, year_s))
+            footer.append(f"{y} {"year" if y == 1 else "years"}, ")
         if mo != 0:
-            footer.append("%d %s, " % (mo, month_s))
+            footer.append(f"{mo} {"month" if mo == 1 else "months"}, ")
         if d != 0:
-            footer.append("%d %s, " % (d, day_s))
+            footer.append(f"{d} {"day" if d == 1 else "days"}, ")
         if h != 0:
-            footer.append("%d %s, " % (h, hour_s))
+            footer.append(f"{h} {"hour" if h == 1 else "hours"}, ")
         if mi != 0:
-            footer.append("%d %s, " % (mi, minute_s))
-        footer.append("and %d %s." % (se, second_s))
+            footer.append(f"{mi} {"minute" if mi == 1 else "minutes"}, ")
+        footer.append(f"and {se} {"second" if se == 1 else "seconds"}.")
 
         embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
 
@@ -311,25 +285,25 @@ class Info:
         roles = []
         for r in user.roles:
             if r.name != "@everyone":
-                roles.append("`%s`" % r.name)
+                roles.append(f"`{r.name}`")
         roles = roles[::-1]
 
         if user.activity is not None:
             if user.activity.type is discord.ActivityType.listening:
-                t = "Listening to"
-                a = user.activity.title
+                _type = "Listening to"
+                activity = user.activity.title
             elif user.activity.type is discord.ActivityType.streaming:
-                t = "Streaming"
-                a = user.activity.name
+                _type = "Streaming"
+                activity = user.activity.name
             elif user.activity.type is discord.ActivityType.watching:
-                t = "Watching"
-                a = user.activity.name
+                _type = "Watching"
+                activity = user.activity.name
             else:
-                t = "Playing"
-                a = user.activity.name
+                _type = "Playing"
+                activity = user.activity.name
         else:
-            t = "Playing"
-            a = "Nothing"
+            _type = "Playing"
+            activity = "Nothing"
 
         if user.status is discord.Status.online:
             status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271724585451"
@@ -344,7 +318,7 @@ class Info:
             status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271699584778"
                       "34/offline.png")
 
-        embed = discord.Embed(description="User ID: %d" % user.id, color=find_color(ctx))
+        embed = discord.Embed(description=f"User ID: {user.id}", color=find_color(ctx))
 
         embed.set_author(name=str(user), icon_url=status)
         embed.set_thumbnail(url=user.avatar_url)
@@ -352,7 +326,7 @@ class Info:
         embed.add_field(name="Display Name", value=user.display_name)
         embed.add_field(name="Status", value=str(user.status).title())
         embed.add_field(name="Color", value=str(user.color))
-        embed.add_field(name=t, value=a)
+        embed.add_field(name=_type, value=activity)
         embed.add_field(name="Top Role", value=user.top_role)
         embed.add_field(name="Joined Server", value=user.joined_at.strftime("%b %-d, %Y"))
         if user.bot:
@@ -362,7 +336,7 @@ class Info:
         embed.add_field(name="Joined Discord", value=user.created_at.strftime("%b %-d, %Y"))
         if roles:
             embed.add_field(
-                name="Roles (%d)" % len(roles), value=", ".join(roles), inline=False)
+                name=f"Roles ({len(roles)})", value=", ".join(roles), inline=False)
         else:
             embed.add_field(name="Roles", value="`No roles`")
 
@@ -372,48 +346,23 @@ class Info:
         mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
         d = int(delta.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
         h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
-        mi = int(delta.total_seconds()) // 60 % 60
+        mi = int(delta.total_seconds()) // 60 % 60  #* etc.
         se = int(delta.total_seconds()) % 60
         #! Do not change "int(delta.totalseconds())" to "delta.seconds"
         #! For reasons I don't fully understand, it doesn't work
 
-        if y == 1:
-            year_s = "year"
-        else:
-            year_s = "years"
-        if mo == 1:
-            month_s = "month"
-        else:
-            month_s = "months"
-        if d == 1:
-            day_s = "day"
-        else:
-            day_s = "days"
-        if h == 1:
-            hour_s = "hour"
-        else:
-            hour_s = "hours"
-        if mi == 1:
-            minute_s = "minute"
-        else:
-            minute_s = "minutes"
-        if se == 1:
-            second_s = "second"
-        else:
-            second_s = "seconds"
-
         footer = []
         if y != 0:
-            footer.append("%d %s, " % (y, year_s))
+            footer.append(f"{y} {"year" if y == 1 else "years"}, ")
         if mo != 0:
-            footer.append("%d %s, " % (mo, month_s))
+            footer.append(f"{mo} {"month" if mo == 1 else "months"}, ")
         if d != 0:
-            footer.append("%d %s, " % (d, day_s))
+            footer.append(f"{d} {"day" if d == 1 else "days"}, ")
         if h != 0:
-            footer.append("%d %s, " % (h, hour_s))
+            footer.append(f"{h} {"hour" if h == 1 else "hours"}, ")
         if mi != 0:
-            footer.append("%d %s, " % (mi, minute_s))
-        footer.append("and %d %s." % (se, second_s))
+            footer.append(f"{mi} {"minute" if mi == 1 else "minutes"}, ")
+        footer.append(f"and {se} {"second" if se == 1 else "seconds"}.")
 
         embed.set_footer(
             text=user.name + " has been on Discord for roughly " + "".join(footer))
