@@ -115,7 +115,7 @@ class Fun:
         (Randomly selects from a list of 30)
         """
         await ctx.channel.trigger_typing()
-        with open(f"data{os.sep}copypastas.txt") as f:
+        with open(f"assets{os.sep}copypastas.txt") as f:
 
             copypastas = f.read()
             copypastas = copypastas.split("\n\n\n\n")

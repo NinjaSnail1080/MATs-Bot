@@ -50,7 +50,7 @@ class Triggers:
 
         if random.randint(1, 500) == 1:
             return await message.channel.send(file=discord.File(
-                f"data{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
+                f"assets{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
 
         e = discord.Embed(color=find_color(message))
 
