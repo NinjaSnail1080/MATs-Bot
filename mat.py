@@ -208,10 +208,12 @@ class MAT(commands.Bot):
             self.loop.create_task(self.switch_games())
 
     async def on_guild_join(self, guild):
+        app = await self.application_info()
         message = ("Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
-                   "NinjaSnail1080#8581. I can do a bunch of stuff, but I'm still in "
-                   "developement, so even more features are coming soon!\n\nDo `!mat help` to "
-                   "get started!")
+                   f"{app.owner}. I can do a bunch of stuff, but I'm still very much in "
+                   "developement, so even more features are coming soon!\n\nIn addition to all "
+                   "my commands, I also have a numerous trigger words that server to "
+                   "amuse/infuriate the people of this server!\n\nDo `!mat help` to get started")
         try:
             sent = False
             for c in guild.text_channels:

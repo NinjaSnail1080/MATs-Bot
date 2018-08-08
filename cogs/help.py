@@ -59,8 +59,7 @@ class Help:
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 
             await ctx.send(
-                content="**Note**: I can't be on all the time. Since Ninja has no way of hosting "
-                "me 24/7 as of now, I can only be on when he manually runs the script.",
+                content="I'm still in beta, so many more commands are coming in the near future!",
                 embed=embed)
 
         elif cat == "fun":
@@ -154,7 +153,9 @@ class Help:
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands
                                  if c.cog_name == "Utility" and not c.hidden]), inline=False)
 
-            await ctx.send(embed=embed)
+            await ctx.send(
+                content="I'm still in beta, so many more commands are coming in the near future!",
+                embed=embed)
 
         else:
             for cmd in self.bot.commands:
