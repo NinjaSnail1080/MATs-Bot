@@ -25,14 +25,11 @@ import random
 import collections
 import re
 
-#TODO: Fix the many problems I'm facing rn with how the commands interact with the json data files
-
 
 async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
     mods are doing. Then send the embed from a moderation command
     """
-    return  #! Temporary while I fix these issues
     serverdata = get_data("server")
     if serverdata[str(guild.id)]["logs"] == "false":
         return
@@ -212,7 +209,14 @@ class Moderation:
             if serverdata[str(ctx.guild.id)]["logs"] != "false":
                 embed.set_footer(text="The number of messages purged was less than 10, so a log "
                                  "wasn't sent to the logs channel")
-        await ctx.send(embed=embed)
+        try:
+            await ctx.send(embed=embed)
+        except:
+            embed = discord.Embed(
+                title=ctx.author.display_name + " ran a purge command",
+                description=f"{len(purged)} {description} in {ctx.channel.mention}",
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
 
     @purge.command(name="all", brief="Invalid formatting. You must format the command like this: "
                    "`<prefix> purge all (OPTIONAL)<number of messages to delete>`")
@@ -428,6 +432,7 @@ class Moderation:
         else:
             embed.add_field(
                 name="Message", value="*The message was too long to put here*", inline=False)
+        embed.add_field(name="Channel", value=last_delete["channel"])
         embed.set_footer(text="Restored by " + ctx.author.display_name)
 
         await ctx.send(embed=embed)
@@ -435,8 +440,6 @@ class Moderation:
             await ctx.send("The restored message that was too long to send in the above embed"
                            f":```{last_delete['content']}```")
 
-        embed.add_field(name="Channel", value=last_delete["channel"])
-        await send_log(ctx.guild, embed)
 
     @commands.command(brief="Invalid formatting. Format like this: `<prefix> setlogs <mention "
                       "channel or channel name>`.\nTo turn off the logs channel, use "

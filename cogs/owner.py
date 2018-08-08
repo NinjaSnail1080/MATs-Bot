@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import restart_program
+from mat import restart_bot
 from discord.ext import commands
 import discord
 import asyncio
@@ -27,7 +27,7 @@ import os
 
 
 class Owner:
-    """Commands that can only be performed by the bot owner, NinjaSnail1080#858"""
+    """Commands that can only be performed by the bot owner"""
 
     def __init__(self, bot):
         self.bot = bot
@@ -119,7 +119,7 @@ class Owner:
         with open("restart", "w") as f:
             f.write(str(ctx.channel.id))
 
-        restart_program()
+        restart_bot()
 
 def setup(bot):
     bot.add_cog(Owner(bot))

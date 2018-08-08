@@ -81,6 +81,22 @@ class Utility:
                 await asyncio.sleep(6)
                 await ctx.message.delete()
 
+    @commands.command(brief="Invalid formatting. You need to include the hex value of the color. "
+                      "Format like this:\n`<prefix> hextorgb <#hex value>`\nThe hex value will "
+                      "look something like this: `#4286f4`")
+    async def hextorgb(self, ctx, color: discord.Color):
+        """Converts a color's hex value to its RGB values"""
+
+        try:
+            embed = discord.Embed(title="MAT's Color Converter", color=color)
+            embed.add_field(name="Hex", value=color)
+            embed.add_field(name="RGB", value=color.to_rgb())
+
+            await ctx.send(embed=embed)
+        except:
+            raise commands.BadArgument
+
+
     @commands.command(hidden=True)
     @commands.is_owner()  #* Temporary
     async def invite(self, ctx):
@@ -91,8 +107,8 @@ class Utility:
             "oauth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591")
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
-                      "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>"
-                      "`\n\nNote: If you used `-d`, then you must provide a user for it to work")
+                      "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
+                      "\n\nNote: If you used `-d`, then you must provide a user for it to work")
     async def pfp(self, ctx, user: discord.Member=None, default=None):
         """Get a user's profile pic. By default it retrieves your own but you can specify a different user.
         Format like this: `<prefix> pfp (OPTIONAL)<user>`
@@ -183,6 +199,23 @@ class Utility:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
             await asyncio.sleep(5)
             await ctx.message.delete()
+
+    @commands.command(brief="Invalid formatting. You're supposed to include a color's RGB "
+                      "values. Format the command like this:\n`<prefix> rgbtohex <r>, <g>, <b>`"
+                      "\nNote that all 3 numbers must be greater than 0 and less than 256")
+    async def rgbtohex(self, ctx, r: int, g: int, b: int):
+        """Convert a color's RGB values to its hex value"""
+
+        try:
+            new_color = discord.Color.from_rgb(r, g, b)
+            embed = discord.Embed(title="MAT's Color Converter", color=new_color)
+            embed.add_field(name="RGB", value=f"({r}, {g}, {b})")
+            embed.add_field(name="Hex", value=new_color)
+
+            await ctx.send(embed=embed)
+        except:
+            raise commands.BadArgument
+
 
 
 def setup(bot):

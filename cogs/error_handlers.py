@@ -56,7 +56,8 @@ class Error_Handlers:
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
-        elif isinstance(exc, commands.BadArgument):
+        elif (isinstance(exc, commands.BadArgument) or
+                  isinstance(exc, commands.MissingRequiredArgument)):
             await ctx.send(ctx.command.brief, delete_after=15.0)
             await asyncio.sleep(15)
             try:

@@ -15,9 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = "0.5.2"
-
-#TODO: Fix this: the .data.json files reset every time the bot runs
+__version__ = "0.5.5"
 
 from discord.ext import commands
 import discord
@@ -71,7 +69,6 @@ if __name__ == "__main__":
 def get_data(to_return=None):
     """Gets data from all of the .data.json file"""
 
-    global botdata
     if os.path.exists("bot.data.json"):
         with open("bot.data.json", "r") as f:
             botdata = dict(json.load(f))
@@ -80,7 +77,6 @@ def get_data(to_return=None):
             botdata = {"messages_read": {}, "commands_used": {}}
             json.dump(botdata, f)
 
-    global serverdata
     if os.path.exists("server.data.json"):
         with open("server.data.json", "r") as f:
             serverdata = dict(json.load(f))
@@ -89,7 +85,6 @@ def get_data(to_return=None):
             serverdata = {}
             json.dump(serverdata, f)
 
-    global userdata
     if os.path.exists("user.data.json"):
         with open("user.data.json", "r") as f:
             userdata = dict(json.load(f))
@@ -99,7 +94,7 @@ def get_data(to_return=None):
             json.dump(userdata, f)
 
     if to_return is None:
-        return None
+        return
     elif to_return == "bot":
         return botdata
     elif to_return == "server":
@@ -112,8 +107,6 @@ def get_data(to_return=None):
 
 def dump_data(to_dump, file):
     """Dumps data to the .data.json files"""
-
-    import rapidjson as json
 
     if file == "bot":
         with open("bot.data.json", "w") as f:
@@ -130,7 +123,7 @@ def dump_data(to_dump, file):
         raise TypeError("\"file\" param must be either \"bot\", \"server\", or \"user\"")
 
 
-def restart_program():
+def restart_bot():
     """Restarts the current program after cleaning up file objects and descriptors"""
 
     try:
@@ -177,15 +170,16 @@ class MAT(commands.Bot):
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
 
+        get_data()
+
         for extention in initial_extensions:
             self.load_extension(extention)
 
-        get_data()
-
-        self.commands_used = collections.Counter()
-        self.messages_read = collections.Counter()
+        self.commands_used = collections.Counter(get_data("bot")["commands_used"])
+        self.messages_read = collections.Counter(get_data("bot")["messages_read"])
 
     async def on_ready(self):
+        serverdata = get_data("server")
         for g in self.guilds:
             if str(g.id) not in serverdata:
                 serverdata[str(g.id)] = {"name": g.name, "logs": "null", "triggers": {}}
@@ -235,6 +229,7 @@ class MAT(commands.Bot):
                     color=discord.Color.blurple()))
         except: pass
 
+        serverdata = get_data("server")
         serverdata[str(guild.id)] = {"name": guild.name, "logs": "null", "triggers": {}}
         for c in guild.channels:
             serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
@@ -289,6 +284,7 @@ class MAT(commands.Bot):
             self.commands_used["TOTAL"] += 1
             self.commands_used[ctx.command.name] += 1
 
+            botdata = get_data("bot")
             botdata["commands_used"] = dict(self.commands_used)
             dump_data(botdata, "bot")
 
@@ -300,6 +296,7 @@ class MAT(commands.Bot):
         if message.guild is not None:
             self.messages_read[str(message.guild.id)] += 1
 
+        botdata = get_data("bot")
         botdata["messages_read"] = dict(self.messages_read)
         dump_data(botdata, "bot")
 
@@ -314,14 +311,17 @@ class MAT(commands.Bot):
                                "creation": message.created_at.strftime(
                                    "**Sent on:** %A, %B %-d, %Y at %X UTC")}
 
+                serverdata = get_data("server")
                 serverdata[str(message.guild.id)]["last_delete"] = last_delete
                 dump_data(serverdata, "server")
 
     async def on_guild_channel_create(self, channel):
+        serverdata = get_data("server")
         serverdata[str(channel.guild.id)]["triggers"][str(channel.id)] = "true"
         dump_data(serverdata, "server")
 
     async def on_guild_channel_delete(self, channel):
+        serverdata = get_data("server")
         serverdata[str(channel.guild.id)]["triggers"].pop(str(channel.id), None)
         if serverdata[str(channel.guild.id)]["logs"] == str(channel.id):
             serverdata[str(channel.guild.id)]["logs"] = "null"

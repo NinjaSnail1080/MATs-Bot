@@ -115,8 +115,7 @@ class Fun:
         (Randomly selects from a list of 30)
         """
         await ctx.channel.trigger_typing()
-        with open(os.path.join(
-            os.path.dirname(__file__), "data" + os.sep + "copypastas.txt"), "r") as f:
+        with open(f"data{os.sep}copypastas.txt") as f:
 
             copypastas = f.read()
             copypastas = copypastas.split("\n\n\n\n")

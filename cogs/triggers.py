@@ -22,6 +22,7 @@ import discord
 import asyncio
 
 import re
+import os
 import random
 
 sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-D-Does s-s-she "
@@ -45,20 +46,23 @@ class Triggers:
                 return
 
         if message.author.id == 281807963147075584:
-            await message.channel.send(random.choice(sigma_responses))
+            return await message.channel.send(random.choice(sigma_responses))
+
+        if random.randint(1, 500) == 1:
+            return await message.channel.send(file=discord.File(
+                f"data{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
 
         e = discord.Embed(color=find_color(message))
 
         if re.search("pinged", message.content, re.IGNORECASE):
-            await message.channel.send(content="Pinged?", embed=e.set_image(
-                url="https://media.discordapp.net/attachments/445766533096931370/45982534883881"
-                "7792/ping.gif"))
+            await message.channel.send(
+                content="Pinged?", embed=e.set_image(url="https://i.imgur.com/LelDalN.gif"))
 
-        elif re.search("think", message.content, re.IGNORECASE) or re.search(
-            "thonk", message.content, re.IGNORECASE) or re.search(
-                "thunk", message.content, re.IGNORECASE) or re.search(
-                    "thenk", message.content, re.IGNORECASE) or re.search(
-                        "hmm", message.content, re.IGNORECASE):
+        elif (re.search("think", message.content, re.IGNORECASE) or
+                  re.search("thonk", message.content, re.IGNORECASE) or
+                      re.search("thunk", message.content, re.IGNORECASE) or
+                          re.search("thenk", message.content, re.IGNORECASE) or
+                              re.search("hmm", message.content, re.IGNORECASE)):
             await message.add_reaction(":thonk:468520122848509962")
 
         elif message.content.lower() == "k":
@@ -100,6 +104,16 @@ class Triggers:
             await message.channel.trigger_typing()
             await asyncio.sleep(1)
             await message.channel.send("∞th")
+
+        elif (re.search("frick", message.content, re.IGNORECASE) or
+                  re.search("heck", message.content, re.IGNORECASE)):
+            await message.channel.send(
+                embed=e.set_image(url="https://i.imgur.com/hG59Noq.jpg"))
+
+        elif (re.search("ban ", message.content, re.IGNORECASE) or
+                  re.search("banned", message.content, re.IGNORECASE)):
+            await message.channel.send(
+                content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
 
 
 def setup(bot):
