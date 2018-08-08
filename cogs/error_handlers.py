@@ -21,7 +21,6 @@ import discord
 import asyncio
 
 import random
-import datetime
 
 
 class Error_Handlers:
@@ -69,8 +68,6 @@ class Error_Handlers:
         elif isinstance(exc, discord.Forbidden):
             return
         else:
-            print("This exception was raised "
-                  f"on {datetime.datetime.now().strftime('%b %-d, %Y at %X')}:\n\n{exc}\n\n")
             app = await self.bot.application_info()
             return await ctx.send(
                 f"```Command: {ctx.command.name}\n{exc}```An unknown error occured and I wasn't "

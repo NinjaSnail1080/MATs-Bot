@@ -80,7 +80,7 @@ class Owner:
         try:
             await ctx.message.delete()
         except discord.Forbidden:
-            print("Can't delete message in this server")
+            pass
         await self.bot.wait_until_ready()
 
         if arg is None:

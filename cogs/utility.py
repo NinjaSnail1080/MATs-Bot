@@ -98,7 +98,6 @@ class Utility:
 
 
     @commands.command(hidden=True)
-    @commands.is_owner()  #* Temporary
     async def invite(self, ctx):
         """Generates an invite link so you can add me to your own server!"""
 
