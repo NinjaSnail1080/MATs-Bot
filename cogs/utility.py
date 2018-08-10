@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color
+# from mat import find_color
+from mat_experimental import find_color
+
 from discord.ext import commands
 import discord
 import asyncio
@@ -71,8 +73,8 @@ class Utility:
 
                     await ctx.send(embed=embed)
                 except:
-                    await ctx.send("Oh, something went wrong trying to shorten this URL. "
-                                   "Try again", delete_after=5.0)
+                    await ctx.send("Oops, something went wrong while trying to shorten/expand "
+                                   "this URL. Try again", delete_after=5.0)
                     await asyncio.sleep(5)
                     await ctx.message.delete()
             else:
@@ -97,7 +99,7 @@ class Utility:
             raise commands.BadArgument
 
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def invite(self, ctx):
         """Generates an invite link so you can add me to your own server!"""
 
@@ -136,13 +138,23 @@ class Utility:
         """
         if content is None:
             await ctx.send("You need to include some text to encode. Format like this: "
-                           "`<prefix> qr <text to encode>`", delete_after=5.0)
-            await asyncio.sleep(5)
+                           "`<prefix> qr <text to encode>`", delete_after=7.0)
+            await asyncio.sleep(7)
             await ctx.message.delete()
         else:
-            qrcode.make(content).save("qr.png")
-            await ctx.send(
-                content=f"```{content}``` as a QR code:", file=discord.File("qr.png"))
+            try:
+                await ctx.channel.trigger_typing()
+                qrcode.make(content).save("qr.png")
+                await ctx.send(
+                    content=f"```{content}``` as a QR code:", file=discord.File("qr.png"))
+
+            except discord.HTTPException:
+                await ctx.send("The text you sent me was too long to encode. I ended up reaching "
+                               "Discord's character limit. Try again with a smaller amount of "
+                               "text.", delete_after=10.0)
+                await asyncio.sleep(10)
+                await ctx.message.delete()
+
             os.remove("qr.png")
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
@@ -162,6 +174,7 @@ class Utility:
                            "etc.)")
             return
         try:
+            await ctx.channel.trigger_typing()
             length = int(length)
             if length > 1500:
                 length = 1500

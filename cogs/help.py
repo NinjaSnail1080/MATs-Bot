@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color
+# from mat import find_color
+from mat_experimental import find_color
+
 from discord.ext import commands
 import discord
 
@@ -166,10 +168,9 @@ class Help:
                     embed.set_author(name="MAT's Bot")
 
                     if cmd.aliases:
-                        embed.add_field(name="Aliases", value="`" + ", ".join(cmd.aliases) + "`")
+                        embed.add_field(name="Aliases", value=f"`{', '.join(cmd.aliases)}`")
 
                     await ctx.send(embed=embed)
-                    break
                     return
 
             await ctx.send("That's not a category. The ones you can pick are:\n\n`fun` (Fun "

@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color, get_data
+# from mat import find_color, get_data
+from mat_experimental import find_color, get_data
+
 from discord.ext import commands
 import discord
 import asyncio
@@ -48,7 +50,7 @@ class Triggers:
         if message.author.id == 281807963147075584:
             return await message.channel.send(random.choice(sigma_responses))
 
-        if random.randint(1, 500) == 1:
+        if random.random() < (20 / message.guild.member_count) / 100:
             return await message.channel.send(file=discord.File(
                 f"assets{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
 

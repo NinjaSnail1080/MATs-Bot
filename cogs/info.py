@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import __version__, find_color
+# from mat import find_color, __version__
+from mat_experimental import find_color, __version__
+
 from discord.ext import commands
 import discord
 import asyncio

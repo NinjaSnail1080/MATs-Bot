@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import find_color
+# from mat import find_color
+from mat_experimental import find_color
+
 from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
@@ -36,6 +38,7 @@ class NSFW:
     @commands.guild_only()
     async def girl(self, ctx):
         """Sends a pic of a (usually nude) girl"""
+
         try:
             with ctx.channel.typing():
                 async with aiohttp.ClientSession().get(

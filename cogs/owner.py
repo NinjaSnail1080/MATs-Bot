@@ -16,7 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from mat import restart_bot
+# from mat import restart_bot
+from mat_experimental import restart_bot
+
 from discord.ext import commands
 import discord
 import asyncio
