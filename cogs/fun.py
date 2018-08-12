@@ -37,6 +37,7 @@ class Fun:
 
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
 
     @commands.command()
     async def ascii(self, ctx, *, image=None):
@@ -88,8 +89,7 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession().get(
-                    "http://www.commitstrip.com/?random=1") as w:
+                async with self.session.get("http://www.commitstrip.com/?random=1") as w:
                     soup = BeautifulSoup(await w.text(), "lxml")
 
                     url = str(w.url)
@@ -122,6 +122,8 @@ class Fun:
             copypastas = f.read()
             copypastas = copypastas.split("\n\n\n\n")
             copypastas = list(filter(None, copypastas))
+            import pprint
+            pprint.pprint(copypastas)
 
         await ctx.send(random.choice(copypastas))
 
@@ -131,7 +133,7 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession().get("http://explosm.net/comics/random") as w:
+                async with self.session.get("http://explosm.net/comics/random") as w:
                     soup = BeautifulSoup(await w.text(), "lxml")
 
                     url = str(w.url)
@@ -260,7 +262,7 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession().get("https://c.xkcd.com/random/comic/") as w:
+                async with self.session.get("https://c.xkcd.com/random/comic/") as w:
                     soup = BeautifulSoup(await w.text(), "lxml")
 
                     url = str(w.url)

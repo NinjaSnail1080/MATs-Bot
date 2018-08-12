@@ -108,14 +108,17 @@ class Triggers:
             await message.channel.send("∞th")
 
         elif (re.search("frick", message.content, re.IGNORECASE) or
-                  re.search(" heck", message.content, re.IGNORECASE)):
+                  re.search(" heck", message.content, re.IGNORECASE) or
+                      message.content.lower() == "heck"):
             await message.channel.send(
                 embed=e.set_image(url="https://i.imgur.com/hG59Noq.jpg"))
 
         elif (re.search("ban ", message.content, re.IGNORECASE) or
-                  re.search("banned", message.content, re.IGNORECASE)):
-            await message.channel.send(
-                content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
+                  re.search("banned", message.content, re.IGNORECASE) or
+                      message.content.lower() == "ban"):
+            if not message.content.startswith("!mat") and not message.content.startswith("expt"):
+                await message.channel.send(
+                    content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
 
 
 def setup(bot):

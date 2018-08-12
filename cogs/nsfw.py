@@ -32,6 +32,7 @@ class NSFW:
 
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
 
     @commands.command()
     @commands.is_nsfw()
@@ -41,8 +42,7 @@ class NSFW:
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession().get(
-                    "https://russiasexygirls.com/?random") as w:
+                async with self.session.get("https://russiasexygirls.com/?random") as w:
                     soup = BeautifulSoup(await w.text(), "lxml")
 
                     url = str(w.url)
@@ -75,10 +75,10 @@ class NSFW:
 
         #* Heavy WIP
         with ctx.channel.typing():
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    "https://www.reddit.com/r/gonewild/hot.json?sort=hot", headers=
-                    {"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
+                async with self.session.get(
+                    "https://www.reddit.com/r/gonewild/hot.json?sort=hot",
+                    headers={"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
+
                     page = await w.json()
 
                     embed = discord.Embed(color=find_color(ctx))
