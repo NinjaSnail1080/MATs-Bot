@@ -55,6 +55,30 @@ class Info:
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["allbans"])
+    @commands.guild_only()
+    async def allbanned(self, ctx):
+        """Sends a list of all the banned users from the server"""
+
+        await ctx.channel.trigger_typing()
+        try:
+            banned = await ctx.guild.bans()
+        except discord.Forbidden:
+            return await ctx.send("I'm sorry, but I don't have permission to view the banned "
+                                  "members. For that I need the Ban Members command")
+        if len(banned) == 0:
+            return await ctx.send("This server hasn't banned any users yet")
+
+        embed = discord.Embed(title=f"All users banned from {ctx.guild.name}",
+                              description=f"Command performed by {ctx.author.mention}",
+                              color=find_color(ctx))
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        embed.add_field(
+            name=f"Banned ({len(banned)})",
+            value="\n".join(str(b.user) + f" (ID: {b.user.id})" for b in banned), inline=False)
+
+        await ctx.send(embed=embed)
+
     @commands.command()
     @commands.guild_only()
     async def allchannels(self, ctx):
