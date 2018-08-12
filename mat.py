@@ -41,8 +41,8 @@ import config
 games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
          "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick",
          "with the server owner's pussy", "with you", "dead", "with myself",
-         "some epic game that you don't have", "with fire", "hard-to-get", "Project X",
-         "you like a god damn fiddle", "getting friendzoned by Sigma"]
+         "a prank on you", "with fire", "hard-to-get", "Project X", "you like a god damn fiddle",
+         "getting friendzoned by Sigma"]
 
 if __name__ == "__main__":
     import urllib3
