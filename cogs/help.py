@@ -51,21 +51,21 @@ class Help:
                 color=find_color(ctx))
 
             embed.add_field(
-                name="<:confetti:464831811558572035> Fun", value=f"{len(cmds["Fun"])} "
+                name="<:confetti:464831811558572035> Fun", value=f"{len(cmds['Fun'])} "
                 "commands\n`<prefix> help fun` for more info")
             embed.add_field(
-                name="<:info:464831966382915584> Info", value=f"{len(cmds["Info"])} commands"
+                name="<:info:464831966382915584> Info", value=f"{len(cmds['Info'])} commands"
                 "\n`<prefix> help info` for more info")
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
-                value=f"{len(cmds["Moderation"])} commands\n`<prefix> help mod` for more info")
+                value=f"{len(cmds['Moderation'])} commands\n`<prefix> help mod` for more info")
             embed.add_field(
                 name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
-                name=":wink: NSFW", value=f"{len(cmds["NSFW"])} commands\n`<prefix> help nsfw` "
+                name=":wink: NSFW", value=f"{len(cmds['NSFW'])} commands\n`<prefix> help nsfw` "
                 "for more info")
             embed.add_field(
-                name=":tools: Utility", value=f"{len(cmds["Utility"])} commands\n`<prefix> "
+                name=":tools: Utility", value=f"{len(cmds['Utility'])} commands\n`<prefix> "
                 "help nsfw` for more info")
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 
