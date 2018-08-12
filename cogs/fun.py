@@ -37,7 +37,7 @@ class Fun:
 
     def __init__(self, bot):
         self.bot = bot
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
     @commands.command()
     async def ascii(self, ctx, *, image=None):
@@ -122,8 +122,6 @@ class Fun:
             copypastas = f.read()
             copypastas = copypastas.split("\n\n\n\n")
             copypastas = list(filter(None, copypastas))
-            import pprint
-            pprint.pprint(copypastas)
 
         await ctx.send(random.choice(copypastas))
 

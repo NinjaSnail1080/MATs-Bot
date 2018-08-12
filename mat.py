@@ -182,8 +182,8 @@ class MAT(commands.Bot):
         serverdata = get_data("server")
         for g in self.guilds:
             if str(g.id) not in serverdata:
-                serverdata[str(g.id)] = {"name": g.name, "logs": "null", "triggers": {}}
-                for c in g.channels:
+                serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
+                for c in g.text_channels:
                     serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
 
@@ -232,8 +232,8 @@ class MAT(commands.Bot):
         except: pass
 
         serverdata = get_data("server")
-        serverdata[str(guild.id)] = {"name": guild.name, "logs": "null", "triggers": {}}
-        for c in guild.channels:
+        serverdata[str(guild.id)] = {"name": guild.name, "triggers": {}}
+        for c in guild.text_channels:
             serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
 
@@ -281,6 +281,50 @@ class MAT(commands.Bot):
             content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
                 len(set(self.get_all_members()))) + " unique users!", embed=embed)
 
+    async def on_guild_remove(self, guild):
+        serverdata = get_data("server")
+        serverdata.pop(str(guild.id), None)
+        dump_data(serverdata, "server")
+
+    async def on_guild_update(self, before, after):
+        serverdata = get_data("server")
+        serverdata[str(before.id)]["name"] = after.name
+        dump_data(serverdata, "server")
+
+    async def on_guild_channel_create(self, channel):
+        if isinstance(channel, discord.TextChannel):
+            serverdata = get_data("server")
+            serverdata[str(channel.guild.id)]["triggers"][str(channel.id)] = "true"
+            dump_data(serverdata, "server")
+
+    async def on_guild_channel_delete(self, channel):
+        if isinstance(channel, discord.TextChannel):
+            serverdata = get_data("server")
+            serverdata[str(channel.guild.id)]["triggers"].pop(str(channel.id), None)
+            if serverdata[str(channel.guild.id)]["logs"] == str(channel.id):
+                serverdata[str(channel.guild.id)].pop("logs", None)
+            dump_data(serverdata, "server")
+
+    async def on_member_join(self, member):
+        serverdata = get_data("server")
+        if "welcome" not in serverdata[str(member.guild.id)]:
+            return
+        else:
+            channel = self.get_channel(int(
+                serverdata[str(member.guild.id)]["welcome"]["channel"]))
+            await channel.send(
+                serverdata[str(member.guild.id)]["welcome"]["message"].format(member.name))
+
+    async def on_member_remove(self, member):
+        serverdata = get_data("server")
+        if "goodbye" not in serverdata[str(member.guild.id)]:
+            return
+        else:
+            channel = self.get_channel(int(
+                serverdata[str(member.guild.id)]["goodbye"]["channel"]))
+            await channel.send(
+                serverdata[str(member.guild.id)]["goodbye"]["message"].format(member.name))
+
     async def on_command(self, ctx):
         if not ctx.command.hidden:
             self.commands_used["TOTAL"] += 1
@@ -317,23 +361,11 @@ class MAT(commands.Bot):
                 serverdata[str(message.guild.id)]["last_delete"] = last_delete
                 dump_data(serverdata, "server")
 
-    async def on_guild_channel_create(self, channel):
-        serverdata = get_data("server")
-        serverdata[str(channel.guild.id)]["triggers"][str(channel.id)] = "true"
-        dump_data(serverdata, "server")
-
-    async def on_guild_channel_delete(self, channel):
-        serverdata = get_data("server")
-        serverdata[str(channel.guild.id)]["triggers"].pop(str(channel.id), None)
-        if serverdata[str(channel.guild.id)]["logs"] == str(channel.id):
-            serverdata[str(channel.guild.id)]["logs"] = "null"
-        dump_data(serverdata, "server")
-
     async def switch_games(self):
         await self.wait_until_ready()
         while True:
             await self.change_presence(activity=discord.Game(random.choice(games)))
-            await asyncio.sleep(random.randint(4, 8))
+            await asyncio.sleep(random.randint(5, 10))
 
     def run(self, token):
         self.loop.create_task(self.switch_games())

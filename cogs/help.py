@@ -38,26 +38,35 @@ class Help:
     async def help(self, ctx, cat=None):
         """MAT's Bot | Help command"""
 
+        cmds = {}
+        for c in self.bot.commands:
+            try:
+                cmds[c.cog_name].append(c.name)
+            except:
+                cmds[c.cog_name] = [c.name]
+
         if cat is None:
             embed = discord.Embed(
                 title="MAT's Bot | Help command", description=list_prefixes + "\n**Categories**:",
                 color=find_color(ctx))
 
             embed.add_field(
-                name="<:confetti:464831811558572035> Fun", value="9 commands\n`<prefix> help "
-                "fun` for more info")
+                name="<:confetti:464831811558572035> Fun", value=f"{len(cmds["Fun"])} "
+                "commands\n`<prefix> help fun` for more info")
             embed.add_field(
-                name="<:info:464831966382915584> Info", value="4 commands\n`<prefix> help info` "
-                "for more info")
+                name="<:info:464831966382915584> Info", value=f"{len(cmds["Info"])} commands"
+                "\n`<prefix> help info` for more info")
             embed.add_field(
-                name="<:raisedfist:470319397291163678> Moderation", value="4 commands\n`<prefix> "
-                "help mod` for more info")
+                name="<:raisedfist:470319397291163678> Moderation",
+                value=f"{len(cmds["Moderation"])} commands\n`<prefix> help mod` for more info")
             embed.add_field(
                 name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
-                name=":wink: NSFW", value="2 commands\n`<prefix> help nsfw` for more info")
+                name=":wink: NSFW", value=f"{len(cmds["NSFW"])} commands\n`<prefix> help nsfw` "
+                "for more info")
             embed.add_field(
-                name=":tools: Utility", value="4 commands\n`<prefix> help nsfw` for more info")
+                name=":tools: Utility", value=f"{len(cmds["Utility"])} commands\n`<prefix> "
+                "help nsfw` for more info")
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 
             await ctx.send(
