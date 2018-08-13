@@ -22,6 +22,8 @@ from mat_experimental import find_color
 from discord.ext import commands
 import discord
 
+import collections
+
 # list_prefixes = "**Prefixes**: `" + "` | `".join()) + "`"
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
 
@@ -38,12 +40,10 @@ class Help:
     async def help(self, ctx, cat=None):
         """MAT's Bot | Help command"""
 
-        cmds = {}
+        cmds = collections.Counter()
         for c in self.bot.commands:
-            try:
-                cmds[c.cog_name].append(c.name)
-            except:
-                cmds[c.cog_name] = [c.name]
+            if not c.hidden:
+                cmds[c.cog_name] += 1
 
         if cat is None:
             embed = discord.Embed(
@@ -51,21 +51,21 @@ class Help:
                 color=find_color(ctx))
 
             embed.add_field(
-                name="<:confetti:464831811558572035> Fun", value=f"{len(cmds['Fun'])} "
+                name="<:confetti:464831811558572035> Fun", value=f"{cmds['Fun']} "
                 "commands\n`<prefix> help fun` for more info")
             embed.add_field(
-                name="<:info:464831966382915584> Info", value=f"{len(cmds['Info'])} commands"
+                name="<:info:464831966382915584> Info", value=f"{cmds['Info']} commands"
                 "\n`<prefix> help info` for more info")
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
-                value=f"{len(cmds['Moderation'])} commands\n`<prefix> help mod` for more info")
+                value=f"{cmds['Moderation']} commands\n`<prefix> help mod` for more info")
             embed.add_field(
                 name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
-                name=":wink: NSFW", value=f"{len(cmds['NSFW'])} commands\n`<prefix> help nsfw` "
+                name=":wink: NSFW", value=f"{cmds['NSFW']} commands\n`<prefix> help nsfw` "
                 "for more info")
             embed.add_field(
-                name=":tools: Utility", value=f"{len(cmds['Utility'])} commands\n`<prefix> "
+                name=":tools: Utility", value=f"{cmds['Utility']} commands\n`<prefix> "
                 "help nsfw` for more info")
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 

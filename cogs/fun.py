@@ -117,7 +117,7 @@ class Fun:
         (Randomly selects from a list of 30)
         """
         await ctx.channel.trigger_typing()
-        with open(f"assets{os.sep}copypastas.txt") as f:
+        with open(f"assets{os.sep}copypastas.txt", "r") as f:
 
             copypastas = f.read()
             copypastas = copypastas.split("\n\n\n\n")
@@ -240,11 +240,15 @@ class Fun:
             await asyncio.sleep(5)
             await ctx.message.delete()
         else:
-            await ctx.send(stuff[::-1])
+            stuff = stuff[::-1]
+            stuff = stuff.replace("@everyone", "`@everyone`")
+            stuff = stuff.replace("@here", "`@here`")
+
+            await ctx.send(stuff)
 
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
                                "puts"])
-    async def say(self, ctx, *, stuff=None):
+    async def say(self, ctx, *, stuff: str=None):
         """Make me say something!"""
 
         if stuff is None:
@@ -252,6 +256,9 @@ class Fun:
             await asyncio.sleep(5)
             await ctx.message.delete()
         else:
+            stuff = stuff.replace("@everyone", "`@everyone`")
+            stuff = stuff.replace("@here", "`@here`")
+
             await ctx.send(stuff)
 
     @commands.command()
