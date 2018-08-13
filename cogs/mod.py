@@ -83,7 +83,9 @@ class Moderation:
         """**Must have the "Ban Members" permission**
         Bans a user from the server
         Format like this: `<prefix> ban <user> <reason for banning>`
+        (WIP. May not work properly sometimes)
         """
+        #TODO: Finish this!
         if not ctx.author.permissions_in(ctx.channel).ban_members:
             await ctx.send("You don't have permission to ban members", delete_after=5.0)
             await asyncio.sleep(5)
@@ -109,13 +111,13 @@ class Moderation:
             await ctx.guild.ban(
                 user=user, reason=reason + " | Action performed by " + ctx.author.name)
             await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
         except discord.Forbidden:
-            return await ctx.send(
+            await ctx.send(
                 f"I don't have permissions to ban **{user.name}**. What's the point of having "
                 "all these moderation commmands if I can't use them?\nEither I don't have perms "
                 "to ban, period, or my role is too low. Can one of you guys in charge fix that "
                 "please?")
-        await send_log(ctx.guild, embed)
 
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
@@ -149,13 +151,13 @@ class Moderation:
         try:
             await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
             await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
         except discord.Forbidden:
-            return await ctx.send(
+            await ctx.send(
                 f"I don't have permissions to kick **{member.display_name}**. What's the point "
                 "of having all these moderation commmands if I can't use them?\nEither I don't "
                 "have perms to kick, period, or my role is too low. Can one of you guys in "
                 "charge fix that please?")
-        await send_log(ctx.guild, embed)
 
     @commands.command()
     @commands.guild_only()
@@ -255,7 +257,7 @@ class Moderation:
             await send_log(ctx.guild, embed)
 
         for m in purged:
-            messages[m.author.name] += 1
+            messages[m.author.display_name] += 1
         for a, m in messages.items():
             embed.add_field(name=a, value=f"{m} messages")
 
@@ -295,18 +297,24 @@ class Moderation:
     @purge.command()
     async def clear(self, ctx):
         if not ctx.guild.me.permissions_in(ctx.channel).manage_channels:
-                return await ctx.send("I need the Manage Channels permission in order to do this "
-                                      "command. Hey mods! You mind fixing that?")
+                return await ctx.send(
+                    "I need the Manage Channels permission in order to do this command. Hey "
+                    "mods! You mind fixing that?")
+
+        serverdata = get_data("server")
         name = ctx.channel.name
         perms = dict(ctx.channel.overwrites)
         cat = ctx.channel.category
         topic = ctx.channel.topic
         pos = ctx.channel.position
         nsfw = ctx.channel.is_nsfw()
+        triggers = serverdata[str(ctx.guild.id)]["triggers"][str(ctx.channel.id)]
 
         await ctx.channel.delete(reason=ctx.author.display_name + " cleared the channel")
         cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
         await cleared.edit(topic=topic, position=pos, nsfw=nsfw)
+        serverdata[str(ctx.guild.id)]["triggers"][str(cleared.id)] = triggers
+        dump_data(serverdata, "server")
 
         embed = discord.Embed(
             title=ctx.author.display_name + " ran a purge command",
@@ -495,6 +503,67 @@ class Moderation:
             await ctx.send("The restored message that was too long to send in the above embed"
                            f":```{last_delete['content']}```")
 
+    @commands.command(hidden=True)
+    @commands.guild_only()
+    async def rmgoodbye(self, ctx):
+        """**Must have Administrator permissions**
+        Removes a previously set custom welcome message
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        serverdata = get_data("server")
+        if "goodbye" not in serverdata[str(ctx.guild.id)]:
+            await ctx.send("This server doesn't have a custom goodbye message. Use "
+                           "the `setgoodbye` command to make one", delete_after=7.0)
+            await asyncio.sleep(7)
+            return await ctx.message.delete()
+
+        msg = serverdata[str(ctx.guild.id)]["goodbye"]["message"]
+        serverdata[str(ctx.guild.id)].pop("goodbye", None)
+        dump_data(serverdata, "server")
+
+        embed = discord.Embed(
+            title=ctx.author.display_name + " REMOVED the custom goodbye message",
+            description=f"**Message**: ```{msg.format('(member)')}```",
+            color=find_color(ctx))
+
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
+
+    @commands.command(hidden=True)
+    @commands.guild_only()
+    async def rmwelcome(self, ctx):
+        """**Must have Administrator permissions**
+        Removes a previously set custom goodbye message
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        serverdata = get_data("server")
+        if "welcome" not in serverdata[str(ctx.guild.id)]:
+            await ctx.send("This server doesn't have a custom welcome message. Use "
+                           "the `setwelcome` command to make one", delete_after=7.0)
+            await asyncio.sleep(7)
+            return await ctx.message.delete()
+
+        msg = serverdata[str(ctx.guild.id)]["welcome"]["message"]
+        serverdata[str(ctx.guild.id)].pop("welcome", None)
+        dump_data(serverdata, "server")
+
+        embed = discord.Embed(
+            title=ctx.author.display_name + " REMOVED the custom welcome message",
+            description=f"**Message**: ```{msg.format('(member)')}```",
+            color=find_color(ctx))
+
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
 
     @commands.command(brief="Invalid formatting. Format like this: `<prefix> setlogs <mention "
                       "channel or channel name>`.\nTo turn off the logs channel, use "
@@ -524,6 +593,71 @@ class Moderation:
             f"This is now the new logs channel, set by {ctx.author.mention}. Whenever "
             "someone uses one of my moderation commands, a message will be sent here to keep "
             "a log of them.")
+
+    @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
+                      "`<prefix> setgoodbye <#mention channel> <goodbye message>`\n\nWhen you're "
+                      "typing the message, put a pair of braces `{}` in to mark where the new "
+                      "member's name will go. It's required that you put the braces in "
+                      "there somewhere")
+    @commands.guild_only()
+    async def setgoodbye(self, ctx, channel: discord.TextChannel, *, msg: str):
+        """**Must have Administrator permissions**
+        Set a custom goodbye message to send whenever a member leaves the server.
+        Format like this: `<prefix> setgoodbye <#mention channel> <goodbye message>`
+        When you're typing the message, put a pair of braces `{}` in to mark where the member's name will go. The braces are required.
+        Finally, to remove the custom goodbye message, just use the `rmgoodbye` command
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        if "{}" not in msg:
+            raise commands.BadArgument
+
+        serverdata = get_data("server")
+        serverdata[str(ctx.guild.id)]["goodbye"] = {"message": msg, "channel": str(channel.id)}
+        dump_data(serverdata, "server")
+
+        embed = discord.Embed(title=ctx.author.display_name + " set a new custom goodbye message",
+                              description=f"**Channel**: {channel.mention}\n**Message**: "
+                              f"```{msg.format('(member)')}```", color=find_color(ctx))
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
+
+
+    @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
+                      "`<prefix> setwelcome <#mention channel> <welcome message>`\n\nWhen you're "
+                      "typing the message, put a pair of braces `{}` in to mark where the new "
+                      "member's name will go. It's required that you put the braces in "
+                      "there somewhere")
+    @commands.guild_only()
+    async def setwelcome(self, ctx, channel: discord.TextChannel, *, msg: str):
+        """**Must have Administrator permissions**
+        Set a custom welcome message to send whenever a new member joins the server.
+        Format like this: `<prefix> setwelcome <#mention channel> <welcome message>`
+        When you're typing the message, put a pair of braces `{}` in to mark where the new member's name will go. The braces are required.
+        Finally, to remove the custom welcome message, just use the `rmwelcome` command
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        if "{}" not in msg:
+            raise commands.BadArgument
+
+        serverdata = get_data("server")
+        serverdata[str(ctx.guild.id)]["welcome"] = {"message": msg, "channel": str(channel.id)}
+        dump_data(serverdata, "server")
+
+        embed = discord.Embed(title=ctx.author.display_name + " set a new custom welcome message",
+                              description=f"**Channel**: {channel.mention}\n**Message**: "
+                              f"```{msg.format('(member)')}```", color=find_color(ctx))
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
 
     @commands.command()
     @commands.guild_only()
@@ -585,13 +719,13 @@ class Moderation:
             await ctx.guild.unban(
                 user=user, reason=reason + " | Action performed by " + ctx.author.name)
             await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
         except discord.Forbidden:
-            return await ctx.send(
+            await ctx.send(
                 f"I don't have permissions to unban **{user.name}**. What's the point "
                 "of having all these moderation commmands if I can't use them?\nIn order to "
                 "unban someone, I need the Ban Members permission. Can one of you guys in "
                 "charge fix that please?")
-        await send_log(ctx.guild, embed)
 
 
 def setup(bot):
