@@ -237,7 +237,7 @@ class MAT(commands.Bot):
             serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
         dump_data(serverdata, "server")
 
-        joins = self.get_guild(463959531807047700).get_channel(465393762512797696)
+        joins = self.get_channel(465393762512797696)
 
         bots = []
         for m in guild.members:
@@ -313,7 +313,7 @@ class MAT(commands.Bot):
             channel = self.get_channel(int(
                 serverdata[str(member.guild.id)]["welcome"]["channel"]))
             await channel.send(
-                serverdata[str(member.guild.id)]["welcome"]["message"].format(member.name))
+                serverdata[str(member.guild.id)]["welcome"]["message"].format(member.mention))
 
     async def on_member_remove(self, member):
         serverdata = get_data("server")
