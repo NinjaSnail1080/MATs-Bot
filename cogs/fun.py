@@ -196,7 +196,7 @@ class Fun:
         with ctx.channel.typing():
             pfp = user.avatar_url_as(format="png")
             async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
-                                        f"&image={pfp}&text={comment}&username={user.name}") as w:
+                                        f"&image={pfp}&text={comment}&username={user.display_name}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
