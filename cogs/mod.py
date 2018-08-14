@@ -462,7 +462,7 @@ class Moderation:
     @commands.guild_only()
     async def restore(self, ctx):
         """**Must have the "Manage Messages" permission**
-        Restores the last deleted message. I can't restore uploaded files though, unfortunately
+        Restores the last deleted message by a non-bot member
         """
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use this command",
@@ -475,13 +475,6 @@ class Moderation:
         except:
             await ctx.send(
                 "Unable to find the last deleted message. Sorry!", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
-
-        if last_delete["content"] == "":
-            await ctx.send(
-                "I can't restore this message. It was probably a file or something, and I can't "
-                "restore uploaded files. Sorry!", delete_after=5.0)
             await asyncio.sleep(5)
             return await ctx.message.delete()
 
@@ -500,8 +493,7 @@ class Moderation:
 
         await ctx.send(embed=embed)
         if len(f"```{last_delete['content']}```") > 1024:
-            await ctx.send("The restored message that was too long to send in the above embed"
-                           f":```{last_delete['content']}```")
+            await ctx.send(f"```{last_delete['content']}```")
 
     @commands.command(hidden=True)
     @commands.guild_only()

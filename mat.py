@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = "0.5.6"
+__version__ = "0.5.8"
 
 from discord.ext import commands
 import discord
@@ -351,8 +351,12 @@ class MAT(commands.Bot):
     async def on_message_delete(self, message):
         if not isinstance(message.channel, discord.DMChannel):
             if not message.author.bot:
+                content = message.clean_content + "\n"
+                for a in message.attachments:
+                    content = content + "\n" + a.url
+
                 last_delete = {"author": message.author.mention,
-                               "content": message.clean_content,
+                               "content": content,
                                "channel": message.channel.mention,
                                "creation": message.created_at.strftime(
                                    "**Sent on:** %A, %B %-d, %Y at %X UTC")}
