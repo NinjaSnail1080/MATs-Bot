@@ -49,11 +49,22 @@ class NSFW:
 
         embed = discord.Embed(color=find_color(ctx))
         embed.set_image(url=resp["message"])
-        embed.set_footer(text=ctx.author.display_name)
+        embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
 
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def anal(self, ctx):
+        """Sends gifs of anal sex"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type=anal") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["butts"])
     @commands.guild_only()
     @commands.is_nsfw()
     async def ass(self, ctx):
@@ -63,6 +74,38 @@ class NSFW:
             async with self.session.get("https://nekobot.xyz/api/image?type=ass") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["tits"])
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def boobs(self, ctx):
+        """Posts some boobs"""
+
+        with ctx.channel.typing():
+            try:
+                async with self.session.get(
+                    f"http://api.oboobs.ru/boobs/get/{random.randint(1, 13013)}") as w:
+                    resp = await w.json()
+                    try:
+                        resp = resp[0]
+                    except: pass
+
+                    url = "http://media.oboobs.ru/" + resp["preview"]
+                    if resp["model"] is None or resp["model"] == "":
+                        model = ""
+                    else:
+                        model = "**Model**: " + resp["model"]
+
+                    embed = discord.Embed(color=find_color(ctx), description=model)
+                    embed.set_image(url=url)
+                    embed.set_footer(text=f"boobs | {ctx.author.display_name}")
+
+                    await ctx.send(embed=embed)
+            except:
+                await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                               "again later", delete_after=6.0)
+                await asyncio.sleep(6)
+                return await ctx.message.delete()
 
     @commands.command(name="4k", aliases=["fourk"])
     @commands.guild_only()
@@ -154,6 +197,17 @@ class NSFW:
         with ctx.channel.typing():
             async with self.session.get("https://nekobot.xyz/api/image?type="
                                         f"{random.choice(['lewdneko', 'lewdkitsune'])}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["porngif"])
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def pgif(self, ctx):
+        """Posts a porn gif"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type=pgif") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 

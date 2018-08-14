@@ -31,6 +31,9 @@ import random
 import re
 import os
 
+#* MAT's Bot uses the NekoBot API for many of these commands.
+#* More info at https://docs.nekobot.xyz/
+
 
 class Fun:
     """Fun stuff!"""
@@ -81,6 +84,56 @@ class Fun:
                            ":\n\n`http://www.example.com/something/image.png`", delete_after=10.0)
             await asyncio.sleep(10)
             await ctx.message.delete()
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> baguette (OPTIONAL)<@mention user>`")
+    async def baguette(self, ctx, user: discord.Member=None):
+        """Eat a baguette
+        Format like this: `<prefix> baguette (OPTIONAL)<@mention user>`
+        """
+        with ctx.channel.typing():
+            if user is None:
+                user = ctx.author
+            img = user.avatar_url_as(format="png")
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
+    async def bigletter(self, ctx, *, text: str):
+        """Turn text into :regional_indicator_b: :regional_indicator_i: :regional_indicator_g:   :regional_indicator_l: :regional_indicator_e: :regional_indicator_t: :regional_indicator_t: :regional_indicator_e: :regional_indicator_r: :regional_indicator_s:
+        Format like this: `<prefix> bigletter <text>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
+                resp = await w.json()
+
+            if not resp["success"]:
+                await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
+                               "again later", delete_after=6.0)
+                await asyncio.sleep(6)
+                return await ctx.message.delete()
+
+            await ctx.send(resp["message"])
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
+    async def captcha(self, ctx, user: discord.Member=None):
+        """Turns a user's avatar into a CAPTCHA "I am not a robot" test
+        Format like this: `<prefix> captcha (OPTIONAL)<@mention user>`
+        """
+        with ctx.channel.typing():
+            if user is None:
+                user = ctx.author
+            img = user.avatar_url_as(format="png")
+            async with self.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
+                    f"&username={user.display_name}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -201,6 +254,36 @@ class Fun:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
+    async def kidnap(self, ctx, user: discord.Member=None):
+        """A group of anime girls kidnap you and you get featured on WatchMojo
+        Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
+        """
+        with ctx.channel.typing():
+            if user is None:
+                user = ctx.author
+            img = user.avatar_url_as(format="png")
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> kms (OPTIONAL)<user>`")
+    async def kms(self, ctx, user: discord.Member=None):
+        """KMS
+        Format like this: <prefix> kms (OPTIONAL)<user>
+        """
+        with ctx.channel.typing():
+            if user is None:
+                user = ctx.author
+            img = user.avatar_url_as(format="png")
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
     @commands.command()
     async def lenny(self, ctx):
         """A list of Lenny faces for all your copypasting needs"""
@@ -293,6 +376,18 @@ class Fun:
         with ctx.channel.typing():
             async with self.session.get(
                     f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> tweet <twitter usernamer> <tweet>`")
+    async def tweet(self, ctx, user: str, *, tweet: str):
+        """Tweet as yourself or another twitter user!
+        Format like this: `<prefix> tweet <twitter username> <tweet>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/imagegen?type=tweet"
+                                        f"&username={user}&text={tweet}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 

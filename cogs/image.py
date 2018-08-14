@@ -56,6 +56,18 @@ class Image:
             embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image>`")
+    async def awooify(self, ctx, member: discord.Member=None):
+        """Awooify an image or a member's avatar"""
+
+        with ctx.channel.typing():
+            img = self.get_image(ctx, member)
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image>`")
     async def blurpify(self, ctx, member: discord.Member=None):
         """Blurpify an image or a member's avatar"""
@@ -64,22 +76,6 @@ class Image:
             img = self.get_image(ctx, member)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
-
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
-    async def captcha(self, ctx, user: discord.Member=None):
-        """Turns a user's avatar into a CAPTCHA "I am not a robot" test
-        Format like this: `<prefix> captcha (OPTIONAL)<@mention user>`
-        """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
-                f"&username={user.display_name}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -104,21 +100,6 @@ class Image:
             img = self.get_image(ctx, member)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
-
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
-    async def kidnap(self, ctx, user: discord.Member=None):
-        """A group of anime girls kidnap you and you get featured on WatchMojo
-        Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
-        """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
