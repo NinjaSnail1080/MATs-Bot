@@ -30,7 +30,6 @@ import aiohttp
 
 class Image:
     """Image Manipulation commands"""
-    #TODO: Clean up the code
 
     def __init__(self, bot):
         self.bot = bot
