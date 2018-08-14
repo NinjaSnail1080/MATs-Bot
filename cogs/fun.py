@@ -39,6 +39,16 @@ class Fun:
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
+    async def send_image(self, ctx, resp):
+        if not resp["success"]:
+            await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                           "again later", delete_after=6.0)
+            await asyncio.sleep(6)
+            return await ctx.message.delete()
+
+        await ctx.send(
+            embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
+
     @commands.command()
     async def ascii(self, ctx, *, image=None):
         """Converts an image into ascii art. Will work for most images.
@@ -111,11 +121,10 @@ class Fun:
             await asyncio.sleep(6)
             await ctx.message.delete()
 
-    @commands.command()
+    @commands.command(aliases=["shitpost"])
     async def copypasta(self, ctx):
-        """Posts a copypasta
-        (Randomly selects from a list of 30)
-        """
+        """Posts a random copypasta/shitpost"""
+
         await ctx.channel.trigger_typing()
         with open(f"assets{os.sep}copypastas.txt", "r") as f:
 
@@ -177,6 +186,19 @@ class Fun:
         msg = await ctx.send(
             f"{ctx.author.mention} has paid their respects. Press F to pay yours.")
         await msg.add_reaction("\U0001f1eb")
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> phcomment <@mention user> <comment>`")
+    async def phcomment(self, ctx, user: discord.Member, *, comment: str):
+        """Generate a PornHub comment!
+        Format like this: `<prefix> phcomment <@mention user> <comment>`
+        """
+        with ctx.channel.typing():
+            pfp = user.avatar_url_as(format="png")
+            async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
+                                        f"&image={pfp}&text={comment}&username={user.name}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
 
     @commands.command()
     async def lenny(self, ctx):
@@ -260,6 +282,18 @@ class Fun:
             stuff = stuff.replace("@here", "`@here`")
 
             await ctx.send(stuff)
+
+    @commands.command(brief="You didn't format the command correctly. You're supposed to include "
+                      "some text for the tweet `<prefix> trumptweet <tweet>`")
+    async def trumptweet(self, ctx, *, tweet: str):
+        """Tweet as Trump!
+        Format like this: `<prefix> trumptweet <tweet>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
 
     @commands.command()
     async def xkcd(self, ctx):
