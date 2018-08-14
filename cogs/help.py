@@ -54,13 +54,14 @@ class Help:
                 name="<:confetti:464831811558572035> Fun", value=f"{cmds['Fun']} "
                 "commands\n`<prefix> help fun` for more info")
             embed.add_field(
+                name="<:paint:464836778000515072> Image Manipulation", value=f"{cmds['Image']} "
+                "commands\n`<prefix> help image` for more info")
+            embed.add_field(
                 name="<:info:464831966382915584> Info", value=f"{cmds['Info']} commands"
                 "\n`<prefix> help info` for more info")
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
                 value=f"{cmds['Moderation']} commands\n`<prefix> help mod` for more info")
-            embed.add_field(
-                name=":notes: Music", value="0 commands\n`<prefix> help music` for more info")
             embed.add_field(
                 name=":wink: NSFW", value=f"{cmds['NSFW']} commands\n`<prefix> help nsfw` "
                 "for more info")
@@ -85,7 +86,18 @@ class Help:
             await ctx.send(embed=embed)
 
         elif cat == "image":
-            await ctx.send("No commands yet ¯\_(ツ)_/¯")
+            embed = discord.Embed(title="Help | Image Manipulation Commands",
+                                  description=list_prefixes + "\n\n**For all of these commands "
+                                  "(unless stated otherwise), you need to either attach an image "
+                                  "or @mention another user after the command. If you don't, "
+                                  "I'll default to your user**", color=find_color(ctx))
+
+            embed.set_author(name="MAT's Bot")
+            for c in self.bot.commands:
+                if c.cog_name == "Image" and not c.hidden:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            await ctx.send(embed=embed)
 
         elif cat == "info":
             embed = discord.Embed(title="Help | Information Commands", description=list_prefixes,
@@ -146,6 +158,10 @@ class Help:
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands if c.cog_name == "Fun"
                                  and not c.hidden]), inline=False)
             embed.add_field(
+                name="<:paint:464836778000515072> Image Manipulation",
+                value=", ".join([f"`{c.name}`" for c in self.bot.commands if c.cog_name == "Image"
+                                 and not c.hidden]), inline=False)
+            embed.add_field(
                 name="<:info:464831966382915584> Info",
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands if c.cog_name == "Info"
                                  and not c.hidden]), inline=False)
@@ -153,8 +169,6 @@ class Help:
                 name="<:raisedfist:470319397291163678> Moderation",
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands
                                  if c.cog_name == "Moderation" and not c.hidden]), inline=False)
-            embed.add_field(
-                name=":notes: Music", value="No commands yet ¯\_(ツ)_/¯", inline=False)
             embed.add_field(
                 name=":wink: NSFW",
                 value=", ".join([f"`{c.name}`" for c in self.bot.commands if c.cog_name == "NSFW"
@@ -182,10 +196,11 @@ class Help:
                     await ctx.send(embed=embed)
                     return
 
-            await ctx.send("That's not a category. The ones you can pick are:\n\n`fun` (Fun "
-                            "commands)\n`info` (Information commands)\n`mod` (Moderation commands"
-                            ")\n`music` (Music commands)\n`nsfw` (NSFW commands)\n\nYou can also "
-                            "put the name of a command for help on that command only")
+            await ctx.send(
+                "That's not a category. The ones you can pick are:\n\n`fun` (Fun commands)\n"
+                "`image` (Image Manipulation commands)\n`info` (Information commands)\n`mod` "
+                "(Moderation commands)\n`nsfw` (NSFW commands)\n`utility` (Utility commands)\n\n"
+                "You can also put the name of a command for help on that command only")
 
 
 def setup(bot):
