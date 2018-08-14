@@ -72,7 +72,7 @@ class Error_Handlers:
             return await ctx.send(
                 f"```Command: {ctx.command.name}\n{exc}```An unknown error occured and I wasn't "
                 "able to complete that command. Sorry!\n\nPlease get in touch with my "
-                f"owner, {app.owner.name}, and tell him what happened so he can try and fix this "
+                "owner, NinjaSnail1080, and tell him what happened so he can try and fix this "
                 "issue. You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
 
