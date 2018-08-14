@@ -22,9 +22,15 @@ from mat_experimental import find_color
 from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
+import asyncio
 import aiohttp
 
 import random
+
+#* MAT's Bot uses the NekoBot API for many of these commands.
+#* More info at https://docs.nekobot.xyz/
+
+r_user_agent = {"User-Agent": "mats-bot-reddit:1.0"}
 
 
 class NSFW:
@@ -34,9 +40,44 @@ class NSFW:
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
+    async def send_image(self, ctx, resp):
+        if not resp["success"]:
+            await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                           "again later", delete_after=6.0)
+            await asyncio.sleep(6)
+            return await ctx.message.delete()
+
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_image(url=resp["message"])
+        embed.set_footer(text=ctx.author.display_name)
+
+        await ctx.send(embed=embed)
+
     @commands.command()
-    @commands.is_nsfw()
     @commands.guild_only()
+    @commands.is_nsfw()
+    async def ass(self, ctx):
+        """Posts some ass"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type=ass") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(name="4k", aliases=["fourk"])
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def fourk(self, ctx):
+        """Sends some 4k porn (usually softcore)"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type=4k") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_nsfw()
     async def girl(self, ctx):
         """Sends a pic of a (usually nude) girl"""
 
@@ -52,6 +93,7 @@ class NSFW:
                     for p in soup.find_all("p"):
                         if "https://russiasexygirls.com/" in str(p):
                             pics.append(p)
+
                     del pics[0]
                     del pics[0]
                     image = random.choice(pics).a.img["src"]
@@ -64,35 +106,67 @@ class NSFW:
 
                 await ctx.send(embed=embed)
         except:
-            await ctx.send("Huh, something went wrong. It looks like servers are down so I "
-                            "wasn't able to get a picture. Try again in a little bit.")
+            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
+                           " able to get a picture. Try again in a little bit.", delete_after=6.0)
+            await asyncio.sleep(6)
+            return await ctx.message.delete()
 
     @commands.command()
-    @commands.is_nsfw()
     @commands.guild_only()
+    @commands.is_nsfw()
     async def gonewild(self, ctx):
-        """Sends a random post from r/gonewild (Not actually working yet. Heavy WIP)"""
+        """Sends a random post from either r/gonewild, r/gonewildcurvy, r/AsiansGoneWild, r/PetiteGoneWild, or r/BigBoobsGW
+        Note: Sometimes, the image will be blank because I wasn't able to get a valid image url. In that case, you can just click on the title and go directly to the post"""
 
-        #* Heavy WIP
         with ctx.channel.typing():
+            subs = ["gonewild", "gonewildcurvy", "AsiansGoneWild", "PetiteGoneWild", "BigBoobsGW"]
+            try:
                 async with self.session.get(
-                    "https://www.reddit.com/r/gonewild/hot.json?sort=hot",
-                    headers={"User-Agent": "mats-bot-reddit : v1.0 (by u/NinjaSnail1080)"}) as w:
+                    f"https://www.reddit.com/r/{random.choice(subs)}/hot.json?sort=hot",
+                    headers=r_user_agent) as w:
 
-                    page = await w.json()
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
 
-                    embed = discord.Embed(color=find_color(ctx))
-                    embed.set_image(url=random.choice(
-                        ["https://i.pinimg.com/736x/05/15/cf/0515cf0c3e92d83deae8d0c4d880ebd6"
-                         "--honeypot-penny.jpg", "http://ancensored.com/files/images/vthumbs/"
-                         "p/55b26456f635ac3dbd7910fe21f2ec8b_full.jpg", "http://www.celebset."
-                         "net/pics/P/3309Penny%20Baker%20(Mens%20Club).jpg", "https://i.pinim"
-                         "g.com/736x/e0/26/3c/e0263c9fca451d3779dc6d409ddeb896--bathing-beaut"
-                         "ies-bubble-baths.jpg"]))
-                    await ctx.send(
-                        "**Heavily WIP. Not working yet**. When finished, this command will send "
-                        "a random post from r/gonewild.\n\nFor now, please enjoy this picture of "
-                        "Penny Baker", embed=embed)
+                    embed = discord.Embed(
+                        title=data["title"], description=f"By u/{data['author']}",
+                        url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+                    embed.set_image(url=data["url"])
+                    embed.set_author(
+                        name=data["subreddit_name_prefixed"],
+                        url="https://www.reddit.com/" + data["subreddit_name_prefixed"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+
+            except:
+                await ctx.send("Huh, something went wrong and I wasn't able to get an image. "
+                               "Try again", delete_after=6.0)
+                await asyncio.sleep(6)
+                await ctx.message.delete()
+
+    @commands.command(aliases=["nekos"])
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def neko(self, ctx):
+        """Posts some lewd nekos"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type="
+                                        f"{random.choice(['lewdneko', 'lewdkitsune'])}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def pussy(self, ctx):
+        """Posts some pussy"""
+
+        with ctx.channel.typing():
+            async with self.session.get("https://nekobot.xyz/api/image?type=pussy") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
 
 
 def setup(bot):
