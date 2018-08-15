@@ -47,12 +47,15 @@ class Image:
     async def send_image(self, ctx, resp):
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                           "again later", delete_after=6.0)
-            await asyncio.sleep(6)
+                           "again later", delete_after=5.0)
+            await asyncio.sleep(5)
             return await ctx.message.delete()
 
-        await ctx.send(
-            embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_image(url=resp["message"])
+        embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
+
+        await ctx.send(embed=embed)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image>`")
@@ -62,7 +65,7 @@ class Image:
         with ctx.channel.typing():
             img = self.get_image(ctx, member)
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -112,6 +115,19 @@ class Image:
             img = self.get_image(ctx, member)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
+                      "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
+                      "OR attach an image>`")
+    async def threats(self, ctx, member: discord.Member=None):
+        """Identify a threat to society"""
+
+        with ctx.channel.typing():
+            img = self.get_image(ctx, member)
+            async with self.session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 

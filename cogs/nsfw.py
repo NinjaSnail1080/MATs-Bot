@@ -27,10 +27,10 @@ import aiohttp
 
 import random
 
+import config
+
 #* MAT's Bot uses the NekoBot API for many of these commands.
 #* More info at https://docs.nekobot.xyz/
-
-r_user_agent = {"User-Agent": "mats-bot-reddit:1.0"}
 
 
 class NSFW:
@@ -43,8 +43,8 @@ class NSFW:
     async def send_image(self, ctx, resp):
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                           "again later", delete_after=6.0)
-            await asyncio.sleep(6)
+                           "again later", delete_after=5.0)
+            await asyncio.sleep(5)
             return await ctx.message.delete()
 
         embed = discord.Embed(color=find_color(ctx))
@@ -81,8 +81,8 @@ class NSFW:
     async def boobs(self, ctx):
         """Posts some boobs"""
 
-        with ctx.channel.typing():
-            try:
+        try:
+            with ctx.channel.typing():
                 async with self.session.get(
                     f"http://api.oboobs.ru/boobs/get/{random.randint(1, 13013)}") as w:
                     resp = await w.json()
@@ -101,11 +101,11 @@ class NSFW:
                     embed.set_footer(text=f"boobs | {ctx.author.display_name}")
 
                     await ctx.send(embed=embed)
-            except:
-                await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                               "again later", delete_after=6.0)
-                await asyncio.sleep(6)
-                return await ctx.message.delete()
+        except:
+            await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                           "again later", delete_after=5.0)
+            await asyncio.sleep(5)
+            return await ctx.message.delete()
 
     @commands.command(name="4k", aliases=["fourk"])
     @commands.guild_only()
@@ -161,12 +161,12 @@ class NSFW:
         """Sends a random post from either r/gonewild, r/gonewildcurvy, r/AsiansGoneWild, r/PetiteGoneWild, or r/BigBoobsGW
         Note: Sometimes, the image will be blank because I wasn't able to get a valid image url. In that case, you can just click on the title and go directly to the post"""
 
-        with ctx.channel.typing():
-            subs = ["gonewild", "gonewildcurvy", "AsiansGoneWild", "PetiteGoneWild", "BigBoobsGW"]
-            try:
+        subs = ["gonewild", "gonewildcurvy", "AsiansGoneWild", "PetiteGoneWild", "BigBoobsGW"]
+        try:
+            with ctx.channel.typing():
                 async with self.session.get(
                     f"https://www.reddit.com/r/{random.choice(subs)}/hot.json?sort=hot",
-                    headers=r_user_agent) as w:
+                    headers=config.R_USER_AGENT) as w:
 
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
@@ -181,12 +181,11 @@ class NSFW:
                     embed.set_footer(text=f"👍 - {data['score']}")
 
                     await ctx.send(embed=embed)
-
-            except:
-                await ctx.send("Huh, something went wrong and I wasn't able to get an image. "
-                               "Try again", delete_after=6.0)
-                await asyncio.sleep(6)
-                await ctx.message.delete()
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get an image. "
+                           "Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command(aliases=["nekos"])
     @commands.guild_only()
