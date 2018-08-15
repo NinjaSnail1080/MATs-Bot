@@ -31,6 +31,8 @@ import random
 import re
 import os
 
+import config
+
 #* MAT's Bot uses the NekoBot API for many of these commands.
 #* More info at https://docs.nekobot.xyz/
 
@@ -45,8 +47,8 @@ class Fun:
     async def send_image(self, ctx, resp):
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                           "again later", delete_after=6.0)
-            await asyncio.sleep(6)
+                           "again later", delete_after=5.0)
+            await asyncio.sleep(5)
             return await ctx.message.delete()
 
         await ctx.send(
@@ -96,7 +98,7 @@ class Fun:
                 user = ctx.author
             img = user.avatar_url_as(format="png")
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -108,13 +110,13 @@ class Fun:
         """
         with ctx.channel.typing():
             async with self.session.get(
-                    f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
+                f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
                 resp = await w.json()
 
             if not resp["success"]:
                 await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
-                               "again later", delete_after=6.0)
-                await asyncio.sleep(6)
+                               "again later", delete_after=5.0)
+                await asyncio.sleep(5)
                 return await ctx.message.delete()
 
             await ctx.send(resp["message"])
@@ -131,7 +133,31 @@ class Fun:
             img = user.avatar_url_as(format="png")
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
-                    f"&username={user.display_name}") as w:
+                f"&username={user.display_name}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> changemymind <text>`")
+    async def changemymind(self, ctx, *, text: str):
+        """Dare people to change your mind
+        Format like this: `<prefix> changemymind <text>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
+                      "supposed to look like this: `<prefix> clyde <text>`")
+    async def clyde(self, ctx, *, text: str):
+        """Clydify text (Basically, have Clyde type some text)
+        Format like this: `<prefix> clyde <text>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -163,7 +189,8 @@ class Fun:
 
             embed = discord.Embed(title=title, color=find_color(ctx), url=url)
 
-            embed.set_author(name="CommitStrip", url="http://www.commitstrip.com/en/?")
+            embed.set_author(name="CommitStrip",
+                             url="http://www.commitstrip.com/en/?")
             embed.set_image(url=image)
             embed.set_footer(text="Published: " + date)
 
@@ -178,14 +205,26 @@ class Fun:
     async def copypasta(self, ctx):
         """Posts a random copypasta/shitpost"""
 
-        await ctx.channel.trigger_typing()
-        with open(f"assets{os.sep}copypastas.txt", "r") as f:
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    "https://www.reddit.com/r/copypasta/hot.json?sort=hot",
+                    headers=config.R_USER_AGENT) as w:
 
-            copypastas = f.read()
-            copypastas = copypastas.split("\n\n\n\n")
-            copypastas = list(filter(None, copypastas))
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
 
-        await ctx.send(random.choice(copypastas))
+                    embed = discord.Embed(
+                        title=data["title"], url=data["url"], description=data["selftext"],
+                        color=find_color(ctx))
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a copypasta. "
+                           "Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
     async def cyhap(self, ctx):
@@ -254,10 +293,22 @@ class Fun:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
+    @commands.command(aliases=["kannafy"], brief="You didn't format the command correctly. It's "
+                      "supposed to look like this: `<prefix> kannagen <text>`")
+    async def kannagen(self, ctx, *, text: str):
+        """Kannafy some text (Sorry for the poor image quality)
+        Format like this: `<prefix> kannagen <text>`
+        """
+        with ctx.channel.typing():
+            async with self.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=kannagen&text={text}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
     async def kidnap(self, ctx, user: discord.Member=None):
-        """A group of anime girls kidnap you and you get featured on WatchMojo
+        """A group of anime girls kidnap you and you get featured on some YouTube video
         Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
         """
         with ctx.channel.typing():
@@ -265,7 +316,7 @@ class Fun:
                 user = ctx.author
             img = user.avatar_url_as(format="png")
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -280,7 +331,7 @@ class Fun:
                 user = ctx.author
             img = user.avatar_url_as(format="png")
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -305,6 +356,32 @@ class Fun:
 
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def meme(self, ctx):
+        """Posts a dank meme"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    f"https://www.reddit.com/r/{random.choice(['memes', 'dankmemes'])}/hot.json?"
+                    "sort=hot", headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    embed = discord.Embed(
+                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
+                        color=find_color(ctx))
+                    embed.set_image(url=data["url"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
+                           "Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
+
     @commands.command(aliases=["weirdspeak"])
     async def mock(self, ctx, *, stuff: str=None):
         """Say something and I'll mock you"""
@@ -317,8 +394,7 @@ class Fun:
         await ctx.channel.trigger_typing()
 
         embed = discord.Embed(color=find_color(ctx))
-        embed.set_image(url="https://media.discordapp.net/attachments/452928801093976064/"
-                        "473376642069299201/mock.jpg")
+        embed.set_image(url="https://i.imgur.com/8NmOT8w.jpg")
         stuff = list(stuff.lower())
         mock = []
         for i in stuff:
@@ -375,7 +451,7 @@ class Fun:
         """
         with ctx.channel.typing():
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
@@ -391,10 +467,25 @@ class Fun:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`")
+    async def whowouldwin(self, ctx, user1: discord.Member, user2: discord.Member=None):
+        """Who would win?
+        Format like this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`
+        """
+        with ctx.channel.typing():
+            if user2 is None:
+                user2 = ctx.author
+            img1 = user1.avatar_url_as(format="png")
+            img2 = user2.avatar_url_as(format="png")
+            async with self.session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
+                                        f"&user1={img1}&user2={img2}") as w:
+                resp = await w.json()
+                await self.send_image(ctx, resp)
+
     @commands.command()
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""
-
         try:
             with ctx.channel.typing():
                 async with self.session.get("https://c.xkcd.com/random/comic/") as w:
