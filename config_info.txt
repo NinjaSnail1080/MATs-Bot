@@ -4,3 +4,4 @@ Here are all of the variables stored in the "config" module:
 
 - TOKEN: Assigned to a string that contains the bot's token. It's needed in order to run the bot.
 - BITLY: Assigned to a string containing my bitly.com access token for the API. It's needed for the "bitly" command to work.
+- R_USER_AGENT: Assigned to a dictionary that contains a Reddit user agent for the commands that use the Reddit API, such as "meme" and "gonewild". It looks like this: {"User-Agent": <user agent here>}
