@@ -88,9 +88,9 @@ class Help:
         elif cat == "image":
             embed = discord.Embed(title="Help | Image Manipulation Commands",
                                   description=list_prefixes + "\n\n**For all of these commands "
-                                  "(unless stated otherwise), you need to either attach an image "
-                                  "or @mention another user after the command. If you don't, "
-                                  "I'll default to your user**", color=find_color(ctx))
+                                  "you need to either attach an image or @mention another user "
+                                  "after the command. If you don't, I'll default to your "
+                                  "user**", color=find_color(ctx))
 
             embed.set_author(name="MAT's Bot")
             for c in self.bot.commands:
