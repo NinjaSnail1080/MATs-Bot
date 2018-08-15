@@ -59,10 +59,10 @@ class NSFW:
     async def anal(self, ctx):
         """Sends gifs of anal sex"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type=anal") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=anal") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(aliases=["butts"])
     @commands.guild_only()
@@ -70,10 +70,10 @@ class NSFW:
     async def ass(self, ctx):
         """Posts some ass"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type=ass") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=ass") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(aliases=["tits"])
     @commands.guild_only()
@@ -113,10 +113,10 @@ class NSFW:
     async def fourk(self, ctx):
         """Sends some 4k porn (usually softcore)"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type=4k") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=4k") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command()
     @commands.guild_only()
@@ -193,11 +193,11 @@ class NSFW:
     async def neko(self, ctx):
         """Posts some lewd nekos"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type="
-                                        f"{random.choice(['lewdneko', 'lewdkitsune'])}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type="
+                                    f"{random.choice(['lewdneko', 'lewdkitsune'])}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(aliases=["porngif"])
     @commands.guild_only()
@@ -205,10 +205,44 @@ class NSFW:
     async def pgif(self, ctx):
         """Posts a porn gif"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type=pgif") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=pgif") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
+
+    @commands.command(hidden=True, brief="Invalid formatting. You need to include some search "
+                      "terms after the command")
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def phsearch(self, ctx, *, terms):
+        """Search Pornhub!
+        Format like this: `<prefix> phsearch <search terms>`
+        """
+        try:
+            with ctx.channel.typing():
+                async with self.session.get("https://www.pornhub.com/video/search?search="
+                                            f"{terms.replace(' ', '+')}") as w:
+                    soup = BeautifulSoup(await w.text(), "lxml")
+
+                    title = soup.find("a", {"class": "img"})['title']
+                    url = "https://www.pornhub.com" + soup.find("a", {"class": "img"})['href']
+                    preview = soup.find("a", {"class": "img"}).img["data-image"]
+                    duration = soup.find(
+                        "div", {"class": "img fade fadeUp videoPreviewBg"}).var.get_text()
+
+                    embed = discord.Embed(title=title, description="**Duration**: " + duration,
+                                          color=find_color(ctx), url=url)
+                    embed.set_image(url=preview)
+
+                    await ctx.send(embed=embed)
+        except:
+            import traceback
+            print(traceback.format_exc())
+            return
+            await ctx.send("Huh, something went wrong and I wasn't able to get an image. "
+                           "Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command()
     @commands.guild_only()
@@ -216,10 +250,10 @@ class NSFW:
     async def pussy(self, ctx):
         """Posts some pussy"""
 
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/image?type=pussy") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=pussy") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
 
 def setup(bot):
