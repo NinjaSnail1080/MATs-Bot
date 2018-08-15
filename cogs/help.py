@@ -28,6 +28,12 @@ import collections
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
 
 
+def chunks(l, s):
+    """Yield s-sized chunks from l"""
+    for i in range(0, len(l), s):
+        yield l[i:i + s]
+
+
 class Help:
     """Help commands"""
 
@@ -74,79 +80,152 @@ class Help:
                 content="I'm still in beta, so many more commands are coming in the near future!",
                 embed=embed)
 
-        elif cat == "fun":
-            embed = discord.Embed(title="Help | Fun Commands", description=list_prefixes,
-                                  color=find_color(ctx))
+        elif cat.lower() == "fun":
+            cmds = list(c for c in self.bot.commands if c.cog_name == "Fun" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
 
+            embed = discord.Embed(
+                title="Help | Fun Commands", description=list_prefixes, color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "Fun" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "image":
+        elif cat.lower() == "image":
+            cmds = list(c for c in self.bot.commands if c.cog_name == "Image" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
+
             embed = discord.Embed(title="Help | Image Manipulation Commands",
                                   description=list_prefixes + "\n\n**For all of these commands "
                                   "you need to either attach an image or @mention another user "
-                                  "after the command. If you don't, I'll default to your "
-                                  "user**", color=find_color(ctx))
-
+                                  "after the command to use their avatar. If you don't, I'll "
+                                  "default to your user and your avatar**", color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "Image" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "info":
+        elif cat.lower() == "info":
+            cmds = list(c for c in self.bot.commands if c.cog_name == "Info" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
+
             embed = discord.Embed(title="Help | Information Commands", description=list_prefixes,
                                   color=find_color(ctx))
-
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "Info" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "mod":
+        elif cat.lower() == "mod" or cat.lower() == "moderation":
+            cmds = list(
+                c for c in self.bot.commands if c.cog_name == "Moderation" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
+
             embed = discord.Embed(title="Help | Moderation Commands", description=list_prefixes,
                                   color=find_color(ctx))
-
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "Moderation" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "music":
+        elif cat.lower() == "music":
             await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
-        elif cat == "utility":
-            embed = discord.Embed(title="Help | Utility Commands", description=list_prefixes,
-                                  color=find_color(ctx))
+        elif cat.lower() == "utility":
+            cmds = list(c for c in self.bot.commands if c.cog_name == "Utility" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
 
+            embed = discord.Embed(
+                title="Help | Utility Commands", description=list_prefixes, color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "Utility" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "nsfw":
-            embed = discord.Embed(title="Help | NSFW Commands", description=list_prefixes,
-                                  color=find_color(ctx))
+        elif cat.lower() == "nsfw":
+            cmds = list(c for c in self.bot.commands if c.cog_name == "NSFW" and not c.hidden)
+            cmds = list(chunks(cmds, 25))
 
+            embed = discord.Embed(
+                title="Help | NSFW Commands", description=list_prefixes, color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
-            for c in self.bot.commands:
-                if c.cog_name == "NSFW" and not c.hidden:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
+
+            for c in cmds[0]:
+                embed.add_field(name=c.name, value=c.help, inline=False)
+
+            extra_embeds = []
+            if len(cmds) > 1:
+                for i in cmds[1:]:
+                    e = discord.Embed(color=find_color(ctx))
+                    for c in i:
+                        e.add_field(name=c.name, value=c.help, inline=False)
+                    extra_embeds.append(e)
 
             await ctx.send(embed=embed)
+            for e in extra_embeds:
+                await ctx.send(embed=e)
 
-        elif cat == "all":
+        elif cat.lower() == "all":
             embed = discord.Embed(
                 title="Help | All Commands", description=list_prefixes, color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
@@ -184,7 +263,7 @@ class Help:
 
         else:
             for cmd in self.bot.commands:
-                if cat == cmd.name:
+                if cat.lower() == cmd.name:
                     embed = discord.Embed(
                         title=f"Help | {cmd.name} Command", description=cmd.help,
                         color=find_color(ctx))
