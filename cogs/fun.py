@@ -93,14 +93,14 @@ class Fun:
         """Eat a baguette
         Format like this: `<prefix> baguette (OPTIONAL)<@mention user>`
         """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
+        img = user.avatar_url_as(format="png")
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
@@ -108,18 +108,18 @@ class Fun:
         """Turn text into :regional_indicator_b: :regional_indicator_i: :regional_indicator_g:   :regional_indicator_l: :regional_indicator_e: :regional_indicator_t: :regional_indicator_t: :regional_indicator_e: :regional_indicator_r: :regional_indicator_s:
         Format like this: `<prefix> bigletter <text>`
         """
-        with ctx.channel.typing():
-            async with self.session.get(
-                f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
-                resp = await w.json()
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
+            resp = await w.json()
 
-            if not resp["success"]:
-                await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
-                               "again later", delete_after=5.0)
-                await asyncio.sleep(5)
-                return await ctx.message.delete()
+        if not resp["success"]:
+            await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
+                            "again later", delete_after=5.0)
+            await asyncio.sleep(5)
+            return await ctx.message.delete()
 
-            await ctx.send(resp["message"])
+        await ctx.send(resp["message"])
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
@@ -127,15 +127,15 @@ class Fun:
         """Turns a user's avatar into a CAPTCHA "I am not a robot" test
         Format like this: `<prefix> captcha (OPTIONAL)<@mention user>`
         """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
-                f"&username={user.display_name}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
+        img = user.avatar_url_as(format="png")
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
+            f"&username={user.display_name}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> changemymind <text>`")
@@ -143,23 +143,23 @@ class Fun:
         """Dare people to change your mind
         Format like this: `<prefix> changemymind <text>`
         """
-        with ctx.channel.typing():
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> clyde <text>`")
     async def clyde(self, ctx, *, text: str):
-        """Clydify text (Basically, have Clyde type some text)
+        """Clydify text (Have Clyde type some text)
         Format like this: `<prefix> clyde <text>`
         """
-        with ctx.channel.typing():
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -285,13 +285,13 @@ class Fun:
         """Generate a PornHub comment!
         Format like this: `<prefix> phcomment <@mention user> <comment>`
         """
-        with ctx.channel.typing():
-            pfp = user.avatar_url_as(format="png")
-            async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
-                                        f"&image={pfp}&text={comment}"
-                                        f"&username={user.display_name}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        pfp = user.avatar_url_as(format="png")
+        async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
+                                    f"&image={pfp}&text={comment}"
+                                    f"&username={user.display_name}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(aliases=["kannafy"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> kannagen <text>`")
@@ -299,11 +299,11 @@ class Fun:
         """Kannafy some text (Sorry for the poor image quality)
         Format like this: `<prefix> kannagen <text>`
         """
-        with ctx.channel.typing():
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=kannagen&text={text}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=kannagen&text={text}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
@@ -311,14 +311,14 @@ class Fun:
         """A group of anime girls kidnap you and you get featured on some YouTube video
         Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
         """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
+        img = user.avatar_url_as(format="png")
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> kms (OPTIONAL)<user>`")
@@ -326,14 +326,14 @@ class Fun:
         """KMS
         Format like this: <prefix> kms (OPTIONAL)<user>
         """
-        with ctx.channel.typing():
-            if user is None:
-                user = ctx.author
-            img = user.avatar_url_as(format="png")
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
+        img = user.avatar_url_as(format="png")
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command()
     async def lenny(self, ctx):
@@ -355,6 +355,32 @@ class Fun:
         embed.set_footer(text="From: https://www.lennyfaces.net/")
 
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def meirl(self, ctx):
+        """Posts that are u irl"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    f"https://www.reddit.com/r/{random.choice(['meirl', 'me_irl'])}/hot.json?"
+                    "sort=hot", headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    embed = discord.Embed(
+                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
+                        color=find_color(ctx))
+                    embed.set_image(url=data["url"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
+                           "Try again", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command()
     async def meme(self, ctx):
@@ -449,11 +475,11 @@ class Fun:
         """Tweet as Trump!
         Format like this: `<prefix> trumptweet <tweet>`
         """
-        with ctx.channel.typing():
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tweet <twitter usernamer> <tweet>`")
@@ -461,11 +487,11 @@ class Fun:
         """Tweet as yourself or another twitter user!
         Format like this: `<prefix> tweet <twitter username> <tweet>`
         """
-        with ctx.channel.typing():
-            async with self.session.get("https://nekobot.xyz/api/imagegen?type=tweet"
-                                        f"&username={user}&text={tweet}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/imagegen?type=tweet"
+                                    f"&username={user}&text={tweet}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`")
@@ -473,15 +499,15 @@ class Fun:
         """Who would win?
         Format like this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`
         """
-        with ctx.channel.typing():
-            if user2 is None:
-                user2 = ctx.author
-            img1 = user1.avatar_url_as(format="png")
-            img2 = user2.avatar_url_as(format="png")
-            async with self.session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
-                                        f"&user1={img1}&user2={img2}") as w:
-                resp = await w.json()
-                await self.send_image(ctx, resp)
+        await ctx.channel.trigger_typing()
+        if user2 is None:
+            user2 = ctx.author
+        img1 = user1.avatar_url_as(format="png")
+        img2 = user2.avatar_url_as(format="png")
+        async with self.session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
+                                    f"&user1={img1}&user2={img2}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command()
     async def xkcd(self, ctx):
