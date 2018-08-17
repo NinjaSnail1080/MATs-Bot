@@ -119,6 +119,123 @@ class Moderation:
                 "to ban, period, or my role is too low. Can one of you guys in charge fix that "
                 "please?")
 
+    @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
+                      "`<prefix> disable <command OR category>`\n\nYou can put a command and "
+                      "I'll disable it for this server or you could put in a category (Fun, "
+                      "Image, NSFW, etc.) and I'll disable all commands in that category")
+    @commands.guild_only()
+    async def disable(self, ctx, cmd):
+        """**Must have Administrater permissions**
+        Disable a command for this server
+        Format like this: `<prefix> disable <command OR category>`
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        if cmd == "help":
+            return await ctx.send(
+                "Yeah, great idea. Disable the freaking help command :rolling_eyes:")
+
+        serverdata = get_data("server")
+        if "disabled" in serverdata[str(ctx.guild.id)]:
+            if cmd in serverdata[str(ctx.guild.id)]["disabled"]:
+                await ctx.send("This command is already disabled", delete_after=5.0)
+                await asyncio.sleep(5)
+                return await ctx.message.delete()
+
+        if cmd in set(c.name for c in self.bot.commands):
+            try:
+                serverdata[str(ctx.guild.id)]["disabled"].append(cmd)
+            except:
+                serverdata[str(ctx.guild.id)]["disabled"] = [cmd]
+            dump_data(serverdata, "server")
+
+            embed = discord.Embed(
+                title=ctx.author.name + " disabled a command",
+                description=f"The `{cmd}` command is now disabled on this server",
+                color=find_color(ctx))
+
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        elif cmd in ["Fun", "Image", "Info", "Moderation", "NSFW", "Utility"]:
+            for c in self.bot.get_cog_commands(cmd):
+                try:
+                    serverdata[str(ctx.guild.id)]["disabled"].append(c.name)
+                except:
+                    serverdata[str(ctx.guild.id)]["disabled"] = [c.name]
+            dump_data(serverdata, "server")
+
+            embed = discord.Embed(title=ctx.author.name + " disabled a group of commands",
+            description=f"All commands in the {cmd} category are now disabled on this server.\n\n"
+            f"`{'`, `'.join(c.name for c in self.bot.commands if c.cog_name == cmd)}`",
+            color=find_color(ctx))
+
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        else:
+            raise commands.BadArgument
+
+    @commands.command(brief="Invalid Formatting. The command is supposed to look like this: "
+                      "`<prefix> enable <command OR \"all\">`\n\nYou can put a command and "
+                      "I'll enable it for this server or you could put in `all` and I'll enable "
+                      "all previously disabled commands")
+    @commands.guild_only()
+    async def enable(self, ctx, cmd):
+        """**Must have Administrater permissions**
+        Disable a command for this server
+        Format like this: `<prefix> enable <command OR "all">`
+        """
+        if not ctx.author.permissions_in(ctx.channel).administrator:
+            await ctx.send("You need to be an Administrator in order to use this command",
+                           delete_after=5.0)
+            await asyncio.sleep(5.0)
+            return await ctx.message.delete()
+
+        if not "disabled" in get_data("server")[str(ctx.guild.id)]:
+            return await ctx.send("This server doesn't have any disabled commands to begin with")
+
+        serverdata = get_data("server")
+        if cmd in serverdata[str(ctx.guild.id)]["disabled"]:
+            serverdata[str(ctx.guild.id)]["disabled"].remove(cmd)
+            dump_data(serverdata, "server")
+
+            embed = discord.Embed(
+                title=ctx.author.name + " enabled a command",
+                description=f"The `{cmd}` command is no longer disabled on this server",
+                color=find_color(ctx))
+
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        elif cmd == "all":
+            disabled = serverdata[str(ctx.guild.id)]["disabled"]
+            serverdata[str(ctx.guild.id)].pop("disabled", None)
+            dump_data(serverdata, "server")
+
+            embed = discord.Embed(
+                title=ctx.author.name + " enabled all previously disabled commands",
+                description="There are no more disabled commands on this server\n\n**Commands "
+                f"enabled**:\n`{'`, `'.join(disabled)}`", color=find_color(ctx))
+
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        elif (cmd not in serverdata[str(ctx.guild.id)]["disabled"] and
+                  cmd in set(c.name for c in self.bot.commands)):
+            await ctx.send("This command is already enabled. Do `<prefix> help` to see a list of "
+                           "all disabled commands", delete_after=7.0)
+            await asyncio.sleep(7)
+            return await ctx.message.delete()
+
+        elif (cmd not in serverdata[str(ctx.guild.id)]["disabled"] and
+                  cmd not in set(c.name for c in self.bot.commands)):
+            raise commands.BadArgument
+
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
     async def kick(self, ctx, member: discord.Member=None, *, reason=None):
@@ -250,7 +367,7 @@ class Moderation:
 
         messages = collections.Counter()
         embed = discord.Embed(
-            title=ctx.author.display_name + " ran a purge command",
+            title=ctx.author.name + " ran a purge command",
             description=f"{len(purged)} {description} in {ctx.channel.mention}",
             color=find_color(ctx))
         if len(purged) >= 10:
@@ -270,7 +387,7 @@ class Moderation:
             await ctx.send(embed=embed)
         except:
             embed = discord.Embed(
-                title=ctx.author.display_name + " ran a purge command",
+                title=ctx.author.name + " ran a purge command",
                 description=f"{len(purged)} {description} in {ctx.channel.mention}",
                 color=find_color(ctx))
             await ctx.send(embed=embed)
@@ -301,23 +418,22 @@ class Moderation:
                     "I need the Manage Channels permission in order to do this command. Hey "
                     "mods! You mind fixing that?")
 
-        serverdata = get_data("server")
         name = ctx.channel.name
         perms = dict(ctx.channel.overwrites)
         cat = ctx.channel.category
         topic = ctx.channel.topic
         pos = ctx.channel.position
         nsfw = ctx.channel.is_nsfw()
-        triggers = serverdata[str(ctx.guild.id)]["triggers"][str(ctx.channel.id)]
+        triggers = get_data("server")[str(ctx.guild.id)]["triggers"][str(ctx.channel.id)]
 
-        await ctx.channel.delete(reason=ctx.author.display_name + " cleared the channel")
+        await ctx.channel.delete(reason=ctx.author.name + " cleared the channel")
         cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
         await cleared.edit(topic=topic, position=pos, nsfw=nsfw)
         serverdata[str(ctx.guild.id)]["triggers"][str(cleared.id)] = triggers
         dump_data(serverdata, "server")
 
         embed = discord.Embed(
-            title=ctx.author.display_name + " ran a purge command",
+            title=ctx.author.name + " ran a purge command",
             description=cleared.mention + " was completely cleared", color=find_color(ctx))
 
         await cleared.send(embed=embed)
@@ -381,7 +497,7 @@ class Moderation:
                         break
 
         embed = discord.Embed(
-            title=ctx.author.display_name + " ran a purge command",
+            title=ctx.author.name + " ran a purge command",
             description=f"{len(all_pins)} messages were unpinned in {ctx.channel.mention}",
             color=find_color(ctx))
 
@@ -404,7 +520,7 @@ class Moderation:
                     await m.clear_reactions()
 
         embed = discord.Embed(
-            title=ctx.author.display_name + " ran a purge command",
+            title=ctx.author.name + " ran a purge command",
             description=f"{total_reactions} reactions were removed from {total_messages} "
             "messages", color=find_color(ctx))
 
@@ -439,7 +555,7 @@ class Moderation:
         try:
             await member.kick(
                 reason="Unlucky individual selected by the randomkick performed by " +
-                ctx.author.display_name)
+                ctx.author.name)
             temp = await ctx.send("And the unlucky individual about to be kicked is...")
             with ctx.channel.typing():
                 await asyncio.sleep(2)
@@ -455,7 +571,7 @@ class Moderation:
                 "someone with a role higher than mine. So try again, or better yet, put my role "
                 "above everyone else's. Then we can make this *really* interesting...")
         await send_log(ctx.guild, discord.Embed(
-            title="A randomkick was performed by " + ctx.author.display_name,
+            title="A randomkick was performed by " + ctx.author.name,
             description=member.name + " was kicked", color=find_color(ctx)))
 
     @commands.command(aliases=["snipe"])
@@ -489,7 +605,7 @@ class Moderation:
             embed.add_field(
                 name="Message", value="*The message was too long to put here*", inline=False)
         embed.add_field(name="Channel", value=last_delete["channel"])
-        embed.set_footer(text="Restored by " + ctx.author.display_name)
+        embed.set_footer(text="Restored by " + ctx.author.name)
 
         await ctx.send(embed=embed)
         if len(f"```{last_delete['content']}```") > 1024:
@@ -519,7 +635,7 @@ class Moderation:
         dump_data(serverdata, "server")
 
         embed = discord.Embed(
-            title=ctx.author.display_name + " REMOVED the custom goodbye message",
+            title=ctx.author.name + " REMOVED the custom goodbye message",
             description=f"**Message**: ```{msg.format('(member)')}```",
             color=find_color(ctx))
 
@@ -550,7 +666,7 @@ class Moderation:
         dump_data(serverdata, "server")
 
         embed = discord.Embed(
-            title=ctx.author.display_name + " REMOVED the custom welcome message",
+            title=ctx.author.name + " REMOVED the custom welcome message",
             description=f"**Message**: ```{msg.format('(member)')}```",
             color=find_color(ctx))
 
@@ -612,7 +728,7 @@ class Moderation:
         serverdata[str(ctx.guild.id)]["goodbye"] = {"message": msg, "channel": str(channel.id)}
         dump_data(serverdata, "server")
 
-        embed = discord.Embed(title=ctx.author.display_name + " set a new custom goodbye message",
+        embed = discord.Embed(title=ctx.author.name + " set a new custom goodbye message",
                               description=f"**Channel**: {channel.mention}\n**Message**: "
                               f"```{msg.format('(member)')}```", color=find_color(ctx))
         await ctx.send(embed=embed)
@@ -645,7 +761,7 @@ class Moderation:
         serverdata[str(ctx.guild.id)]["welcome"] = {"message": msg, "channel": str(channel.id)}
         dump_data(serverdata, "server")
 
-        embed = discord.Embed(title=ctx.author.display_name + " set a new custom welcome message",
+        embed = discord.Embed(title=ctx.author.name + " set a new custom welcome message",
                               description=f"**Channel**: {channel.mention}\n**Message**: "
                               f"```{msg.format('(member)')}```", color=find_color(ctx))
         await ctx.send(embed=embed)
