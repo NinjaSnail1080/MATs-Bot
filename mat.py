@@ -178,6 +178,14 @@ class MAT(commands.Bot):
         self.commands_used = collections.Counter(get_data("bot")["commands_used"])
         self.messages_read = collections.Counter(get_data("bot")["messages_read"])
 
+        def check_disabled(ctx):
+            if "disabled" in get_data("server")[str(ctx.guild.id)]:
+                return ctx.command.name not in get_data("server")[str(ctx.guild.id)]["disabled"]
+            else:
+                return True
+
+        self.add_check(check_disabled)
+
     async def on_ready(self):
         serverdata = get_data("server")
         for g in self.guilds:
@@ -325,7 +333,7 @@ class MAT(commands.Bot):
             await channel.send(
                 serverdata[str(member.guild.id)]["goodbye"]["message"].format(member.name))
 
-    async def on_command(self, ctx):
+    async def on_command_completion(self, ctx):
         if not ctx.command.hidden:
             self.commands_used["TOTAL"] += 1
             self.commands_used[ctx.command.name] += 1
