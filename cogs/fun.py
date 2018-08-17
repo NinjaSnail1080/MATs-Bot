@@ -115,11 +115,17 @@ class Fun:
 
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
-                            "again later", delete_after=5.0)
+                           "again later", delete_after=5.0)
             await asyncio.sleep(5)
             return await ctx.message.delete()
 
-        await ctx.send(resp["message"])
+        try:
+            await ctx.send(resp["message"])
+        except discord.HTTPException:
+            await ctx.send("The message was too large for me to send. Try again with a shorter "
+                           "one", delete_after=5.0)
+            await asyncio.sleep(5)
+            await ctx.message.delete()
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
