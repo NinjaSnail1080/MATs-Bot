@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color
-from mat_experimental import find_color
+try:
+    from mat_experimental import find_color, delete_message
+except ImportError:
+    from mat import find_color, delete_message
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -48,8 +50,7 @@ class Fun:
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
                            "again later", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         await ctx.send(
             embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
@@ -74,18 +75,15 @@ class Fun:
             except:
                 await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
                                "ascii art. Try again with a different image.", delete_after=7.0)
-                await asyncio.sleep(7)
-                await ctx.message.delete()
+                return await delete_message(ctx, 7)
         elif image is None:
             await ctx.send("You need to include a link to the image you want to convert.\n\n"
                            "Format like this: `<prefix> ascii <image URL>`", delete_after=10.0)
-            await asyncio.sleep(10)
-            await ctx.message.delete()
+            return await delete_message(ctx, 10)
         elif not validators.url(image):
             await ctx.send("Invalid url. The link to your image needs to look something like this"
                            ":\n\n`http://www.example.com/something/image.png`", delete_after=10.0)
-            await asyncio.sleep(10)
-            await ctx.message.delete()
+            return await delete_message(ctx, 10)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> baguette (OPTIONAL)<@mention user>`")
@@ -116,16 +114,14 @@ class Fun:
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
                            "again later", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         try:
             await ctx.send(resp["message"])
         except discord.HTTPException:
             await ctx.send("The message was too large for me to send. Try again with a shorter "
                            "one", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
@@ -204,8 +200,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
                            " able to get a comic. Try again in a little bit.", delete_after=6.0)
-            await asyncio.sleep(6)
-            await ctx.message.delete()
+            return await delete_message(ctx, 6)
 
     @commands.command(aliases=["shitpost"])
     async def copypasta(self, ctx):
@@ -229,8 +224,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong and I wasn't able to get a copypasta. "
                            "Try again", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
     @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
     async def cyhap(self, ctx):
@@ -256,8 +250,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
                            " able to get a comic. Try again in a little bit.", delete_after=6.0)
-            await asyncio.sleep(6)
-            await ctx.message.delete()
+            return await delete_message(ctx, 6)
 
     @commands.command(brief="The number of sides must be an **integer above 2**. Try again.")
     async def diceroll(self, ctx, sides: int=6):
@@ -267,8 +260,7 @@ class Fun:
         if sides <= 2:
             await ctx.send("The number of sides must be an **integer above 2**. Try again.",
                            delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         dice = str(random.randint(1, sides))
         temp = await ctx.send(f"Rolling a {sides}-sided dice...")
@@ -385,8 +377,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
                            "Try again", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
     @commands.command()
     async def meme(self, ctx):
@@ -411,8 +402,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
                            "Try again", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
     @commands.command(aliases=["weirdspeak"])
     async def mock(self, ctx, *, stuff: str=None):
@@ -420,8 +410,7 @@ class Fun:
 
         if stuff is None:
             await ctx.send("Dude, you need to say something for me to mock", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         await ctx.channel.trigger_typing()
 
@@ -451,8 +440,8 @@ class Fun:
 
         if stuff is None:
             await ctx.send("Dude, you need to give me some text to reverse", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
+
         else:
             stuff = stuff[::-1]
             stuff = stuff.replace("@everyone", "`@everyone`")
@@ -467,8 +456,8 @@ class Fun:
 
         if stuff is None:
             await ctx.send("Dude, you need to give me something to say", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
+
         else:
             stuff = stuff.replace("@everyone", "`@everyone`")
             stuff = stuff.replace("@here", "`@here`")
@@ -541,8 +530,7 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
                            " able to get a comic. Try again in a little bit.", delete_after=6.0)
-            await asyncio.sleep(6)
-            await ctx.message.delete()
+            return await delete_message(ctx, 6)
 
 
 def setup(bot):

@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color, get_data
-from mat_experimental import find_color, get_data
+try:
+    from mat_experimental import find_color, get_data
+except ImportError:
+    from mat import find_color, get_data
 
 from discord.ext import commands
 import discord

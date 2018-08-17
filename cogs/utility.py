@@ -16,12 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color
-from mat_experimental import find_color
+try:
+    from mat_experimental import find_color, delete_message
+except ImportError:
+    from mat import find_color, delete_message
 
 from discord.ext import commands
 import discord
-import asyncio
 import qrcode
 import pyshorteners
 import validators
@@ -50,8 +51,7 @@ class Utility:
                            "bitly <URL to shorten>`\n\nAlternatively, you can also put an "
                            "existing bit.ly link and I'll expand it back into the original URL",
                            delete_after=10.0)
-            await asyncio.sleep(10)
-            await ctx.message.delete()
+            return await delete_message(ctx, 10)
         else:
             if validators.url(url):
                 await ctx.channel.trigger_typing()
@@ -75,13 +75,11 @@ class Utility:
                 except:
                     await ctx.send("Oops, something went wrong while trying to shorten/expand "
                                    "this URL. Try again", delete_after=5.0)
-                    await asyncio.sleep(5)
-                    await ctx.message.delete()
+                    return await delete_message(ctx, 5)
             else:
                 await ctx.send("Invalid URL. The link must look something like this: `http://www."
                                "example.com/something.html`.\nTry again", delete_after=6.0)
-                await asyncio.sleep(6)
-                await ctx.message.delete()
+                return await delete_message(ctx, 6)
 
     @commands.command(brief="Invalid formatting. You need to include the hex value of the color. "
                       "Format like this:\n`<prefix> hextorgb <#hex value>`\nThe hex value will "
@@ -139,8 +137,7 @@ class Utility:
         if content is None:
             await ctx.send("You need to include some text to encode. Format like this: "
                            "`<prefix> qr <text to encode>`", delete_after=7.0)
-            await asyncio.sleep(7)
-            await ctx.message.delete()
+            return await delete_message(ctx, 7)
         else:
             try:
                 await ctx.channel.trigger_typing()
@@ -152,8 +149,7 @@ class Utility:
                 await ctx.send("The text you sent me was too long to encode. I ended up reaching "
                                "Discord's character limit. Try again with a smaller amount of "
                                "text.", delete_after=10.0)
-                await asyncio.sleep(10)
-                await ctx.message.delete()
+                await delete_message(ctx, 10)
 
             os.remove("qr.png")
 
@@ -209,8 +205,7 @@ class Utility:
             #* In the unlikely event that the whitespaces in Level 5 cause the message length to
             #* be more than 2000 characters:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
-            await asyncio.sleep(5)
-            await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
     @commands.command(brief="Invalid formatting. You're supposed to include a color's RGB "
                       "values. Format the command like this:\n`<prefix> rgbtohex <r>, <g>, <b>`"

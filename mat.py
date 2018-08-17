@@ -137,6 +137,17 @@ def restart_bot():
     os.execl(python, python, *sys.argv)
 
 
+async def delete_message(ctx, time):
+    """Deletes a command's message if the command was formatted incorectly"""
+
+    await asyncio.sleep(time)
+    try:
+        await ctx.message.delete()
+    except:
+        pass
+    return
+
+
 def find_color(ctx):
     """Find the color of the bot's top role in the guild. Or if it's a DM,
     return Discord's "blurple" color

@@ -16,12 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color
-from mat_experimental import find_color
+try:
+    from mat_experimental import find_color, delete_message
+except ImportError:
+    from mat import find_color, delete_message
 
 from discord.ext import commands
 import discord
-import asyncio
 import aiohttp
 
 #* MAT's Bot uses the NekoBot API for most of these commands.
@@ -48,8 +49,7 @@ class Image:
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
                            "again later", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         embed = discord.Embed(color=find_color(ctx))
         embed.set_image(url=resp["message"])

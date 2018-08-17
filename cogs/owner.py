@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import restart_bot
-from mat_experimental import restart_bot
+try:
+    from mat_experimental import restart_bot, delete_message
+except ImportError:
+    from mat import restart_bot, delete_message
 
 from discord.ext import commands
 import discord

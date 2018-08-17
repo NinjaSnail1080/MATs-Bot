@@ -16,12 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color, __version__
-from mat_experimental import find_color, __version__
+try:
+    from mat_experimental import find_color, __version__, delete_message
+except ImportError:
+    from mat import find_color, __version__, delete_message
 
 from discord.ext import commands
 import discord
-import asyncio
 
 import datetime
 
@@ -163,8 +164,7 @@ class Info:
         except discord.Forbidden:
             await ctx.send("Unfortunately, I don't have access to that channel, so I wasn't able "
                            "to get information from it", delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 7)
 
         await ctx.send(embed=embed)
 
@@ -179,8 +179,7 @@ class Info:
         if emoji is None:
             await ctx.send("You need to include an emoji after the command. Keep in mind that it "
                            "only works with custom emojis.", delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 7)
 
         embed = discord.Embed(
             title=f"Info on the :{emoji.name}: emoji", description=str(emoji),

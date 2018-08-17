@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import find_color, get_data, dump_data
-from mat_experimental import find_color, get_data, dump_data
+try:
+    from mat_experimental import find_color, get_data, dump_data, delete_message
+except ImportError:
+    from mat import find_color, get_data, dump_data, delete_message
 
 from discord.ext import commands
 import discord
@@ -62,11 +64,8 @@ async def check_reason(ctx, reason):
     if len(reason) + len(ctx.author.name) + 23 > 512:
         await ctx.send(
             f"Reason is too long. It must be under {abs(len(ctx.author.name) + 23 - 512)} "
-            "characters", delete_after=6.0)
-        await asyncio.sleep(6)
-        try:
-            await ctx.message.delete()
-        except: pass
+            "characters", delete_after=7.0)
+        await delete_message(ctx, 7)
         return False
     return reason
 
@@ -88,16 +87,14 @@ class Moderation:
         #TODO: Finish this!
         if not ctx.author.permissions_in(ctx.channel).ban_members:
             await ctx.send("You don't have permission to ban members", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if user is None:
             await ctx.send(
                 "You didn't format the command correctly. It's supposed to look like this: "
                 "`<prefix> ban <@mention user or user's name/id> <reason for banning>`",
                 delete_after=10.0)
-            await asyncio.sleep(10)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
         elif user == self.bot.user:
             return await ctx.send(":rolling_eyes:")
 
@@ -132,8 +129,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if cmd == "help":
             return await ctx.send(
@@ -143,8 +139,7 @@ class Moderation:
         if "disabled" in serverdata[str(ctx.guild.id)]:
             if cmd in serverdata[str(ctx.guild.id)]["disabled"]:
                 await ctx.send("This command is already disabled", delete_after=5.0)
-                await asyncio.sleep(5)
-                return await ctx.message.delete()
+                return await delete_message(ctx, 5)
 
         if cmd in set(c.name for c in self.bot.commands):
             try:
@@ -187,14 +182,13 @@ class Moderation:
     @commands.guild_only()
     async def enable(self, ctx, cmd):
         """**Must have Administrater permissions**
-        Disable a command for this server
+        Enable a previously disabled command for this server
         Format like this: `<prefix> enable <command OR "all">`
         """
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if not "disabled" in get_data("server")[str(ctx.guild.id)]:
             return await ctx.send("This server doesn't have any disabled commands to begin with")
@@ -229,8 +223,7 @@ class Moderation:
                   cmd in set(c.name for c in self.bot.commands)):
             await ctx.send("This command is already enabled. Do `<prefix> help` to see a list of "
                            "all disabled commands", delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 7)
 
         elif (cmd not in serverdata[str(ctx.guild.id)]["disabled"] and
                   cmd not in set(c.name for c in self.bot.commands)):
@@ -245,16 +238,14 @@ class Moderation:
         """
         if not ctx.author.permissions_in(ctx.channel).kick_members:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if member is None:
             await ctx.send(
                 "You didn't format the command correctly. It's supposed to look like this: "
                 "`<prefix> kick <@mention member or member's name/id> <reason for kicking>`",
                 delete_after=10.0)
-            await asyncio.sleep(10)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 10)
         elif member == ctx.guild.me:
             return await ctx.send(":rolling_eyes:")
 
@@ -285,8 +276,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         serverdata = get_data("server")
         serverdata[str(ctx.guild.id)]["logs"] = "false"
@@ -305,8 +295,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use that command",
                            delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if (not ctx.guild.me.permissions_in(ctx.channel).manage_messages or
                 not ctx.guild.me.permissions_in(ctx.channel).read_message_history):
@@ -355,9 +344,8 @@ class Moderation:
     async def remove(self, ctx, limit, check, description: str):
         if limit > 2000:
             await ctx.send("I can't purge more than 2000 messages. Put in a smaller number.",
-                           delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
 
         temp = await ctx.send("Purging...")
         with ctx.channel.typing():
@@ -485,8 +473,7 @@ class Moderation:
         all_pins = await ctx.channel.pins()
         if len(all_pins) == 0:
             await ctx.send("This channel has no pinned messages", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         temp = await ctx.send("Please wait... This could take some time...")
         with ctx.channel.typing():
@@ -542,8 +529,7 @@ class Moderation:
         """
         if not ctx.author.permissions_in(ctx.channel).kick_members:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                     "RIP in pieces", "Rest in pieces"]
@@ -583,16 +569,14 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         try:
             last_delete = get_data("server")[str(ctx.guild.id)]["last_delete"]
         except:
             await ctx.send(
                 "Unable to find the last deleted message. Sorry!", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         embed = discord.Embed(
             title="Restored last deleted message",
@@ -620,15 +604,13 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         serverdata = get_data("server")
         if "goodbye" not in serverdata[str(ctx.guild.id)]:
             await ctx.send("This server doesn't have a custom goodbye message. Use "
                            "the `setgoodbye` command to make one", delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 7)
 
         msg = serverdata[str(ctx.guild.id)]["goodbye"]["message"]
         serverdata[str(ctx.guild.id)].pop("goodbye", None)
@@ -651,15 +633,13 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         serverdata = get_data("server")
         if "welcome" not in serverdata[str(ctx.guild.id)]:
             await ctx.send("This server doesn't have a custom welcome message. Use "
                            "the `setwelcome` command to make one", delete_after=7.0)
-            await asyncio.sleep(7)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 7)
 
         msg = serverdata[str(ctx.guild.id)]["welcome"]["message"]
         serverdata[str(ctx.guild.id)].pop("welcome", None)
@@ -686,8 +666,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if channel is None:
             raise commands.BadArgument
@@ -718,8 +697,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if "{}" not in msg:
             raise commands.BadArgument
@@ -751,8 +729,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).administrator:
             await ctx.send("You need to be an Administrator in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5.0)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if "{}" not in msg:
             raise commands.BadArgument
@@ -776,8 +753,7 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).manage_messages:
             await ctx.send("You need the Manage Messages permission in order to use this command",
                            delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         serverdata = get_data("server")
         triggers = serverdata[str(ctx.guild.id)]["triggers"]
@@ -805,16 +781,14 @@ class Moderation:
         #TODO: Finish this
         if not ctx.author.permissions_in(ctx.channel).ban_members:
             await ctx.send("You don't have permission to ban or unban members", delete_after=5.0)
-            await asyncio.sleep(5)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 5)
 
         if user is None:
             await ctx.send(
                 "You didn't format the command correctly. It's supposed to look like this: "
                 "`<prefix> unban <user's name/id> (OPTIONAL)<reason for unbanning>`",
                 delete_after=10.0)
-            await asyncio.sleep(10)
-            return await ctx.message.delete()
+            return await delete_message(ctx, 10)
 
         reason = await check_reason(ctx, reason)
         if not reason:

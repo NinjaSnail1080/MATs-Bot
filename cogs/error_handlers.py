@@ -16,8 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# from mat import get_data
-from mat_experimental import get_data
+try:
+    from mat_experimental import get_data, delete_message
+except ImportError:
+    from mat import get_data, delete_message
 
 from discord.ext import commands
 import discord
@@ -37,32 +39,40 @@ class Error_Handlers:
         if str(exc) == ("Command raised an exception: Forbidden: FORBIDDEN (status code: 403): "
                         "Missing Permissions"):
             return
+
         elif "check functions for command" in str(exc):
             if ctx.command.cog_name == "NSFW" and not ctx.channel.is_nsfw():
                 await ctx.send("This command can only be used in NSFW channels", delete_after=6.0)
-                return await self.delete(6, ctx)
+                return await delete_message(ctx, 6)
+
             if "disabled" in get_data("server")[str(ctx.guild.id)]:
                 if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
                     await ctx.send("Sorry, but this command has been disabled for your server "
                                    "by one of its Administrators", delete_after=7.0)
-                    return await self.delete(7, ctx)
+                    return await delete_message(ctx, 7)
+
         elif str(exc) == "You do not own this bot.":
             app = await self.bot.application_info()
             await ctx.send(
                 f"Only my owner, **{app.owner.name}**, can use that command", delete_after=6.0)
-            return await self.delete(6, ctx)
+            return await delete_message(ctx, 6)
+
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
+
         elif (isinstance(exc, commands.BadArgument) or
                   isinstance(exc, commands.MissingRequiredArgument)):
             await ctx.send(ctx.command.brief, delete_after=15.0)
-            return await self.delete(15, ctx)
+            return await delete_message(ctx, 15)
+
         elif isinstance(exc, commands.NoPrivateMessage):
             return await ctx.send(
                 "This command cannot be used in private messages. You must be in a server")
+
         elif isinstance(exc, discord.Forbidden):
             return
+
         else:
             app = await self.bot.application_info()
             return await ctx.send(
@@ -70,14 +80,6 @@ class Error_Handlers:
                 "able to complete that command. Sorry!\n\nPlease get in touch with my "
                 "owner, NinjaSnail1080, and tell him what happened so he can try and fix this "
                 "issue. You can reach him at my support server: https://discord.gg/P4Fp3jA")
-
-    async def delete(self, time, ctx):
-        await asyncio.sleep(time)
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-        return
 
 
 def setup(bot):
