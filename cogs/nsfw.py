@@ -236,9 +236,6 @@ class NSFW:
 
                     await ctx.send(embed=embed)
         except:
-            import traceback
-            print(traceback.format_exc())
-            return
             await ctx.send("Huh, something went wrong and I wasn't able to get an image. "
                            "Try again", delete_after=5.0)
             await asyncio.sleep(5)
@@ -252,6 +249,17 @@ class NSFW:
 
         await ctx.channel.trigger_typing()
         async with self.session.get("https://nekobot.xyz/api/image?type=pussy") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
+
+    @commands.command(aliases=["thighs"])
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def thigh(self, ctx):
+        """Sends some thiccccccccc thighs"""
+
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/image?type=thigh") as w:
             resp = await w.json()
             await self.send_image(ctx, resp)
 
