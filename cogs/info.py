@@ -332,17 +332,13 @@ class Info:
             activity = "Nothing"
 
         if user.status is discord.Status.online:
-            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271724585451"
-                      "73/online.png")
+            status = "https://i.imgur.com/WcPjzNt.png"
         elif user.status is discord.Status.idle:
-            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271691070341"
-                      "12/idle.png")
+            status = "https://i.imgur.com/UdRIQ2S.png"
         elif user.status is discord.Status.dnd:
-            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271674544783"
-                      "36/dnd.png")
+            status = "https://i.imgur.com/voWO5qd.png"
         else:
-            status = ("https://cdn.discordapp.com/attachments/466728408353734670/4707271699584778"
-                      "34/offline.png")
+            status = "https://i.imgur.com/8OOawcF.png"
 
         embed = discord.Embed(description=f"User ID: {user.id}", color=find_color(ctx))
 
