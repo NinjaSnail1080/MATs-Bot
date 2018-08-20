@@ -52,7 +52,7 @@ class Triggers:
         if message.author.id == 281807963147075584:
             return await message.channel.send(random.choice(sigma_responses))
 
-        if random.random() < (20 / message.guild.member_count) / 100:
+        if random.random() < (10 / message.guild.member_count) / 100:
             return await message.channel.send(file=discord.File(
                 f"assets{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
 
@@ -76,8 +76,10 @@ class Triggers:
                 "to type \"ok\" but could not expand the energy to type two whole letters since "
                 "you were stabbed. The police have been notified.")
 
-        elif re.search("can't", message.content, re.IGNORECASE) and re.search(
-            "believe", message.content, re.IGNORECASE):
+        elif ("can't believe" in message.content.lower() or
+                  "can't fucking believe" in message.content.lower() or
+                      "cant believe" in message.content.lower() or
+                          "cant fucking believe" in message.content.lower()):
             await message.channel.send("You better believe it, scrub")
 
         elif message.content.lower() == "jesus":
@@ -121,6 +123,9 @@ class Triggers:
             if not message.content.startswith("!mat") and not message.content.startswith("expt"):
                 await message.channel.send(
                     content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
+
+        elif message.content.lower() == "ping":
+            await message.channel.send("pong")
 
 
 def setup(bot):
