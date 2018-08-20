@@ -444,8 +444,8 @@ class Fun:
 
         else:
             stuff = stuff[::-1]
-            stuff = stuff.replace("@everyone", "`@everyone`")
-            stuff = stuff.replace("@here", "`@here`")
+            stuff = stuff.replace("@everyone", "@\u200beveryone")
+            stuff = stuff.replace("@here", "@\u200bhere")
 
             await ctx.send(stuff)
 
@@ -459,10 +459,35 @@ class Fun:
             return await delete_message(ctx, 5)
 
         else:
-            stuff = stuff.replace("@everyone", "`@everyone`")
-            stuff = stuff.replace("@here", "`@here`")
+            stuff = stuff.replace("@everyone", "@\u200beveryone")
+            stuff = stuff.replace("@here", "@\u200bhere")
 
             await ctx.send(stuff)
+
+    @commands.command()
+    async def thanos(self, ctx):
+        """Thanos did nothing wrong"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    f"https://www.reddit.com/r/thanosdidnothingwrong/hot.json?sort=hot",
+                    headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    embed = discord.Embed(
+                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
+                        color=find_color(ctx))
+                    embed.set_image(url=data["url"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a thanos "
+                           "shitpost. Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
                       "some text for the tweet `<prefix> trumptweet <tweet>`")
