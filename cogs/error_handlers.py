@@ -73,6 +73,11 @@ class Error_Handlers:
         elif isinstance(exc, discord.Forbidden):
             return
 
+        elif (str(exc) == "Command raised an exception: TypeError: must be str, not NoneType" and
+                  ctx.command.cog_name == "Moderation"):
+            #* To stop the command from raising an exception if the reason given is too long
+            return
+
         else:
             app = await self.bot.application_info()
             return await ctx.send(

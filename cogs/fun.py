@@ -215,6 +215,11 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
+                    if len(data["selftext"]) > 2048:
+                        data["selftext"] = ("**Sorry, but this content is too long for me to "
+                                            "send here. To see it, just click the title above to "
+                                            "go straight to the post**")
+
                     embed = discord.Embed(
                         title=data["title"], url=data["url"], description=data["selftext"],
                         color=find_color(ctx))
