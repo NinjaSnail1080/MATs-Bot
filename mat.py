@@ -297,8 +297,8 @@ class MAT(commands.Bot):
                 guild.owner_id) + ")", inline=False)
 
         await joins.send(
-            content=f"I am now part of {len(self.guilds))} servers and have "
-                f"{len(set(self.get_all_members())))} unique users!", embed=embed)
+            content=f"I am now part of {len(self.guilds)} servers and have "
+                f"{len(set(self.get_all_members()))} unique users!", embed=embed)
 
     async def on_guild_remove(self, guild):
         serverdata = get_data("server")
