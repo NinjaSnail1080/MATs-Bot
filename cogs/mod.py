@@ -55,19 +55,20 @@ async def send_log(guild, send_embed):
     await logs.send(embed=send_embed)
 
 
-async def check_reason(ctx, reason):
+class REASON(commands.Converter):
     """Checks the reason given for a mod command"""
 
-    if reason is None:
-        reason = "No reason given"
-        return reason
-    if len(reason) + len(ctx.author.name) + 23 > 512:
-        await ctx.send(
-            f"Reason is too long. It must be under {abs(len(ctx.author.name) + 23 - 512)} "
-            "characters", delete_after=7.0)
-        await delete_message(ctx, 7)
-        return False
-    return reason
+    async def convert(self, ctx, reason):
+        if reason is None:
+            reason = "No reason given"
+
+        if len(reason) + len(ctx.author.name) + 23 > 512:
+            max_length = 512 - (len(ctx.author.name) + 23)
+            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
+        else:
+            return reason
 
 
 class Moderation:
@@ -78,7 +79,7 @@ class Moderation:
 
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
-    async def ban(self, ctx, user: discord.User=None, *, reason=None):
+    async def ban(self, ctx, user: discord.User=None, *, reason: REASON=None):
         """**Must have the "Ban Members" permission**
         Bans a user from the server
         Format like this: `<prefix> ban <user> <reason for banning>`
@@ -98,11 +99,8 @@ class Moderation:
         elif user == self.bot.user:
             return await ctx.send(":rolling_eyes:")
 
-        if not await check_reason(ctx, reason):
-            return
-
         embed = discord.Embed(
-            color=find_color(ctx), title=user.name + " was banned by " + ctx.author.name,
+            color=find_color(ctx), title=str(user) + " was banned by " + ctx.author.name,
             description="__Reason__: " + reason)
         try:
             await ctx.guild.ban(
@@ -123,7 +121,7 @@ class Moderation:
     @commands.guild_only()
     async def disable(self, ctx, cmd):
         """**Must have Administrater permissions**
-        Disable a command for this server
+        Disable a command or group of commands for this server
         Format like this: `<prefix> disable <command OR category>`
         """
         if not ctx.author.permissions_in(ctx.channel).administrator:
@@ -131,26 +129,26 @@ class Moderation:
                            delete_after=5.0)
             return await delete_message(ctx, 5)
 
-        if cmd == "help":
-            return await ctx.send(
-                "Yeah, great idea. Disable the freaking help command :rolling_eyes:")
+        if cmd.lower() == "help":
+            await ctx.send("Yeah, great idea. Disable the freaking help command :rolling_eyes:",
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
 
-        serverdata = get_data("server")
-        if "disabled" in serverdata[str(ctx.guild.id)]:
-            if cmd in serverdata[str(ctx.guild.id)]["disabled"]:
+        if "disabled" in get_data("server")[str(ctx.guild.id)]:
+            if cmd.lower() in get_data("server")[str(ctx.guild.id)]["disabled"]:
                 await ctx.send("This command is already disabled", delete_after=5.0)
                 return await delete_message(ctx, 5)
 
-        if cmd in set(c.name for c in self.bot.commands):
+        if cmd.lower() in set(c.name for c in self.bot.commands):
             try:
-                serverdata[str(ctx.guild.id)]["disabled"].append(cmd)
+                serverdata[str(ctx.guild.id)]["disabled"].append(cmd.lower())
             except:
-                serverdata[str(ctx.guild.id)]["disabled"] = [cmd]
+                serverdata[str(ctx.guild.id)]["disabled"] = [cmd.lower()]
             dump_data(serverdata, "server")
 
             embed = discord.Embed(
                 title=ctx.author.name + " disabled a command",
-                description=f"The `{cmd}` command is now disabled on this server",
+                description=f"The `{cmd.lower()}` command is now disabled on this server",
                 color=find_color(ctx))
 
             await ctx.send(embed=embed)
@@ -182,7 +180,7 @@ class Moderation:
     @commands.guild_only()
     async def enable(self, ctx, cmd):
         """**Must have Administrater permissions**
-        Enable a previously disabled command for this server
+        Enable a previously disabled command(s) for this server
         Format like this: `<prefix> enable <command OR "all">`
         """
         if not ctx.author.permissions_in(ctx.channel).administrator:
@@ -191,22 +189,24 @@ class Moderation:
             return await delete_message(ctx, 5)
 
         if not "disabled" in get_data("server")[str(ctx.guild.id)]:
-            return await ctx.send("This server doesn't have any disabled commands to begin with")
+            await ctx.send("This server doesn't have any disabled commands to begin with",
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
 
         serverdata = get_data("server")
-        if cmd in serverdata[str(ctx.guild.id)]["disabled"]:
-            serverdata[str(ctx.guild.id)]["disabled"].remove(cmd)
+        if cmd.lower() in serverdata[str(ctx.guild.id)]["disabled"]:
+            serverdata[str(ctx.guild.id)]["disabled"].remove(cmd.lower())
             dump_data(serverdata, "server")
 
             embed = discord.Embed(
                 title=ctx.author.name + " enabled a command",
-                description=f"The `{cmd}` command is no longer disabled on this server",
+                description=f"The `{cmd.lower()}` command is no longer disabled on this server",
                 color=find_color(ctx))
 
             await ctx.send(embed=embed)
             await send_log(ctx.guild, embed)
 
-        elif cmd == "all":
+        elif cmd.lower() == "all":
             disabled = serverdata[str(ctx.guild.id)]["disabled"]
             serverdata[str(ctx.guild.id)].pop("disabled", None)
             dump_data(serverdata, "server")
@@ -219,19 +219,19 @@ class Moderation:
             await ctx.send(embed=embed)
             await send_log(ctx.guild, embed)
 
-        elif (cmd not in serverdata[str(ctx.guild.id)]["disabled"] and
-                  cmd in set(c.name for c in self.bot.commands)):
+        elif (cmd.lower() not in serverdata[str(ctx.guild.id)]["disabled"] and
+                  cmd.lower() in set(c.name for c in self.bot.commands)):
             await ctx.send("This command is already enabled. Do `<prefix> help` to see a list of "
                            "all disabled commands", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        elif (cmd not in serverdata[str(ctx.guild.id)]["disabled"] and
-                  cmd not in set(c.name for c in self.bot.commands)):
+        elif (cmd.lower() not in serverdata[str(ctx.guild.id)]["disabled"] and
+                  cmd.lower() not in set(c.name for c in self.bot.commands)):
             raise commands.BadArgument
 
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
-    async def kick(self, ctx, member: discord.Member=None, *, reason=None):
+    async def kick(self, ctx, member: discord.Member=None, *, reason: REASON=None):
         """**Must have the "Kick Members" permission**
         Kicks a member from the server
         Format like this: `<prefix> kick <member> <reason for kicking>`
@@ -249,12 +249,8 @@ class Moderation:
         elif member == ctx.guild.me:
             return await ctx.send(":rolling_eyes:")
 
-        reason = await check_reason(ctx, reason)
-        if not reason:
-            return
-
         embed = discord.Embed(
-            color=find_color(ctx), title=member.name + " was kicked by " + ctx.author.name,
+            color=find_color(ctx), title=str(member) + " was kicked by " + ctx.author.name,
             description="__Reason__: " + reason)
         try:
             await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
@@ -266,6 +262,54 @@ class Moderation:
                 "of having all these moderation commmands if I can't use them?\nEither I don't "
                 "have perms to kick, period, or my role is too low. Can one of you guys in "
                 "charge fix that please?")
+
+    @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
+                      "`<prefix> masskick <reason for kicking> <members>`\n\nIf the reason is "
+                      "more than one word, surround it with \"quotation marks\"")
+    @commands.guild_only()
+    async def masskick(self, ctx, reason: REASON, *members: discord.Member):
+        """**Must have the "Kick Members" permission**
+        Mass kicks multiple members from the server
+        Format like this: `<prefix> masskick <reason for kicking> <members>`
+        Note: If the reason is more than one word, surround it with "quotation marks"
+        """
+        if not ctx.author.permissions_in(ctx.channel).kick_members:
+            await ctx.send("You don't have permission to kick members", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+        if not members:
+            raise commands.BadArgument
+
+        cant_kick = []
+        kicked = []
+
+        temp = await ctx.send("Kicking...")
+        with ctx.channel.typing():
+            for member in members:
+                try:
+                    await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
+                    kicked.append(str(member))
+                except:
+                    cant_kick.append(member.mention)
+        await temp.delete()
+
+        if kicked:
+            embed = discord.Embed(
+                title=ctx.author.name + " ran a mass kick", description="**Kicked** "
+                f"({len(kicked)}): `{'`, `'.join(kicked)}`\n\n**Reason**: " + reason,
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        if cant_kick:
+            embed = discord.Embed(
+                title="A problem arose", description="I couldn't kick everyone you listed. This "
+                "may be because I either don't have the Kick Members permission, or that the "
+                "members I was trying to kick had higher roles than me. Could one of you guys "
+                "in charge fix that?", color=find_color(ctx))
+            embed.add_field(
+                name="Here are the member(s) I couldn't kick:", value=", ".join(cant_kick))
+            await ctx.send(embed=embed)
 
     @commands.command()
     @commands.guild_only()
@@ -367,8 +411,7 @@ class Moderation:
             embed.add_field(name=a, value=f"{m} messages")
 
         if len(purged) < 10:
-            serverdata = get_data("server")
-            if serverdata[str(ctx.guild.id)]["logs"] != "false":
+            if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
                 embed.set_footer(text="The number of messages purged was less than 10, so a log "
                                  "wasn't sent to the logs channel")
         try:
@@ -431,7 +474,7 @@ class Moderation:
     async def contains(self, ctx, *, substr: str):
 
         await self.remove(ctx, 1000, lambda m: re.search(substr, m.content, re.IGNORECASE),
-                          f"messages containing the string, `{substr}`, were deleted")
+                          f"messages containing the string `{substr}` were deleted")
 
     @purge.command()
     async def embeds(self, ctx):
@@ -558,7 +601,7 @@ class Moderation:
                 "above everyone else's. Then we can make this *really* interesting...")
         await send_log(ctx.guild, discord.Embed(
             title="A randomkick was performed by " + ctx.author.name,
-            description=member.name + " was kicked", color=find_color(ctx)))
+            description=str(member) + " was kicked", color=find_color(ctx)))
 
     @commands.command(aliases=["snipe"])
     @commands.guild_only()
@@ -587,7 +630,8 @@ class Moderation:
                 name="Message", value=f"```{last_delete['content']}```", inline=False)
         else:
             embed.add_field(
-                name="Message", value="*The message was too long to put here*", inline=False)
+                name="Message", value="*The message was too long to put here so I'll send it "
+                "after this embed*", inline=False)
         embed.add_field(name="Channel", value=last_delete["channel"])
         embed.set_footer(text="Restored by " + ctx.author.name)
 
@@ -772,7 +816,7 @@ class Moderation:
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
                       "members, use the `allbanned` command")
     @commands.guild_only()
-    async def unban(self, ctx, user: discord.User=None, *, reason=None):
+    async def unban(self, ctx, user: discord.User=None, *, reason: REASON=None):
         """**Must have the "Ban Members" permission**
         Unbans a previously banned user from the server
         Format like this: `<prefix> ban <user> (OPTIONAL)<reason for unbanning>`
@@ -790,12 +834,8 @@ class Moderation:
                 delete_after=10.0)
             return await delete_message(ctx, 10)
 
-        reason = await check_reason(ctx, reason)
-        if not reason:
-            return
-
         embed = discord.Embed(
-            color=find_color(ctx), title=user.name + " was unbanned by " + ctx.author.name,
+            color=find_color(ctx), title=str(user) + " was unbanned by " + ctx.author.name,
             description="__Reason__: " + reason)
         try:
             await ctx.guild.unban(
