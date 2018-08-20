@@ -266,7 +266,7 @@ class MAT(commands.Bot):
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
-            color=discord.Color.from_rgb(0, 60, 255))
+            color=guild.me.top_role.color)
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
@@ -297,8 +297,8 @@ class MAT(commands.Bot):
                 guild.owner_id) + ")", inline=False)
 
         await joins.send(
-            content="I am now part of " + str(len(self.guilds)) + " servers and have " + str(
-                len(set(self.get_all_members()))) + " unique users!", embed=embed)
+            content=f"I am now part of {len(self.guilds))} servers and have "
+                f"{len(set(self.get_all_members())))} unique users!", embed=embed)
 
     async def on_guild_remove(self, guild):
         serverdata = get_data("server")
