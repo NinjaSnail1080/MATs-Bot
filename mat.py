@@ -174,6 +174,7 @@ class MAT(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
+                         case_insensitive=True,
                          pm_help=None,
                          shard_count=1,
                          shard_id=0,

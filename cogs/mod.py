@@ -331,7 +331,7 @@ class Moderation:
             "Logging moderation commands has been turned off for this server "
             f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
 
-    @commands.group(aliases=["remove", "delete"])
+    @commands.group(aliases=["remove", "delete"], case_insensitive=True)
     @commands.guild_only()
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**
