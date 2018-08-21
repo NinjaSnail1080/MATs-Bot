@@ -45,7 +45,7 @@ class Error_Handlers:
                 await ctx.send("This command can only be used in NSFW channels", delete_after=6.0)
                 return await delete_message(ctx, 6)
 
-            if "disabled" in get_data("server")[str(ctx.guild.id)]:
+            elif "disabled" in get_data("server")[str(ctx.guild.id)]:
                 if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
                     await ctx.send("Sorry, but this command has been disabled for your server "
                                    "by one of its Administrators", delete_after=7.0)
