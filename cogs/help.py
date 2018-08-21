@@ -49,11 +49,8 @@ class Help:
         """MAT's Bot | Help command"""
 
         try:
-            if "disabled" in get_data("server")[str(ctx.guild.id)]:
-                disabled = get_data("server")[str(ctx.guild.id)]["disabled"]
-            else:
-                disabled = []
-        except AttributeError:
+            disabled = get_data("server")[str(ctx.guild.id)]["disabled"]
+        except:
             disabled = []
 
         cmds = collections.Counter()
@@ -279,8 +276,8 @@ class Help:
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
                 value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
-                                 if c.cog_name == "Moderation" and not c.hidden
-                                 and c.name not in disabled]), inline=False)
+                                            if c.cog_name == "Moderation" and not c.hidden
+                                            and c.name not in disabled]), inline=False)
             embed.add_field(
                 name=":wink: NSFW",
                 value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
@@ -289,8 +286,8 @@ class Help:
             embed.add_field(
                 name=":tools: Utility",
                 value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
-                                 if c.cog_name == "Utility" and not c.hidden
-                                 and c.name not in disabled]), inline=False)
+                                            if c.cog_name == "Utility" and not c.hidden
+                                            and c.name not in disabled]), inline=False)
             if disabled:
                 embed.add_field(name=":no_entry_sign: Disabled Commands",
                                 value=f"`{'`, `'.join(disabled)}`", inline=False)
@@ -306,9 +303,10 @@ class Help:
                         title=f"Help | {cmd.name} Command", description=cmd.help,
                         color=find_color(ctx))
                     embed.set_author(name="MAT's Bot")
+                    embed.set_footer(text=cmd.signature)
 
                     if cmd.aliases:
-                        embed.add_field(name="Aliases", value=f"`{', '.join(cmd.aliases)}`")
+                        embed.add_field(name="Aliases", value=f"`{'`, `'.join(cmd.aliases)}`")
 
                     await ctx.send(embed=embed)
                     return

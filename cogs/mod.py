@@ -139,6 +139,7 @@ class Moderation:
                 await ctx.send("This command is already disabled", delete_after=5.0)
                 return await delete_message(ctx, 5)
 
+        serverdata = get_data("server")
         if cmd.lower() in set(c.name for c in self.bot.commands):
             try:
                 serverdata[str(ctx.guild.id)]["disabled"].append(cmd.lower())

@@ -354,7 +354,7 @@ class MAT(commands.Bot):
             dump_data(botdata, "bot")
 
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author == bot.user:
             return
 
         self.messages_read["TOTAL"] += 1
@@ -365,7 +365,8 @@ class MAT(commands.Bot):
         botdata["messages_read"] = dict(self.messages_read)
         dump_data(botdata, "bot")
 
-        await bot.process_commands(message)
+        if not message.author.bot:
+            await bot.process_commands(message)
 
     async def on_message_delete(self, message):
         if not isinstance(message.channel, discord.DMChannel):
