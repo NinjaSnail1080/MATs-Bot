@@ -215,6 +215,9 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
+                    if data["stickied"]:
+                        raise Exception
+
                     if len(data["selftext"]) > 2048:
                         data["selftext"] = ("**Sorry, but this content is too long for me to "
                                             "send here. To see it, just click the title above to "
@@ -281,6 +284,34 @@ class Fun:
         msg = await ctx.send(
             f"{ctx.author.mention} has paid their respects. Press F to pay yours.")
         await msg.add_reaction("\U0001f1eb")
+
+    @commands.command()
+    async def greentext(self, ctx):
+        """Posts a greentext ("anti-climactic short stories from the internet")"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    f"https://www.reddit.com/r/greentext/hot.json?sort=hot",
+                    headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    if data["stickied"]:
+                        raise Exception
+
+                    embed = discord.Embed(
+                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
+                        color=find_color(ctx))
+                    embed.set_image(url=data["url"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
+                           "Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> phcomment <@mention user> <comment>`")
@@ -372,6 +403,9 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
+                    if data["stickied"]:
+                        raise Exception
+
                     embed = discord.Embed(
                         title=data["title"], url="https://www.reddit.com" + data["permalink"],
                         color=find_color(ctx))
@@ -396,6 +430,9 @@ class Fun:
 
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
+
+                    if data["stickied"]:
+                        raise Exception
 
                     embed = discord.Embed(
                         title=data["title"], url="https://www.reddit.com" + data["permalink"],
@@ -482,9 +519,15 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
+                    if data["stickied"]:
+                        raise Exception
+
+                    if data["stickied"]:
+                        raise Exception
+
                     embed = discord.Embed(
                         title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        color=find_color(ctx))
+                        description=data["selftext"], color=find_color(ctx))
                     embed.set_image(url=data["url"])
                     embed.set_footer(text=f"👍 - {data['score']}")
 
