@@ -55,8 +55,8 @@ async def send_log(guild, send_embed):
     await logs.send(embed=send_embed)
 
 
-class REASON(commands.Converter):
-    """Checks the reason given for a mod command"""
+class ReasonForAction(commands.Converter):
+    """Checks the reason given for a mod action"""
 
     async def convert(self, ctx, reason):
         if reason is None:
@@ -77,9 +77,13 @@ class Moderation:
     def __init__(self, bot):
         self.bot = bot
 
+    async def on_message(self, message):
+        #TODO: Eventually this will contain the antispam and antiraid features
+        pass
+
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
-    async def ban(self, ctx, user: discord.User=None, *, reason: REASON=None):
+    async def ban(self, ctx, user: discord.User=None, *, reason: ReasonForAction=None):
         """**Must have the "Ban Members" permission**
         Bans a user from the server
         Format like this: `<prefix> ban <user> <reason for banning>`
@@ -232,7 +236,7 @@ class Moderation:
 
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
-    async def kick(self, ctx, member: discord.Member=None, *, reason: REASON=None):
+    async def kick(self, ctx, member: discord.Member=None, *, reason: ReasonForAction=None):
         """**Must have the "Kick Members" permission**
         Kicks a member from the server
         Format like this: `<prefix> kick <member> <reason for kicking>`
@@ -268,7 +272,7 @@ class Moderation:
                       "`<prefix> masskick <reason for kicking> <members>`\n\nIf the reason is "
                       "more than one word, surround it with \"quotation marks\"")
     @commands.guild_only()
-    async def masskick(self, ctx, reason: REASON, *members: discord.Member):
+    async def masskick(self, ctx, reason: ReasonForAction, *members: discord.Member):
         """**Must have the "Kick Members" permission**
         Mass kicks multiple members from the server
         Format like this: `<prefix> masskick <reason for kicking> <members>`
@@ -817,7 +821,7 @@ class Moderation:
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
                       "members, use the `allbanned` command")
     @commands.guild_only()
-    async def unban(self, ctx, user: discord.User=None, *, reason: REASON=None):
+    async def unban(self, ctx, user: discord.User=None, *, reason: ReasonForAction=None):
         """**Must have the "Ban Members" permission**
         Unbans a previously banned user from the server
         Format like this: `<prefix> ban <user> (OPTIONAL)<reason for unbanning>`

@@ -169,6 +169,9 @@ class NSFW:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
+                    if data["stickied"]:
+                        raise Exception
+
                     embed = discord.Embed(
                         title=data["title"], description=f"By u/{data['author']}",
                         url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
