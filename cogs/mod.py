@@ -557,7 +557,7 @@ class Moderation:
         embed = discord.Embed(
             title=ctx.author.name + " ran a purge command",
             description=f"{total_reactions} reactions were removed from {total_messages} "
-            "messages", color=find_color(ctx))
+            f"messages in {ctx.channel.mention}", color=find_color(ctx))
 
         await ctx.message.delete()
         await temp.delete()
