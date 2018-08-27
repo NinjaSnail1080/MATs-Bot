@@ -39,10 +39,9 @@ import config
 #* See "config_info.txt" for information on all the variables stored in this module.
 
 games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
-         "\"!mat help\" for help", "\"!mat help\" for help", "with the server owner's dick",
-         "with the server owner's pussy", "with you", "dead", "with myself",
-         "a prank on you", "with fire", "hard-to-get", "Project X", "you like a god damn fiddle",
-         "getting friendzoned by Sigma"]
+         "\"!mat help\" for help", "\"!mat help\" for help", "some epic game you don't have",
+         "with you", "dead", "with myself", "a prank on you", "with fire", "hard-to-get",
+         "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma"]
 
 if __name__ == "__main__":
     import urllib3
@@ -217,7 +216,8 @@ class MAT(commands.Bot):
         print("Servers: " + str(len(self.guilds)))
         print("Users: " + str(len(set(self.get_all_members()))))
         print("-----------------\n")
-        await self.change_presence(status=discord.Status.online)
+        await self.change_presence(
+            status=discord.Status.online, activity=discord.Game(random.choice(games)))
 
         if os.path.exists("restart"):
             with open("restart", "r") as f:
