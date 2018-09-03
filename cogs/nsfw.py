@@ -173,8 +173,9 @@ class NSFW:
                         raise Exception
 
                     embed = discord.Embed(
-                        title=data["title"], description=f"By u/{data['author']}",
-                        url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+                        title=data["title"], description=f"By [u/{data['author']}](https://www."
+                        f"reddit.com/user/{data['author']}/)", url="https://www.reddit.com" +
+                        data["permalink"], color=find_color(ctx))
                     embed.set_image(url=data["url"])
                     embed.set_author(
                         name=data["subreddit_name_prefixed"],
