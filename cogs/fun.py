@@ -215,7 +215,10 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
+                    import pprint
+                    pprint.pp(data)
+
+                    if data["stickied"] or data["over_18"]:
                         raise Exception
 
                     if len(data["selftext"]) > 2048:
@@ -298,7 +301,7 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
+                    if data["stickied"] or data["over_18"]:
                         raise Exception
 
                     embed = discord.Embed(
@@ -403,7 +406,7 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
+                    if data["stickied"] or data["over_18"]:
                         raise Exception
 
                     embed = discord.Embed(
@@ -431,7 +434,7 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
+                    if data["stickied"] or data["over_18"]:
                         raise Exception
 
                     embed = discord.Embed(
@@ -519,10 +522,7 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
-                        raise Exception
-
-                    if data["stickied"]:
+                    if data["stickied"] or data["over_18"]:
                         raise Exception
 
                     embed = discord.Embed(
