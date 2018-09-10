@@ -215,9 +215,6 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    import pprint
-                    pprint.pp(data)
-
                     if data["stickied"] or data["over_18"]:
                         raise Exception
 
@@ -508,6 +505,38 @@ class Fun:
             stuff = stuff.replace("@here", "@\u200bhere")
 
             await ctx.send(stuff)
+
+    @commands.command(aliases=["showerthoughts"])
+    async def showerthought(self, ctx):
+        """Posts a random showerthought"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    "https://www.reddit.com/r/Showerthoughts/hot.json?sort=hot",
+                        headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    if data["stickied"] or data["over_18"]:
+                        raise Exception
+
+                    if len(data["selftext"]) > 2048:
+                        data["selftext"] = ("**Sorry, but this content is too long for me to "
+                                            "send here. To see it, just click the title above to "
+                                            "go straight to the post**")
+
+                    embed = discord.Embed(
+                        title=data["title"], url=data["url"], description=data["selftext"],
+                        color=find_color(ctx))
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get a showerthought. "
+                           "Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
 
     @commands.command()
     async def thanos(self, ctx):
