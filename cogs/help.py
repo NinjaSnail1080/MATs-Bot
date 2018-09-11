@@ -303,7 +303,6 @@ class Help:
                         title=f"Help | {cmd.name} Command", description=cmd.help,
                         color=find_color(ctx))
                     embed.set_author(name="MAT's Bot")
-                    embed.set_footer(text=cmd.signature)
 
                     if cmd.aliases:
                         embed.add_field(name="Aliases", value=f"`{'`, `'.join(cmd.aliases)}`")
