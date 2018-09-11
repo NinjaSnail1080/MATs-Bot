@@ -110,17 +110,17 @@ class Image:
     async def gettext(self, ctx, url=None):
         """Get text from an image.
         Format like this: `<prefix> gettext <image url OR attach an image>`
-        Note: Works best with black text on a white background or the opposite"""
-        try:
-            await ctx.channel.trigger_typing()
-            if url is None:
-                img = IMG.open(io.BytesIO(requests.get(self.get_image(ctx, None)).content))
+        Note: Works best with black text on a white background or the opposite
+        """
+        await ctx.channel.trigger_typing()
+        if url is None:
+            img = IMG.open(io.BytesIO(requests.get(self.get_image(ctx, None)).content))
+        else:
+            if validators.url(url):
+                img = IMG.open(io.BytesIO(requests.get(url).content))
             else:
-                if validators.url(url):
-                    img = IMG.open(io.BytesIO(requests.get(url).content))
-                else:
-                    raise commands.BadArgument
-
+                raise commands.BadArgument
+        try:
             img = img.filter(ImageFilter.MedianFilter())
             enhancer = ImageEnhance.Contrast(img)
             img = enhancer.enhance(2)
