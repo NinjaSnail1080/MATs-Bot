@@ -477,6 +477,56 @@ class Fun:
         await ctx.send(content="".join(mock), embed=embed)
 
     @commands.command()
+    async def reddit(self, ctx, sub):
+        """Get a random post from a subreddit
+        Format like this: `<prefix> reddit <subreddit>`
+        Note: Capitalization doesn't matter when typing the name of the sub"""
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    f"https://www.reddit.com/r/{sub}/hot.json?sort=hot",
+                    headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    if data["stickied"]:
+                        raise Exception
+                    if data["over_18"]:
+                        if not ctx.channel.is_nsfw():
+                            return await ctx.send(
+                                "This particular post is rated NSFW. Either it just happened to "
+                                "be NSFW in a non-NSFW sub or the entire subreddit itself is "
+                                "rated NSFW.\n\nIf it's the first case, just try the command "
+                                "again and hopefully it won't pick another NSFW post. However, "
+                                "if it's the second one, then you will need to go into an "
+                                "NSFW-marked channel on this server to get a post from that sub")
+
+                    if len(data["selftext"]) > 2048:
+                        data["selftext"] = ("**Sorry, but this content is too long for me to "
+                                            "send here. To see it, just click the title above to "
+                                            "go straight to the post**")
+
+                    embed = discord.Embed(
+                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
+                        description=data["selftext"], color=find_color(ctx))
+                    embed.set_author(
+                        name=data["subreddit_name_prefixed"],
+                        url="https://www.reddit.com/" + data["subreddit_name_prefixed"])
+                    embed.set_image(url=data["url"])
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except Exception as e:
+            if isinstance(e, KeyError) or isinstance(e, IndexError):
+                await ctx.send("This subreddit doesn't exist. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            else:
+                await ctx.send("Huh, something went wrong and I wasn't able to get a post from "
+                               "this sub. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
+
+    @commands.command()
     async def reverse(self, ctx, *, stuff: str=None):
         """Reverse the text you give me!"""
 
