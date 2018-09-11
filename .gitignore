@@ -134,6 +134,7 @@ idna_ssl.py
 /pycares
 /pycparser
 /pyshorteners
+/pytesseract
 /qrcode
 /requests
 six.py
