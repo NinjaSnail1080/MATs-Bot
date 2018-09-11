@@ -476,7 +476,8 @@ class Fun:
 
         await ctx.send(content="".join(mock), embed=embed)
 
-    @commands.command()
+    @commands.command(brief="You're supposed to include a subreddit for me to get a random post "
+                      "from after the command. Like this: `<prefix> reddit <subreddit>`")
     async def reddit(self, ctx, sub):
         """Get a random post from a subreddit
         Format like this: `<prefix> reddit <subreddit>`
