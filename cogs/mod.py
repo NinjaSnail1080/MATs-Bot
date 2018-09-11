@@ -29,6 +29,8 @@ import random
 import collections
 import re
 
+#TODO: Fix problem with commands that use the ReasonForAction converter
+
 
 async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
@@ -93,6 +95,9 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).ban_members:
             await ctx.send("You don't have permission to ban members", delete_after=5.0)
             return await delete_message(ctx, 5)
+
+        if reason is None:
+            reason = "No reason given"
 
         if user is None:
             await ctx.send(
@@ -245,6 +250,9 @@ class Moderation:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
             return await delete_message(ctx, 5)
 
+        if reason is None:
+            reason = "No reason given"
+
         if member is None:
             await ctx.send(
                 "You didn't format the command correctly. It's supposed to look like this: "
@@ -281,6 +289,9 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).kick_members:
             await ctx.send("You don't have permission to kick members", delete_after=5.0)
             return await delete_message(ctx, 5)
+
+        if reason is None:
+            reason = "No reason given"
 
         if not members:
             raise commands.BadArgument
@@ -831,6 +842,9 @@ class Moderation:
         if not ctx.author.permissions_in(ctx.channel).ban_members:
             await ctx.send("You don't have permission to ban or unban members", delete_after=5.0)
             return await delete_message(ctx, 5)
+
+        if reason is None:
+            reason = "No reason given"
 
         if user is None:
             await ctx.send(
