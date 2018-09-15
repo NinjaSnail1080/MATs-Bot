@@ -31,14 +31,13 @@ import pytesseract
 
 import io
 import os
-import requests
 
 import config
 
+pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
+
 #* MAT's Bot uses the NekoBot API for most of these commands.
 #* More info at https://docs.nekobot.xyz/
-
-pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
 
 
 class Image:
@@ -108,39 +107,49 @@ class Image:
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext <image url OR attach an image>`")
     async def gettext(self, ctx, url=None):
-        """Get text from an image.
+        """Attempts to read text from an image.
         Format like this: `<prefix> gettext <image url OR attach an image>`
-        Note: Works best with black text on a white background or the opposite
+        Note: Works best with black text on a white background or vice versa
         """
-        await ctx.channel.trigger_typing()
-        if url is None:
-            img = IMG.open(io.BytesIO(requests.get(self.get_image(ctx, None)).content))
-        else:
-            if validators.url(url):
-                img = IMG.open(io.BytesIO(requests.get(url).content))
-            else:
-                raise commands.BadArgument
+        #* Aiohttp is being used here in this admittedly ugly block of code because for the life
+        #* of me I can't get the requests library to work for this
         try:
-            img = img.filter(ImageFilter.MedianFilter())
-            enhancer = ImageEnhance.Contrast(img)
-            img = enhancer.enhance(2)
-            img = img.convert("1")
-            img.save("image.png")
-
-            text = pytesseract.image_to_string(IMG.open("image.png"))
-            os.remove("image.png")
-            if text == "":
-                await ctx.send("I wasn't able to get any text from that image", delete_after=5.0)
-                return await delete_message(ctx, 5)
-            elif len(text) > 1941:
-                await ctx.send("This text is too long for me to send here. Try an image "
-                               "that doesn't have so many words in it", delete_after=6.0)
-                return await delete_message(ctx, 6)
+            if url is None:
+                if not ctx.message.attachments:
+                    raise commands.BadArgument
+                async with self.session.get(ctx.message.attachments[0].url) as resp:
+                    img = IMG.open(io.BytesIO(await resp.read()))
             else:
-                await ctx.send(
-                    f"Here's the text I was able to read from that image:\n```\n{text}```")
+                if validators.url(url):
+                    async with self.session.get(url) as resp:
+                        img = IMG.open(io.BytesIO(await resp.read()))
+                else:
+                    raise commands.BadArgument
+        except OSError:
+            await ctx.send("That's not an image file", delete_after=5.0)
+            return await delete_message(ctx, 5)
+        try:
+            async with ctx.channel.typing():
+                img = img.filter(ImageFilter.MedianFilter())
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(2)
+                img = img.convert("1")
+                img.save("image.png")
+
+                text = pytesseract.image_to_string(IMG.open("image.png"))
+                os.remove("image.png")
+                if text == "":
+                    await ctx.send("I wasn't able to read any text from that image", delete_after=5.0)
+                    return await delete_message(ctx, 5)
+                elif len(text) > 1941:
+                    await ctx.send("This text is too long for me to send here. Try an image "
+                                    "that doesn't have so many words in it", delete_after=6.0)
+                    return await delete_message(ctx, 6)
+                else:
+                    return await ctx.send(
+                        f"Here's the text I was able to read from that image:\n```\n{text}```")
         except:
-            await ctx.send("Hmm, something went wrong while I was trying to get the text from "
+            await ctx.send("Hmm, something went wrong while I was trying to read the text from "
                            "this image. Try again", delete_after=6.0)
             return await delete_message(ctx, 6)
 
@@ -178,7 +187,7 @@ class Image:
         with ctx.channel.typing():
             img = self.get_image(ctx, member)
             async with self.session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
+                f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
