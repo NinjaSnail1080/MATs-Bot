@@ -204,8 +204,9 @@ class Fun:
 
     @commands.command(aliases=["shitpost"])
     async def copypasta(self, ctx):
-        """Posts a random copypasta/shitpost"""
-
+        """Posts a random copypasta
+        Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW copypastas
+        """
         try:
             with ctx.channel.typing():
                 async with self.session.get(
@@ -215,7 +216,9 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"] or data["over_18"]:
+                    if data["stickied"]:
+                        raise Exception
+                    if data["over_18"] and not ctx.channel.is_nsfw():
                         raise Exception
 
                     if len(data["selftext"]) > 2048:
@@ -286,30 +289,32 @@ class Fun:
         await msg.add_reaction("\U0001f1eb")
 
     @commands.command()
-    async def greentext(self, ctx):
-        """Posts a greentext ("anti-climactic short stories from the internet")"""
-
+    async def joke(self, ctx):
+        """Sends a joke
+        Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW jokes
+        """
         try:
             with ctx.channel.typing():
                 async with self.session.get(
-                    f"https://www.reddit.com/r/greentext/hot.json?sort=hot",
+                    f"https://www.reddit.com/r/jokes/hot.json?sort=hot",
                     headers=config.R_USER_AGENT) as w:
 
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"] or data["over_18"]:
+                    if data["stickied"]:
+                        raise Exception
+                    if data["over_18"] and not ctx.channel.is_nsfw():
                         raise Exception
 
                     embed = discord.Embed(
                         title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        color=find_color(ctx))
-                    embed.set_image(url=data["url"])
+                        description=data["selftext"], color=find_color(ctx))
                     embed.set_footer(text=f"👍 - {data['score']}")
 
                     await ctx.send(embed=embed)
         except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
+            await ctx.send("Huh, something went wrong and I wasn't able to get a joke. "
                            "Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
