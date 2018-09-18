@@ -496,17 +496,14 @@ class Fun:
                     resp = await w.json()
                     data = random.choice(resp["data"]["children"])["data"]
 
-                    if data["stickied"]:
-                        raise Exception
-                    if data["over_18"]:
-                        if not ctx.channel.is_nsfw():
-                            return await ctx.send(
-                                "This particular post is rated NSFW. Either it just happened to "
-                                "be NSFW in a non-NSFW sub or the entire subreddit itself is "
-                                "rated NSFW.\n\nIf it's the first case, just try the command "
-                                "again and hopefully it won't pick another NSFW post. However, "
-                                "if it's the second one, then you will need to go into an "
-                                "NSFW-marked channel on this server to get a post from that sub")
+                    if data["over_18"] and not ctx.channel.is_nsfw():
+                        return await ctx.send(
+                            "This particular post is rated NSFW. Either it just happened to be "
+                            "NSFW in a non-NSFW sub or the entire subreddit itself is rated "
+                            "NSFW.\n\nIf it's the first case, just try the command again and "
+                            "hopefully it won't pick another NSFW post. However, if it's the "
+                            "second one, then you will need to go into an NSFW-marked channel "
+                            "on this server to get a post from that sub")
 
                     if len(data["selftext"]) > 2048:
                         data["selftext"] = ("**Sorry, but this content is too long for me to "

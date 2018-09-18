@@ -136,8 +136,10 @@ class NSFW:
                         if "https://russiasexygirls.com/" in str(p):
                             pics.append(p)
 
-                    del pics[0]
-                    del pics[0]
+                    try:
+                        del pics[0]
+                        del pics[0]
+                    except: pass
                     image = random.choice(pics).a.img["src"]
 
                 embed = discord.Embed(
@@ -252,10 +254,10 @@ class NSFW:
             resp = await w.json()
             await self.send_image(ctx, resp)
 
-    @commands.command(aliases=["thighs"])
+    @commands.command(aliases=["thigh"])
     @commands.guild_only()
     @commands.is_nsfw()
-    async def thigh(self, ctx):
+    async def thighs(self, ctx):
         """Sends some thiccccccccc thighs"""
 
         await ctx.channel.trigger_typing()
