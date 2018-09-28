@@ -32,6 +32,7 @@ import validators
 import random
 import re
 import os
+import string
 
 import config
 
@@ -617,6 +618,32 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong and I wasn't able to get a thanos "
                            "shitpost. Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+    @commands.command(brief="You didn't format the command correctly. You're supposed to "
+                      "include some text for me to thiccify")
+    async def thiccify(self, ctx, *, text):
+        """Turns text into 乇乂丅尺卂 丅卄工匚匚 letters
+        Format like this: `<prefix> thiccify <text>`
+        """
+        try:
+            await ctx.channel.trigger_typing()
+            text = list(text.lower())
+            thicc_letters = "卂乃匚刀乇下厶卄工丁长乚从𠘨口尸㔿尺丂丅凵リ山乂丫乙"
+            thicc = []
+
+            for i in text:
+                try:
+                    pos = string.ascii_lowercase.index(i)
+                    i = thicc_letters[pos]
+                except:
+                    if i == " ":
+                        i = "  "
+                thicc.append(i)
+
+            await ctx.send("".join(thicc))
+        except:
+            await ctx.send("Huh, something went wrong. Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
