@@ -122,8 +122,11 @@ mat_experimental.py
 /cchardet
 /certifi
 /cffi
+/click
+/concurrent
 decorator.py
 /discord
+goslate.py
 /idna
 idna_ssl.py
 /lxml
@@ -133,6 +136,7 @@ idna_ssl.py
 /psutil
 /pycares
 /pycparser
+/PyDictionary
 /pyshorteners
 /pytesseract
 /qrcode
