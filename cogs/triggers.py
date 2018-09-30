@@ -59,7 +59,7 @@ class Triggers:
         e = discord.Embed(color=find_color(message))
 
         if re.search("pinged", message.content, re.IGNORECASE):
-            await message.channel.send(
+            return await message.channel.send(
                 content="Pinged?", embed=e.set_image(url="https://i.imgur.com/LelDalN.gif"))
 
         elif (re.search("think", message.content, re.IGNORECASE) or
@@ -67,10 +67,10 @@ class Triggers:
                       re.search("thunk", message.content, re.IGNORECASE) or
                           re.search("thenk", message.content, re.IGNORECASE) or
                               re.search("hmm", message.content, re.IGNORECASE)):
-            await message.add_reaction(":thonk:468520122848509962")
+            return await message.add_reaction(":thonk:468520122848509962")
 
         elif message.content.lower() == "k":
-            await message.channel.send(
+            return await message.channel.send(
                 message.author.mention + " This is an auto-response. The person you are trying "
                 "to reach has no idea what \"k\" is meant to represent. They assume you wanted "
                 "to type \"ok\" but could not expand the energy to type two whole letters since "
@@ -80,16 +80,17 @@ class Triggers:
                   "can't fucking believe" in message.content.lower() or
                       "cant believe" in message.content.lower() or
                           "cant fucking believe" in message.content.lower()):
-            await message.channel.send("You better believe it, scrub")
+            return await message.channel.send("You better believe it, scrub")
 
         elif message.content.lower() == "jesus":
-            await message.channel.send("Christ")
+            return await message.channel.send("Christ")
 
         elif message.content.lower() == "good bot" or message.content.lower() == "best bot":
             async for m in message.channel.history(limit=4):
                 if m.author == self.bot.user:
                     await message.channel.send("Why thank you, human!")
                     break
+            return
 
         elif re.search("thank you", message.content, re.IGNORECASE) or re.search(
             "thanks", message.content, re.IGNORECASE):
@@ -97,10 +98,11 @@ class Triggers:
                 if m.author == self.bot.user:
                     await message.channel.send("You're welcome!")
                     break
+            return
 
         elif message.content.lower() == "f" or re.search(
             "press f", message.content, re.IGNORECASE):
-            await message.channel.send("F")
+            return await message.channel.send("F")
 
         elif message.content.lower() == "first":
             await message.channel.send("second")
@@ -109,23 +111,20 @@ class Triggers:
             await message.channel.send("third")
             await message.channel.trigger_typing()
             await asyncio.sleep(1)
-            await message.channel.send("∞th")
-
-        elif (re.search("frick", message.content, re.IGNORECASE) or
-                  re.search(" heck", message.content, re.IGNORECASE) or
-                      message.content.lower() == "heck"):
-            await message.channel.send(
-                embed=e.set_image(url="https://i.imgur.com/hG59Noq.jpg"))
+            return await message.channel.send("∞th")
 
         elif (re.search("ban ", message.content, re.IGNORECASE) or
                   re.search("banned", message.content, re.IGNORECASE) or
                       message.content.lower() == "ban"):
             if not message.content.startswith("!mat") and not message.content.startswith("expt"):
-                await message.channel.send(
+                return await message.channel.send(
                     content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
 
         elif message.content.lower() == "ping":
-            await message.channel.send("pong")
+            return await message.channel.send("pong")
+
+        elif re.search("no u", message.content, re.IGNORECASE):
+            return await message.channel.send("no u")
 
 
 def setup(bot):
