@@ -22,6 +22,7 @@ except ImportError:
     from mat import find_color, delete_message
 
 from discord.ext import commands
+from PyDictionary import PyDictionary
 import discord
 import qrcode
 import pyshorteners
@@ -44,7 +45,7 @@ class Utility:
     async def bitly(self, ctx, *, url=None):
         """Shortens a link with Bitly.
         Format like this: `<prefix> bitly <URL to shorten>`
-        You can also put an existing bit.ly link and I'll expand it into the original URL!
+        You can also put an existing bit.ly link and I'll expand it into the original URL
         """
         if url is None:
             await ctx.send("You need to include a link to shorten. Format like this: `<prefix> "
@@ -80,6 +81,28 @@ class Utility:
                 await ctx.send("Invalid URL. The link must look something like this: `http://www."
                                "example.com/something.html`.\nTry again", delete_after=6.0)
                 return await delete_message(ctx, 6)
+
+    @commands.command(brief="You need to include a word for me to define")
+    async def define(self, ctx, *, word):
+        """Get the definition for a word"""
+
+        try:
+            await ctx.channel.trigger_typing()
+            definitions = PyDictionary(word).getMeanings()
+            definitions = definitions[word.lower()]
+
+            embed = discord.Embed(description=f"**Definitions of __{word.title()}__\n\u200b**",
+                                  color=find_color(ctx))
+            for part, meanings in definitions.items():
+                embed.add_field(name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b")
+
+            embed.set_footer(
+                text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=embed)
+        except:
+            await ctx.send("Word not found. Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
 
     @commands.command(brief="Invalid formatting. You need to include the hex value of the color. "
                       "Format like this:\n`<prefix> hextorgb <#hex value>`\nThe hex value will "
@@ -223,6 +246,43 @@ class Utility:
         except:
             raise commands.BadArgument
 
+    @commands.command(aliases=["synonym", "synonyms", "antonym", "antonyms"], brief="You need to "
+                      "include a word for me to get the synonyms and antonyms of", hidden=True)
+    async def thesaurus(self, ctx, *, word):
+        """Get the synonyms and antonyms of a word"""
+
+        return await ctx.send("This command isn't working properly right now")
+
+        try:
+            await ctx.channel.trigger_typing()
+            s = PyDictionary(word).getSynonyms()
+            a = PyDictionary(word).getAntonyms()
+
+            embed = discord.Embed(description=f"**Thesaurus for __{word.title()}__\n\u200b**",
+                                  color=find_color(ctx))
+            embed.add_field(name="Synonyms", value=f"`{'`, `'.join(s)}`")
+            embed.add_field(name="Antonyms", value=f"`{'`, `'.join(a)}`")
+            embed.set_footer(
+                text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=embed)
+        except:
+            await ctx.send("Word not found. Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+    @commands.command(brief="(finish this later)", hidden=True)
+    async def translate(self, ctx, lang, *, phrase):
+        """Translate words from English to another language
+        Format like this: `<prefix> translate <language code> <words to translate>`
+        Click [here](https://developers.google.com/admin-sdk/directory/v1/languages) to see all the language codes
+        """
+        try:
+            await ctx.channel.trigger_typing()
+            translation = PyDictionary(phrase).translateTo(lang)
+
+            await ctx.send(f"WIP```{translation[0]}```")
+        except:
+            pass
 
 
 def setup(bot):
