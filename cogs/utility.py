@@ -22,11 +22,11 @@ except ImportError:
     from mat import find_color, delete_message
 
 from discord.ext import commands
-from PyDictionary import PyDictionary
 import discord
 import qrcode
 import pyshorteners
 import validators
+import aiohttp
 
 import random
 import string
@@ -34,75 +34,97 @@ import os
 
 import config
 
+#TODO: Use the new commands.Greedy and maybe typing.Optional converters for some commands
+
+
+def parse_definitions(resp):
+    """Parses definitions for the "define" command"""
+
+    sort_defs = {}
+    for d in resp["definitions"]:
+        if d["partOfSpeech"] not in sort_defs:
+            sort_defs[d["partOfSpeech"]] = []
+        sort_defs[d["partOfSpeech"]].append(d["definition"])
+
+    return sort_defs
+
 
 class Utility:
     """Utility commands"""
 
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
-    @commands.command(aliases=["shorten"])
-    async def bitly(self, ctx, *, url=None):
+    @commands.command(aliases=["shorten"], brief="You need to include a link to shorten. Format "
+                      "like this: `<prefix> bitly <URL to shorten>`\n\nAlternatively, you can "
+                      "also put an existing bit.ly link and I'll expand it back into the "
+                      "original URL")
+    async def bitly(self, ctx, *, url):
         """Shortens a link with Bitly.
         Format like this: `<prefix> bitly <URL to shorten>`
         You can also put an existing bit.ly link and I'll expand it into the original URL
         """
-        if url is None:
-            await ctx.send("You need to include a link to shorten. Format like this: `<prefix> "
-                           "bitly <URL to shorten>`\n\nAlternatively, you can also put an "
-                           "existing bit.ly link and I'll expand it back into the original URL",
-                           delete_after=10.0)
-            return await delete_message(ctx, 10)
+        if validators.url(url):
+            await ctx.channel.trigger_typing()
+            try:
+                s = pyshorteners.Shortener(
+                    engine=pyshorteners.Shorteners.BITLY, bitly_token=config.BITLY)
+
+                if "bit.ly" not in url:
+                    title = "MAT's Link Shortener"
+                    link = s.short(url)
+                else:
+                    title = "MAT's Link Expander"
+                    link = s.expand(url)
+
+                embed = discord.Embed(
+                    title=title, description="Powered by [Bitly](https://bitly.com/)",
+                    color=find_color(ctx))
+                embed.add_field(name="Before", value=url, inline=False)
+                embed.add_field(name="After", value=link, inline=False)
+
+                await ctx.send(embed=embed)
+            except:
+                await ctx.send("Oops, something went wrong while trying to shorten/expand this "
+                               "URL. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
         else:
-            if validators.url(url):
-                await ctx.channel.trigger_typing()
-                try:
-                    s = pyshorteners.Shortener(
-                        engine=pyshorteners.Shorteners.BITLY, bitly_token=config.BITLY)
-
-                    if "bit.ly" not in url:
-                        title = "MAT's Link Shortener"
-                        link = s.short(url)
-                    else:
-                        title = "MAT's Link Expander"
-                        link = s.expand(url)
-
-                    embed = discord.Embed(
-                        title=title, description="Powered by Bitly", color=find_color(ctx))
-                    embed.add_field(name="Before", value=url, inline=False)
-                    embed.add_field(name="After", value=link, inline=False)
-
-                    await ctx.send(embed=embed)
-                except:
-                    await ctx.send("Oops, something went wrong while trying to shorten/expand "
-                                   "this URL. Try again", delete_after=5.0)
-                    return await delete_message(ctx, 5)
-            else:
-                await ctx.send("Invalid URL. The link must look something like this: `http://www."
-                               "example.com/something.html`.\nTry again", delete_after=6.0)
-                return await delete_message(ctx, 6)
+            await ctx.send("Invalid URL. The link must look something like this: `http://www."
+                           "example.com/something.html`.\nTry again", delete_after=6.0)
+            return await delete_message(ctx, 6)
 
     @commands.command(brief="You need to include a word for me to define")
     async def define(self, ctx, *, word):
         """Get the definition for a word"""
 
-        try:
-            await ctx.channel.trigger_typing()
-            definitions = PyDictionary(word).getMeanings()
-            definitions = definitions[word.lower()]
+        await ctx.channel.trigger_typing()
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/definitions",
+                                    headers=config.WORDS_API) as w:
+            resp = await w.json()
+            try:
+                data = parse_definitions(resp)
+            except KeyError:
+                if resp["message"] == "word not found":
+                    await ctx.send("Word not found. Try again", delete_after=5.0)
+                    return await delete_message(ctx, 5)
+                else:
+                    return await ctx.send(
+                        f"An unknown error has occured:```{resp['message']}```"
+                        "If this problem persists, get in touch with my owner, NinjaSnail1080. "
+                        "You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
-            embed = discord.Embed(description=f"**Definitions of __{word.title()}__\n\u200b**",
-                                  color=find_color(ctx))
-            for part, meanings in definitions.items():
-                embed.add_field(name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b")
+        embed = discord.Embed(
+            title=f"Definitions of {word.title()}",
+            description="Powered by [WordsAPI](https://www.wordsapi.com/)\n\u200b",
+            color=find_color(ctx))
+        embed.set_footer(
+            text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
-            embed.set_footer(
-                text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        for part, meanings in data.items():
+            embed.add_field(name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b")
 
-            await ctx.send(embed=embed)
-        except:
-            await ctx.send("Word not found. Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.send(embed=embed)
 
     @commands.command(brief="Invalid formatting. You need to include the hex value of the color. "
                       "Format like this:\n`<prefix> hextorgb <#hex value>`\nThe hex value will "
@@ -247,28 +269,51 @@ class Utility:
             raise commands.BadArgument
 
     @commands.command(aliases=["synonym", "synonyms", "antonym", "antonyms"], brief="You need to "
-                      "include a word for me to get the synonyms and antonyms of", hidden=True)
+                      "include a word for me to get the synonyms and antonyms of")
     async def thesaurus(self, ctx, *, word):
         """Get the synonyms and antonyms of a word"""
 
-        return await ctx.send("This command isn't working properly right now")
+        await ctx.channel.trigger_typing()
+        error = []
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
+                                    headers=config.WORDS_API) as w:
+            s = await w.json()
+            if "message" in s:
+                error.append(s["message"])
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/antonyms",
+                                    headers=config.WORDS_API) as w:
+            a = await w.json()
+            if "message" in a:
+                error.append(a["message"])
 
         try:
-            await ctx.channel.trigger_typing()
-            s = PyDictionary(word).getSynonyms()
-            a = PyDictionary(word).getAntonyms()
+            embed = discord.Embed(
+                title=f"Thesaurus for {word.title()}",
+                description="Powered by [WordsAPI](https://www.wordsapi.com/)",
+                color=find_color(ctx))
 
-            embed = discord.Embed(description=f"**Thesaurus for __{word.title()}__\n\u200b**",
-                                  color=find_color(ctx))
-            embed.add_field(name="Synonyms", value=f"`{'`, `'.join(s)}`")
-            embed.add_field(name="Antonyms", value=f"`{'`, `'.join(a)}`")
+            if not s['synonyms']:
+                s['synonyms'].append("(None)")
+            if not a['antonyms']:
+                a['antonyms'].append("(None)")
+
+            embed.add_field(
+                name="Synonyms", value=f"`{'`, `'.join(s['synonyms'])}`", inline=False)
+            embed.add_field(
+                name="Antonyms", value=f"`{'`, `'.join(a['antonyms'])}`", inline=False)
             embed.set_footer(
                 text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-        except:
-            await ctx.send("Word not found. Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        except KeyError:
+            if "word not found" in error:
+                await ctx.send("Word not found. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            else:
+                return await ctx.send(
+                    "An unknown error has occured:```" + "\n".join(error) + "```If this problem "
+                    "persists, get in touch with my owner, NinjaSnail1080. You can reach him at "
+                    "my support server: https://discord.gg/P4Fp3jA")
 
     @commands.command(brief="(finish this later)", hidden=True)
     async def translate(self, ctx, lang, *, phrase):
@@ -276,6 +321,7 @@ class Utility:
         Format like this: `<prefix> translate <language code> <words to translate>`
         Click [here](https://developers.google.com/admin-sdk/directory/v1/languages) to see all the language codes
         """
+        return await ctx.send("This command isn't working right now")
         try:
             await ctx.channel.trigger_typing()
             translation = PyDictionary(phrase).translateTo(lang)
