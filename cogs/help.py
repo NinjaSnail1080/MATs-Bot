@@ -26,7 +26,6 @@ import discord
 
 import collections
 
-# list_prefixes = "**Prefixes**: `" + "` | `".join()) + "`"
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
 
 
@@ -94,6 +93,15 @@ class Help:
 
             cmds = list(c for c in self.bot.commands if c.cog_name == "Fun" and not c.hidden and
                         c.name not in disabled)
+
+            if len(cmds) == 0:
+                embed = discord.Embed(
+                    title="Help | Fun Commands", description=list_prefixes + "\n\n**All commands"
+                    " in this category have been disabled for this server by one of its "
+                    "Administrators**", color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                return await ctx.send(embed=embed)
+
             cmds = list(chunks(cmds, 25))
 
             embed = discord.Embed(
@@ -118,6 +126,16 @@ class Help:
         elif cat.lower() == "image":
             cmds = list(c for c in self.bot.commands if c.cog_name == "Image" and
                         not c.hidden and c.name not in disabled)
+
+            if len(cmds) == 0:
+                embed = discord.Embed(
+                    title="Help | Image Manipulation Commands",
+                    description=list_prefixes + "\n\n**All commands in this category have been "
+                    "disabled for this server by one of its Administrators**",
+                    color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                return await ctx.send(embed=embed)
+
             cmds = list(chunks(cmds, 25))
 
             embed = discord.Embed(title="Help | Image Manipulation Commands",
@@ -145,6 +163,15 @@ class Help:
         elif cat.lower() == "info":
             cmds = list(c for c in self.bot.commands if c.cog_name == "Info" and not c.hidden and
                         c.name not in disabled)
+
+            if len(cmds) == 0:
+                embed = discord.Embed(
+                    title="Help | Information Commands", description=list_prefixes + "\n\n**All "
+                    "commands in this category have been disabled for this server by one of "
+                    "its Administrators**", color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                return await ctx.send(embed=embed)
+
             cmds = list(chunks(cmds, 25))
 
             embed = discord.Embed(title="Help | Information Commands", description=list_prefixes,
@@ -197,6 +224,15 @@ class Help:
         elif cat.lower() == "utility":
             cmds = list(c for c in self.bot.commands if c.cog_name == "Utility" and
                         not c.hidden and c.name not in disabled)
+
+            if len(cmds) == 0:
+                embed = discord.Embed(
+                    title="Help | Utility Commands", description=list_prefixes + "\n\n**All "
+                    "commands in this category have been disabled for this server by one of "
+                    "its Administrators**", color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                return await ctx.send(embed=embed)
+
             cmds = list(chunks(cmds, 25))
 
             embed = discord.Embed(
