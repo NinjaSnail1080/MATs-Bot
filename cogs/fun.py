@@ -23,6 +23,7 @@ except ImportError:
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
+from zalgo_text.zalgo import zalgo
 import discord
 import asyncio
 import aiohttp
@@ -238,7 +239,23 @@ class Fun:
                            "Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
-    @commands.command(aliases=["ch", "cyha", "cyahap", "c&h"])
+    @commands.command(aliases=["zalgo", "zalgofy"],
+                      brief="You need to include some text for me to creepify")
+    async def creepify(self, ctx, *, text: str):
+        """Turns text into c̛̜̎ṟ͆̃e̲͛̋e͇̭̐p̮̺ͮy̷ͪ͡ ź͉ͯą͗ͪl̬̦̈g̯̪̊ờ͙ ṯ̸̦e͔̎̀x̡͈ͪṫ͟͞
+
+        Note: Due to an issue with Discord, this command won't work very well on large amounts of text. Use [this generator](https://lingojam.com/ZalgoText) if you want to convert large amounts of text
+        """
+        await ctx.channel.trigger_typing()
+        creepified = zalgo().zalgofy(text)
+        if len(creepified) > 2000:
+            await ctx.send("Sorry, but the creepified text has too many characters for me to "
+                           "send here. Try again with less text", delete_after=5.0)
+            return await delete_message(ctx, 5)
+        else:
+            await ctx.send(creepified)
+
+    @commands.command(aliases=["ch", "cyha", "c&h"])
     async def cyhap(self, ctx):
         """Posts a random Cyanide & Happiness comic"""
 
@@ -348,7 +365,7 @@ class Fun:
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
     async def kidnap(self, ctx, user: discord.Member=None):
-        """A group of anime girls kidnap you and you get featured on some YouTube video
+        """A group of anime girls kidnap you and you get featured on [this YouTube video](https://www.youtube.com/watch?v=54a-NPz0sHY)
         Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
         """
         await ctx.channel.trigger_typing()
