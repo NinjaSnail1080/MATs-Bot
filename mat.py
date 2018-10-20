@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = "0.6.2"
+__version__ = 0.7
 
 from discord.ext import commands
 import discord
@@ -327,9 +327,7 @@ class MAT(commands.Bot):
 
     async def on_member_join(self, member):
         serverdata = get_data("server")
-        if "welcome" not in serverdata[str(member.guild.id)]:
-            return
-        else:
+        if "welcome" in serverdata[str(member.guild.id)]:
             channel = self.get_channel(int(
                 serverdata[str(member.guild.id)]["welcome"]["channel"]))
             await channel.send(
@@ -337,9 +335,7 @@ class MAT(commands.Bot):
 
     async def on_member_remove(self, member):
         serverdata = get_data("server")
-        if "goodbye" not in serverdata[str(member.guild.id)]:
-            return
-        else:
+        if "goodbye" in serverdata[str(member.guild.id)]:
             channel = self.get_channel(int(
                 serverdata[str(member.guild.id)]["goodbye"]["channel"]))
             await channel.send(
