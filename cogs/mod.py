@@ -30,6 +30,8 @@ import collections
 import re
 
 #TODO: Fix problem with commands that use the ReasonForAction converter
+#TODO: Fix problem with purge clear. It doesn't send the embed after clearing at all
+#TODO: Use the new commands.Greedy and maybe typing.Optional converters for some commands
 
 
 async def send_log(guild, send_embed):
@@ -142,6 +144,11 @@ class Moderation:
             await ctx.send("Yeah, great idea. Disable the freaking help command :rolling_eyes:",
                            delete_after=6.0)
             return await delete_message(ctx, 6)
+
+        elif cmd.lower() == "enable":
+            await ctx.send("I don't think I need to explain why it would be a bad idea to "
+                           "disable this command", delete_after=7.0)
+            return await delete_message(ctx, 7)
 
         if "disabled" in get_data("server")[str(ctx.guild.id)]:
             if cmd.lower() in get_data("server")[str(ctx.guild.id)]["disabled"]:
