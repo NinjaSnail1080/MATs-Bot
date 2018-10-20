@@ -47,7 +47,7 @@ class Error_Handlers:
 
             elif "disabled" in get_data("server")[str(ctx.guild.id)]:
                 if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
-                    await ctx.send("Sorry, but this command has been disabled for your server "
+                    await ctx.send("Sorry, but this command has been disabled on your server "
                                    "by one of its Administrators", delete_after=7.0)
                     return await delete_message(ctx, 7)
 
