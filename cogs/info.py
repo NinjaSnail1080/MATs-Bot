@@ -113,7 +113,7 @@ class Info:
     @commands.command()
     @commands.guild_only()
     async def allroles(self, ctx):
-        """Sends a list of all the roles in the server"""
+        """Sends a list of all the roles in the server (not necessarily in order)"""
 
         await ctx.channel.trigger_typing()
         embed = discord.Embed(title=f"All of the roles in {ctx.guild.name}",
@@ -122,7 +122,7 @@ class Info:
         embed.set_thumbnail(url=ctx.guild.icon_url)
         embed.add_field(
             name=f"Roles ({len(ctx.guild.roles)})",
-            value=", ".join(r.mention for r in ctx.guild.role_hierarchy), inline=False)
+            value=", ".join(r.mention for r in ctx.guild.roles[::-1]), inline=False)
 
         await ctx.send(embed=embed)
 
@@ -133,7 +133,7 @@ class Info:
     @commands.guild_only()
     async def channelinfo(self, ctx, channel: discord.TextChannel=None):
         """Info about a text channel. By default I'll show info about the channel the command was performed in, although you can specify a different one.
-        Format like this: `<prefix> channelinfo (OPTIONAL)<#mention text channel or channel name>`
+        Format like this: `<prefix> channelinfo (OPTIONAL)<text channel>`
         """
         await ctx.channel.trigger_typing()
         if channel is None:
@@ -158,7 +158,7 @@ class Info:
             embed.add_field(name="Roles overwritten", value=len(c.changed_roles))
             embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
             if c.topic is None or c.topic == "":
-                embed.add_field(name="Channel topic", value=f"```No topic```", inline=False)
+                embed.add_field(name="Channel topic", value="```No topic```", inline=False)
             else:
                 embed.add_field(name="Channel topic", value=f"```{c.topic}```", inline=False)
         except discord.Forbidden:
@@ -206,7 +206,7 @@ class Info:
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
         """Info about the server"""
