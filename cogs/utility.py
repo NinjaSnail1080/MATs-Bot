@@ -122,7 +122,8 @@ class Utility:
             text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
         for part, meanings in data.items():
-            embed.add_field(name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b")
+            embed.add_field(
+                name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b", inline=False)
 
         await ctx.send(embed=embed)
 
