@@ -40,6 +40,8 @@ import config
 #* MAT's Bot uses the NekoBot API for many of these commands.
 #* More info at https://docs.nekobot.xyz/
 
+#TODO: Use typing.Optional for some commands
+
 
 class Fun:
     """Fun stuff!"""
@@ -108,21 +110,26 @@ class Fun:
         """Turn text into :regional_indicator_b: :regional_indicator_i: :regional_indicator_g:   :regional_indicator_l: :regional_indicator_e: :regional_indicator_t: :regional_indicator_t: :regional_indicator_e: :regional_indicator_r: :regional_indicator_s:
         Format like this: `<prefix> bigletter <text>`
         """
-        await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/text?type=bigletter&text={text}") as w:
-            resp = await w.json()
-
-        if not resp["success"]:
-            await ctx.send("Huh, something went wrong. I wasn't able to get the text. Try "
-                           "again later", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         try:
-            await ctx.send(resp["message"])
-        except discord.HTTPException:
-            await ctx.send("The message was too large for me to send. Try again with a shorter "
-                           "one", delete_after=5.0)
+            await ctx.channel.trigger_typing()
+            text = list(text.lower())
+            bigletters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯', '🇰', '🇱',
+                          '🇲', '🇳', '🇴', '🇵', '🇶', '🇷', '🇸', '🇹', '🇺', '🇻', '🇼', '🇽',
+                          '🇾', '🇿']
+            big = []
+
+            for i in text:
+                try:
+                    pos = string.ascii_lowercase.index(i)
+                    i = bigletters[pos] + " "
+                except:
+                    if i == " ":
+                        i = "  "
+                big.append(i)
+
+            await ctx.send("".join(big))
+        except:
+            await ctx.send("Huh, something went wrong. Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
@@ -243,7 +250,6 @@ class Fun:
                       brief="You need to include some text for me to creepify")
     async def creepify(self, ctx, *, text: str):
         """Turns text into c̛̜̎ṟ͆̃e̲͛̋e͇̭̐p̮̺ͮy̷ͪ͡ ź͉ͯą͗ͪl̬̦̈g̯̪̊ờ͙ ṯ̸̦e͔̎̀x̡͈ͪṫ͟͞
-
         Note: Due to an issue with Discord, this command won't work very well on large amounts of text. Use [this generator](https://lingojam.com/ZalgoText) if you want to convert large amounts of text
         """
         await ctx.channel.trigger_typing()
@@ -359,36 +365,6 @@ class Fun:
         await ctx.channel.trigger_typing()
         async with self.session.get(
             f"https://nekobot.xyz/api/imagegen?type=kannagen&text={text}") as w:
-            resp = await w.json()
-            await self.send_image(ctx, resp)
-
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> kidnap (OPTIONAL)<@mention user>`")
-    async def kidnap(self, ctx, user: discord.Member=None):
-        """A group of anime girls kidnap you and you get featured on [this YouTube video](https://www.youtube.com/watch?v=54a-NPz0sHY)
-        Format like this: `<prefix> kidnap (OPTIONAL)<@mention user>`
-        """
-        await ctx.channel.trigger_typing()
-        if user is None:
-            user = ctx.author
-        img = user.avatar_url_as(format="png")
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=kidnap&image={img}") as w:
-            resp = await w.json()
-            await self.send_image(ctx, resp)
-
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> kms (OPTIONAL)<user>`")
-    async def kms(self, ctx, user: discord.Member=None):
-        """KMS
-        Format like this: <prefix> kms (OPTIONAL)<user>
-        """
-        await ctx.channel.trigger_typing()
-        if user is None:
-            user = ctx.author
-        img = user.avatar_url_as(format="png")
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=kms&url={img}") as w:
             resp = await w.json()
             await self.send_image(ctx, resp)
 
