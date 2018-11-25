@@ -27,14 +27,13 @@ import qrcode
 import pyshorteners
 import validators
 import aiohttp
+import typing
 
 import random
 import string
 import os
 
 import config
-
-#TODO: Use the new commands.Greedy and maybe typing.Optional converters for some commands
 
 
 def parse_definitions(resp):
@@ -154,10 +153,10 @@ class Utility:
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
                       "\n\nNote: If you used `-d`, then you must provide a user for it to work")
-    async def pfp(self, ctx, user: discord.Member=None, default=None):
+    async def pfp(self, ctx, user: typing.Optional[discord.Member]=None, default=None):
         """Get a user's profile pic. By default it retrieves your own but you can specify a different user.
         Format like this: `<prefix> pfp (OPTIONAL)<user>`
-        Add "-d" to the end of the command to get the user's default pfp (Only works if user is provided)
+        Add `-d` to the end of the command to get the user's default pfp
         """
         if user is None:
             user = ctx.author
