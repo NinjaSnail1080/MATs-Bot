@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = 0.7
+__version__ = "0.7.1"
 
 from discord.ext import commands
 import discord
@@ -230,7 +230,7 @@ class MAT(commands.Bot):
     async def on_guild_join(self, guild):
         app = await self.application_info()
         message = ("Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
-                   f"{app.owner}. I can do a bunch of stuff, but I'm still very much in "
+                   f"**{app.owner}**. I can do a bunch of stuff, but I'm still very much in "
                    "developement, so even more features are coming soon!\n\nIn addition to all "
                    "my commands, I also have a numerous trigger words that server to "
                    "amuse/infuriate the people of this server!\n\nDo `!mat help` to get started")
@@ -267,7 +267,7 @@ class MAT(commands.Bot):
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
-            color=guild.me.top_role.color)
+            color=joins.guild.top_role.color)
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
