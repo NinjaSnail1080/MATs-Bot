@@ -29,6 +29,7 @@ import asyncio
 import aiohttp
 import ascii
 import validators
+import typing
 
 import random
 import re
@@ -343,12 +344,14 @@ class Fun:
             return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> phcomment <@mention user> <comment>`")
-    async def phcomment(self, ctx, user: discord.Member, *, comment: str):
+                      "this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`")
+    async def phcomment(self, ctx, user: typing.Optional[discord.Member]=None, *, comment: str):
         """Generate a PornHub comment!
-        Format like this: `<prefix> phcomment <@mention user> <comment>`
+        Format like this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`
         """
         await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
         pfp = user.avatar_url_as(format="png")
         async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
                                     f"&image={pfp}&text={comment}"
@@ -388,6 +391,21 @@ class Fun:
         embed.set_footer(text="From: https://www.lennyfaces.net/")
 
         await ctx.send(embed=embed)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> lolice (OPTIONAL)<@mention user>`")
+    async def lolice(self, ctx, user: discord.Member=None):
+        """text
+        Format like this: `<prefix> lolice (OPTIONAL)<@mention user>`
+        """
+        await ctx.channel.trigger_typing()
+        if user is None:
+            user = ctx.author
+        img = user.avatar_url_as(format="png")
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=lolice&url={img}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command()
     async def meirl(self, ctx):
