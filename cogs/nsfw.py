@@ -190,6 +190,19 @@ class NSFW:
                            "Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_nsfw()
+    async def hentai(self, ctx):
+        """Posts some hentai"""
+
+        await ctx.channel.trigger_typing()
+        endpoints = ["hentai", "hentai", "hentai", "hentai_anal"]
+        async with self.session.get(
+            f"https://nekobot.xyz/api/image?type={random.choice(endpoints)}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
+
     @commands.command(aliases=["nekos"])
     @commands.guild_only()
     @commands.is_nsfw()
