@@ -29,10 +29,10 @@ import collections
 list_prefixes = "**Prefixes**: `!mat` | `mat.` | `mat/`"
 
 
-def chunks(l, s):
-    """Yield s-sized chunks from l"""
-    for i in range(0, len(l), s):
-        yield l[i:i + s]
+def chunks(L, s):
+    """Yield s-sized chunks from L"""
+    for i in range(0, len(L), s):
+        yield L[i:i + s]
 
 
 class Help:
@@ -90,9 +90,8 @@ class Help:
                 embed=embed)
 
         elif cat.lower() == "fun":
-
-            cmds = list(c for c in self.bot.commands if c.cog_name == "Fun" and not c.hidden and
-                        c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Fun" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
             if len(cmds) == 0:
                 embed = discord.Embed(
@@ -124,8 +123,8 @@ class Help:
                 await ctx.send(embed=e)
 
         elif cat.lower() == "image":
-            cmds = list(c for c in self.bot.commands if c.cog_name == "Image" and
-                        not c.hidden and c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Image" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
             if len(cmds) == 0:
                 embed = discord.Embed(
@@ -138,11 +137,12 @@ class Help:
 
             cmds = list(chunks(cmds, 25))
 
-            embed = discord.Embed(title="Help | Image Manipulation Commands",
-                                  description=list_prefixes + "\n\n**For all of these commands "
-                                  "you need to either attach an image or @mention another user "
-                                  "after the command to use their avatar. If you don't, I'll "
-                                  "default to your user and your avatar**", color=find_color(ctx))
+            embed = discord.Embed(
+                title="Help | Image Manipulation Commands",
+                description=list_prefixes + "\n\n**For all of these commands you need to either "
+                "attach an image, insert an image url, or @mention another user after the "
+                "command to use their avatar. If you don't put anything, I'll default to your "
+                "user's avatar**", color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
 
             for c in cmds[0]:
@@ -161,8 +161,8 @@ class Help:
                 await ctx.send(embed=e)
 
         elif cat.lower() == "info":
-            cmds = list(c for c in self.bot.commands if c.cog_name == "Info" and not c.hidden and
-                        c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Info" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
             if len(cmds) == 0:
                 embed = discord.Embed(
@@ -194,9 +194,8 @@ class Help:
                 await ctx.send(embed=e)
 
         elif cat.lower() == "mod" or cat.lower() == "moderation":
-            cmds = list(
-                c for c in self.bot.commands if c.cog_name == "Moderation" and not c.hidden and
-                c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Moderation" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
             cmds = list(chunks(cmds, 25))
 
             embed = discord.Embed(title="Help | Moderation Commands", description=list_prefixes,
@@ -222,8 +221,8 @@ class Help:
             await ctx.send("No commands yet ¯\_(ツ)_/¯")
 
         elif cat.lower() == "utility":
-            cmds = list(c for c in self.bot.commands if c.cog_name == "Utility" and
-                        not c.hidden and c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Utility" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
             if len(cmds) == 0:
                 embed = discord.Embed(
@@ -255,8 +254,8 @@ class Help:
                 await ctx.send(embed=e)
 
         elif cat.lower() == "nsfw":
-            cmds = list(c for c in self.bot.commands if c.cog_name == "NSFW" and not c.hidden and
-                        c.name not in disabled)
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "NSFW" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
             if len(cmds) == 0:
                 embed = discord.Embed(
@@ -288,6 +287,8 @@ class Help:
                 await ctx.send(embed=e)
 
         elif cat.lower() == "all":
+            cmds = sorted(list(self.bot.commands), key=lambda c: c.name)
+
             embed = discord.Embed(
                 title="Help | All Commands", description=list_prefixes, color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
@@ -296,32 +297,32 @@ class Help:
 
             embed.add_field(
                 name="<:confetti:464831811558572035> Fun",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Fun" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name="<:paint:464836778000515072> Image Manipulation",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Image" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name="<:info:464831966382915584> Info",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Info" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Moderation" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name=":wink: NSFW",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "NSFW" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name=":tools: Utility",
-                value="\u200b" + ", ".join([f"`{c.name}`" for c in self.bot.commands
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Utility" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             if disabled:
