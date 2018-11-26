@@ -28,6 +28,7 @@ import discord
 import aiohttp
 import validators
 import pytesseract
+import typing
 
 import io
 import os
@@ -47,12 +48,17 @@ class Image:
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
-    def get_image(self, ctx, user: discord.Member=None):
-        if user is None and not ctx.message.attachments:
+    def get_image(self, ctx, user_url: typing.Union[discord.Member, str]=None):
+        if user_url is None and not ctx.message.attachments:
             img = ctx.author.avatar_url_as(format="png")
-        elif user is not None:
-            img = user.avatar_url_as(format="png")
-        elif user is None and ctx.message.attachments:
+        elif user_url is not None:
+            if isinstance(user_url, discord.Member):
+                img = user_url.avatar_url_as(format="png")
+            elif validators.url(user_url):
+                img = user_url
+            else:
+                raise commands.BadArgument
+        elif user_url is None and ctx.message.attachments:
             img = ctx.message.attachments[0].url
         return img
 
@@ -69,46 +75,49 @@ class Image:
         await ctx.send(embed=embed)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image>`")
-    async def awooify(self, ctx, member: discord.Member=None):
+                      "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def awooify(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Awooify an image or a member's avatar"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image>`")
-    async def blurpify(self, ctx, member: discord.Member=None):
+                      "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def blurpify(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Blurpify an image or a member's avatar"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> deepfry (OPTIONAL)<@mention user OR attach an image>`")
-    async def deepfry(self, ctx, member: discord.Member=None):
+                      "this: `<prefix> deepfry (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def deepfry(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Deepfry an image or a member's avatar"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=deepfry&image={img}") as w:
                 resp = await w.json()
                 await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> gettext <image url OR attach an image>`")
+                      "this: `<prefix> gettext <attach an image OR image url>`")
     async def gettext(self, ctx, url=None):
         """Attempts to read text from an image.
-        Format like this: `<prefix> gettext <image url OR attach an image>`
+        Format like this: `<prefix> gettext <attach an image OR image url>`
         Note: Works best with black text on a white background or vice versa
         """
         #* Aiohttp is being used here in this admittedly ugly block of code because for the life
@@ -139,7 +148,8 @@ class Image:
                 text = pytesseract.image_to_string(IMG.open("image.png"))
                 os.remove("image.png")
                 if text == "":
-                    await ctx.send("I wasn't able to read any text from that image", delete_after=5.0)
+                    await ctx.send(
+                        "I wasn't able to read any text from that image", delete_after=5.0)
                     return await delete_message(ctx, 5)
                 elif len(text) > 1941:
                     await ctx.send("This text is too long for me to send here. Try an image "
@@ -154,12 +164,13 @@ class Image:
             return await delete_message(ctx, 6)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> iphonex (OPTIONAL)<@mention user OR attach an image>`")
-    async def iphonex(self, ctx, member: discord.Member=None):
+                      "this: `<prefix> iphonex (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def iphonex(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Places a picture inside of an iPhone X. Do what you will with the resulting pic"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
                 resp = await w.json()
@@ -167,12 +178,12 @@ class Image:
 
     @commands.command(aliases=["majik"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
-                      "attach an image>`")
-    async def magik(self, ctx, member: discord.Member=None):
+                      "attach an image OR image url>`")
+    async def magik(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Magikify an image or a member's avatar"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
                 resp = await w.json()
@@ -180,12 +191,12 @@ class Image:
 
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
-                      "OR attach an image>`")
-    async def threats(self, ctx, member: discord.Member=None):
+                      "OR attach an image OR image url>`")
+    async def threats(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Identify a threat to society"""
 
         with ctx.channel.typing():
-            img = self.get_image(ctx, member)
+            img = self.get_image(ctx, member_url)
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
                 resp = await w.json()
