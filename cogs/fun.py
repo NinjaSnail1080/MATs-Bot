@@ -27,12 +27,10 @@ from zalgo_text.zalgo import zalgo
 import discord
 import asyncio
 import aiohttp
-import ascii
 import validators
 import typing
 
 import random
-import re
 import os
 import string
 
@@ -59,36 +57,6 @@ class Fun:
 
         await ctx.send(
             embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
-
-    @commands.command()
-    async def ascii(self, ctx, *, image=None):
-        """Converts an image into ascii art. Will work for most images.
-        Format like this: `<prefix> ascii <image URL>`
-        """
-        if image is not None and validators.url(image):
-            try:
-                with ctx.channel.typing():
-                    art = ascii.loadFromUrl(image, 60, False)
-                    if len(art) > 1994:
-                        art = "".join(art.split())
-                        split_art = re.findall(".{1,1920}", art)
-                        for a in split_art:
-                            art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                            await ctx.send(f"```{art}```")
-                    else:
-                        await ctx.send(f"```{art}```")
-            except:
-                await ctx.send("Huh, something went wrong. I wasn't able to convert this into "
-                               "ascii art. Try again with a different image.", delete_after=7.0)
-                return await delete_message(ctx, 7)
-        elif image is None:
-            await ctx.send("You need to include a link to the image you want to convert.\n\n"
-                           "Format like this: `<prefix> ascii <image URL>`", delete_after=10.0)
-            return await delete_message(ctx, 10)
-        elif not validators.url(image):
-            await ctx.send("Invalid url. The link to your image needs to look something like this"
-                           ":\n\n`http://www.example.com/something/image.png`", delete_after=10.0)
-            return await delete_message(ctx, 10)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> baguette (OPTIONAL)<@mention user>`")
@@ -356,18 +324,6 @@ class Fun:
         async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
                                     f"&image={pfp}&text={comment}"
                                     f"&username={user.display_name}") as w:
-            resp = await w.json()
-            await self.send_image(ctx, resp)
-
-    @commands.command(aliases=["kannafy"], brief="You didn't format the command correctly. It's "
-                      "supposed to look like this: `<prefix> kannagen <text>`")
-    async def kannagen(self, ctx, *, text: str):
-        """Kannafy some text (Sorry for the poor image quality)
-        Format like this: `<prefix> kannagen <text>`
-        """
-        await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=kannagen&text={text}") as w:
             resp = await w.json()
             await self.send_image(ctx, resp)
 

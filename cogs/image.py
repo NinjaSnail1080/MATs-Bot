@@ -29,9 +29,11 @@ import aiohttp
 import validators
 import pytesseract
 import typing
+import ascii
 
 import io
 import os
+import re
 
 import config
 
@@ -73,6 +75,24 @@ class Image:
         embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
 
         await ctx.send(embed=embed)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def ascii(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Converts an image or a member's avatar into ascii art. Will work for most images"""
+
+        with ctx.channel.typing():
+            img = self.get_image(ctx, member_url)
+            art = ascii.loadFromUrl(img, 60, False)
+            if len(art) > 1994:
+                art = "".join(art.split())
+                split_art = re.findall(".{1,1920}", art)
+                for a in split_art:
+                    art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
+                    await ctx.send(f"```{art}```")
+            else:
+                await ctx.send(f"```{art}```")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image OR "
