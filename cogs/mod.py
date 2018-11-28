@@ -173,6 +173,8 @@ class Moderation:
 
         elif cmd in ["Fun", "Image", "Info", "Moderation", "NSFW", "Utility"]:
             for c in self.bot.get_cog_commands(cmd):
+                if c.name == "enable":  #* So it doesn't disable the "enable" command
+                    continue
                 try:
                     serverdata[str(ctx.guild.id)]["disabled"].append(c.name)
                 except:
