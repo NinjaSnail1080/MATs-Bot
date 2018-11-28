@@ -132,7 +132,7 @@ class Fun:
     @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> clyde <text>`")
     async def clyde(self, ctx, *, text: str):
-        """Clydify text (Have Clyde type some text)
+        """Make Clyde say something
         Format like this: `<prefix> clyde <text>`
         """
         await ctx.channel.trigger_typing()
@@ -278,7 +278,7 @@ class Fun:
         """Pay your respects"""
 
         msg = await ctx.send(
-            f"{ctx.author.mention} has paid their respects. Press F to pay yours.")
+            f"{ctx.author.mention} has paid their respects :heart:. Press F to pay yours.")
         await msg.add_reaction("\U0001f1eb")
 
     @commands.command()
@@ -348,24 +348,9 @@ class Fun:
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> lolice (OPTIONAL)<@mention user>`")
-    async def lolice(self, ctx, user: discord.Member=None):
-        """text
-        Format like this: `<prefix> lolice (OPTIONAL)<@mention user>`
-        """
-        await ctx.channel.trigger_typing()
-        if user is None:
-            user = ctx.author
-        img = user.avatar_url_as(format="png")
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=lolice&url={img}") as w:
-            resp = await w.json()
-            await self.send_image(ctx, resp)
-
     @commands.command()
     async def meirl(self, ctx):
-        """Posts that are u irl"""
+        """Sends posts that are u irl"""
 
         try:
             with ctx.channel.typing():
@@ -612,6 +597,19 @@ class Fun:
         except:
             await ctx.send("Huh, something went wrong. Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> trap <@mention user>`")
+    async def trap(self, ctx, member: discord.Member):
+        """Trap another user with yoir trapcard!
+        Format like this: `<prefix> trap <@mention user>`
+        """
+        await ctx.channel.trigger_typing()
+        async with self.session.get(
+            f"https://nekobot.xyz/api/imagegen?type=trap&name={member.display_name}"
+            f"&author={ctx.author.display_name}&image={member.avatar_url_as(format='png')}") as w:
+            resp = await w.json()
+            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
                       "some text for the tweet `<prefix> trumptweet <tweet>`")
