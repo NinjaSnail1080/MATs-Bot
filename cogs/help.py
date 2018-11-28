@@ -141,8 +141,9 @@ class Help:
                 title="Help | Image Manipulation Commands",
                 description=list_prefixes + "\n\n**For all of these commands you need to either "
                 "attach an image, insert an image url, or @mention another user after the "
-                "command to use their avatar. If you don't put anything, I'll default to your "
-                "user's avatar**", color=find_color(ctx))
+                "command to use their avatar. If you don't put anything, I'll search the "
+                "previous 5 messages for an image and use it if I find one. If I don't, I'll "
+                "just default to your user's avatar**", color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
 
             for c in cmds[0]:
