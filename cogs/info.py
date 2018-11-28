@@ -65,8 +65,8 @@ class Info:
         try:
             banned = await ctx.guild.bans()
         except discord.Forbidden:
-            return await ctx.send("I'm sorry, but I don't have permission to view the banned "
-                                  "members. For that I need the Ban Members command")
+            return await ctx.send("I'm sorry, but I don't have the proper perms to view the "
+                                  "banned members. For that I need the Ban Members permission")
         if len(banned) == 0:
             return await ctx.send("This server hasn't banned any users yet")
 
