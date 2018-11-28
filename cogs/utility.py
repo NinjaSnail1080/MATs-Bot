@@ -141,7 +141,6 @@ class Utility:
         except:
             raise commands.BadArgument
 
-
     @commands.command()
     async def invite(self, ctx):
         """Generates an invite link so you can add me to your own server!"""
@@ -149,6 +148,20 @@ class Utility:
         await ctx.send(
             "Here's my invite link so you can add me to your own server!\nhttps://discordapp.com/"
             "oauth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591")
+
+    @commands.command(brief="You need to include some search terms. Format like this: `<prefix> "
+                      "lmgtfy <search terms>`")
+    async def lmgtfy(self, ctx, *, terms: str):
+        """Generates a LMGTFY (Let Me Google That For You) link.
+        Format like this: `<prefix> lmgtfy <search terms>`
+        """
+        link = "http://lmgtfy.com/?q=" + terms.lower().replace(" ", "+")
+        embed = discord.Embed(
+            title=terms.title() + "?", description=f"[Let Me Google That For You]({link})",
+            color=find_color(ctx))
+        embed.set_thumbnail(url="https://lmgtfy.com/assets/sticker-b222a421fb6cf257985abfab188be7"
+                            "d6746866850efe2a800a3e57052e1a2411.png")
+        await ctx.send(embed=embed)
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
