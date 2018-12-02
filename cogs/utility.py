@@ -163,6 +163,38 @@ class Utility:
                             "d6746866850efe2a800a3e57052e1a2411.png")
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["lifeprotip"])
+    async def lpt(self, ctx):
+        """Posts an LPT, or Life Pro Tip (i.e., a life hack that's actually useful)"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.session.get(
+                    "https://www.reddit.com/r/LifeProTips/hot.json?sort=hot",
+                    headers=config.R_USER_AGENT) as w:
+
+                    resp = await w.json()
+                    data = random.choice(resp["data"]["children"])["data"]
+
+                    if data["stickied"]:
+                        raise Exception
+
+                    if len(data["selftext"]) > 2048:
+                        data["selftext"] = ("**Sorry, but this content is too long for me to "
+                                            "send here. To see it, just click the title above to "
+                                            "go straight to the post**")
+
+                    embed = discord.Embed(
+                        title=data["title"], url=data["url"], description=data["selftext"],
+                        color=find_color(ctx))
+                    embed.set_footer(text=f"👍 - {data['score']}")
+
+                    await ctx.send(embed=embed)
+        except:
+            await ctx.send("Huh, something went wrong and I wasn't able to get an LPT. "
+                           "Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
                       "\n\nNote: If you used `-d`, then you must provide a user for it to work")
