@@ -422,9 +422,6 @@ class Fun:
             if i == "c":
                 if random.randint(1, 2) == 1:
                     i = "k"
-            elif i == "k":
-                if random.randint(1, 2) == 1:
-                    i = "c"
             elif i == "x":
                 if random.randint(1, 2) == 1:
                     i = "ks"
