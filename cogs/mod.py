@@ -29,6 +29,9 @@ import random
 import collections
 import re
 
+#! Extremely important!
+#TODO: FIX THE PROBLEM WITH THE PURGE COMMANDS THAT ALLOW MEMBERS WITHOUT PROPER PERMS TO USE IT. SWITCH TO USING CHECKS (https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html?highlight=checks#checks) IN THOSE COMMANDS INSTEAD.
+
 #TODO: Fix problem with commands that use the ReasonForAction converter
 #TODO: Fix problem with purge clear. It doesn't send the embed after clearing at all
 #TODO: Use the new commands.Greedy and maybe typing.Optional converters for some commands
@@ -355,7 +358,7 @@ class Moderation:
             "Logging moderation commands has been turned off for this server "
             f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
 
-    @commands.group(aliases=["remove", "delete"], case_insensitive=True)
+    @commands.group(aliases=["remove", "delete"])
     @commands.guild_only()
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**

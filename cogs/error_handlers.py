@@ -51,6 +51,13 @@ class Error_Handlers:
                                    "by one of its Administrators", delete_after=7.0)
                     return await delete_message(ctx, 7)
 
+            #! Temporary
+            elif ctx.command.cog_name == "Moderation":
+                await ctx.send("All Moderation commands are locked for the time being until some "
+                               "bugs are fixed", delete_after=7.0)
+                return await delete_message(ctx, 7)
+            #! Temporary ^
+
         elif str(exc) == "You do not own this bot.":
             app = await self.bot.application_info()
             await ctx.send(

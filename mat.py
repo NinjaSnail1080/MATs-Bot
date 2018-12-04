@@ -197,6 +197,13 @@ class MAT(commands.Bot):
 
         self.add_check(check_disabled)
 
+        #! Temporary
+        def no_mod(ctx):
+            return ctx.command.cog_name != "Moderation"
+
+        self.add_check(no_mod)
+        #! Temporary ^
+
     async def on_ready(self):
         serverdata = get_data("server")
         for g in self.guilds:
