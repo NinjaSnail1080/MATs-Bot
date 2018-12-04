@@ -53,8 +53,8 @@ class Error_Handlers:
 
             #! Temporary
             elif ctx.command.cog_name == "Moderation":
-                await ctx.send("All Moderation commands are locked for the time being until some "
-                               "bugs are fixed", delete_after=7.0)
+                await ctx.send("All Moderation commands (except `toggle`) are locked for the "
+                               "time being until some bugs are fixed", delete_after=7.0)
                 return await delete_message(ctx, 7)
             #! Temporary ^
 

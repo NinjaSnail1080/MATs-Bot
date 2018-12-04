@@ -199,7 +199,10 @@ class MAT(commands.Bot):
 
         #! Temporary
         def no_mod(ctx):
-            return ctx.command.cog_name != "Moderation"
+            if ctx.command.name != "toggle":
+                return ctx.command.cog_name != "Moderation"
+            else:
+                return True
 
         self.add_check(no_mod)
         #! Temporary ^
