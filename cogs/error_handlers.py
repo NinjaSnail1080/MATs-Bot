@@ -51,18 +51,32 @@ class Error_Handlers:
                                    "by one of its Administrators", delete_after=7.0)
                     return await delete_message(ctx, 7)
 
-            #! Temporary
-            elif ctx.command.cog_name == "Moderation":
-                await ctx.send("All Moderation commands (except `toggle`) are locked for the "
-                               "time being until some bugs are fixed", delete_after=7.0)
-                return await delete_message(ctx, 7)
-            #! Temporary ^
-
         elif str(exc) == "You do not own this bot.":
             app = await self.bot.application_info()
             await ctx.send(
                 f"Only my owner, **{app.owner.name}**, can use that command", delete_after=6.0)
             return await delete_message(ctx, 6)
+
+        elif isinstance(exc, commands.BotMissingPermissions):
+            if len(exc.missing_perms) == 1:
+                return await ctx.send(
+                    "I don't have the proper perms to perform this command. To do this, I would "
+                    f"need the **{str(exc.missing_perms[0]).replace('_', ' ').title()}** "
+                    "permission. Could one of you guys in charge fix that and then get "
+                    "back to me?")
+            else:
+                m_perms = exc.missing_perms
+                return await ctx.send(
+                    "I don't have the proper perms to perform this command. "
+                    "To do this, I would need these permissions:\n"
+                    f"**{'**, **'.join(str(p).replace('_', ' ').title() for p in m_perms)}**\n"
+                    "Could one of you guys in charge fix that and then get back to me?")
+
+        elif isinstance(exc, commands.MissingPermissions):
+            await ctx.send(
+                f"You need the **{str(exc.missing_perms[0]).replace('_', ' ').title()}** "
+                "permission in order to use this command", delete_after=7.0)
+            return await delete_message(ctx, 7)
 
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
@@ -78,11 +92,6 @@ class Error_Handlers:
                 "This command cannot be used in private messages. You must be in a server")
 
         elif isinstance(exc, discord.Forbidden):
-            return
-
-        elif (str(exc) == "Command raised an exception: TypeError: must be str, not NoneType" and
-                  ctx.command.cog_name == "Moderation"):
-            #* To stop the command from raising an exception if the reason given is too long
             return
 
         else:
