@@ -29,13 +29,6 @@ import random
 import collections
 import re
 
-#! Extremely important!
-#TODO: FIX THE PROBLEM WITH THE PURGE COMMANDS THAT ALLOW MEMBERS WITHOUT PROPER PERMS TO USE IT. SWITCH TO USING CHECKS (https://discordpy.readthedocs.io/en/rewrite/ext/commands/api.html?highlight=checks#checks) IN THOSE COMMANDS INSTEAD.
-
-#TODO: Fix problem with commands that use the ReasonForAction converter
-#TODO: Fix problem with purge clear. It doesn't send the embed after clearing at all
-#TODO: Use the new commands.Greedy and maybe typing.Optional converters for some commands
-
 
 async def send_log(guild, send_embed):
     """Creates a #logs channel if it doesn't already exist so people can keep track of what the
@@ -62,22 +55,6 @@ async def send_log(guild, send_embed):
     await logs.send(embed=send_embed)
 
 
-class ReasonForAction(commands.Converter):
-    """Checks the reason given for a mod action"""
-
-    async def convert(self, ctx, reason):
-        if reason is None:
-            reason = "No reason given"
-
-        if len(reason) + len(ctx.author.name) + 23 > 512:
-            max_length = 512 - (len(ctx.author.name) + 23)
-            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
-                           delete_after=7.0)
-            return await delete_message(ctx, 7)
-        else:
-            return reason
-
-
 class Moderation:
     """Moderation tools"""
 
@@ -90,59 +67,89 @@ class Moderation:
 
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
-    async def ban(self, ctx, user: discord.User=None, *, reason: ReasonForAction=None):
+    @commands.bot_has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    async def ban(self, ctx, users: commands.Greedy[discord.User], *, reason: str=None):
         """**Must have the "Ban Members" permission**
-        Bans a user from the server
-        Format like this: `<prefix> ban <user> <reason for banning>`
-        (WIP. May not work properly sometimes)
+        Bans a user(s) from the server
+        Format like this: `<prefix> ban <@mention user(s)> <reason for banning>`
         """
-        #TODO: Finish this!
-        if not ctx.author.permissions_in(ctx.channel).ban_members:
-            await ctx.send("You don't have permission to ban members", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        if not users:
+            await ctx.send("You didn't format the command correctly, it's supposed to look like "
+                           "this: `<prefix> ban <user(s)> <reason for banning>`",
+                           delete_after=10.0)
+            return await delete_message(ctx, 10)
 
         if reason is None:
             reason = "No reason given"
+        if len(reason) + len(ctx.author.name) + 23 > 512:
+            max_length = 512 - (len(ctx.author.name) + 23)
+            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
 
-        if user is None:
-            await ctx.send(
-                "You didn't format the command correctly. It's supposed to look like this: "
-                "`<prefix> ban <@mention user or user's name/id> <reason for banning>`",
-                delete_after=10.0)
-            return await delete_message(ctx, 5)
-        elif user == self.bot.user:
+        if self.bot.user in users:
             return await ctx.send(":rolling_eyes:")
 
-        embed = discord.Embed(
-            color=find_color(ctx), title=str(user) + " was banned by " + ctx.author.name,
-            description="__Reason__: " + reason)
-        try:
-            await ctx.guild.ban(
-                user=user, reason=reason + " | Action performed by " + ctx.author.name)
+        banned, cant_ban = [], []
+
+        temp = await ctx.send("Banning...")
+        with ctx.channel.typing():
+            for user in users:
+                try:
+                    await ctx.guild.ban(
+                        user=user, reason=reason + " | Action performed by " + ctx.author.name)
+                    banned.append(str(user))
+                except:
+                    cant_ban.append(user)
+            await temp.delete()
+
+        if len(banned) == 1:
+            embed = discord.Embed(
+                title=f"{banned[0]} was banned by {ctx.author.name}",
+                description="__Reason__: " + reason, color=find_color(ctx))
+            embed.set_thumbnail(url="https://i.imgur.com/0A6naoR.png")
             await ctx.send(embed=embed)
             await send_log(ctx.guild, embed)
-        except discord.Forbidden:
-            await ctx.send(
-                f"I don't have permissions to ban **{user.name}**. What's the point of having "
-                "all these moderation commmands if I can't use them?\nEither I don't have perms "
-                "to ban, period, or my role is too low. Can one of you guys in charge fix that "
-                "please?")
+
+        elif banned:
+            embed = discord.Embed(
+                title=f"{len(banned)} users were banned by {ctx.author.name}",
+                description=f"**Banned**: `{'`, `'.join(banned)}`\n__Reason__: " + reason,
+                color=find_color(ctx))
+            embed.set_thumbnail(url="https://i.imgur.com/0A6naoR.png")
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        if len(cant_ban) == 1:
+            embed = discord.Embed(
+                title=f"I couldn't ban {cant_ban[0].name}",
+                description=f"{cant_ban[0].mention} has a role that's higher than mine in the "
+                "server hierarchy, so I couldn't ban them",
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
+
+        elif cant_ban:
+            embed = discord.Embed(
+                title="I couldn't ban all the users you listed",
+                description="Some of the users you listed have a role that's higher than mine in "
+                "the server hierarchy, so I couldn't ban them",
+                color=find_color(ctx))
+            embed.add_field(name="Here are the users I couldn't ban:",
+                            value=f"{', '.join(u.mention for u in cant_ban)}")
+            await ctx.send(embed=embed)
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> disable <command OR category>`\n\nYou can put a command and "
                       "I'll disable it for this server or you could put in a category (Fun, "
                       "Image, NSFW, etc.) and I'll disable all commands in that category")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def disable(self, ctx, cmd):
-        """**Must have Administrater permissions**
+        """**Must have the Administrater permission**
         Disable a command or group of commands for this server
         Format like this: `<prefix> disable <command OR category>`
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         if cmd.lower() == "help":
             await ctx.send("Yeah, great idea. Disable the freaking help command :rolling_eyes:",
                            delete_after=6.0)
@@ -200,16 +207,12 @@ class Moderation:
                       "I'll enable it for this server or you could put in `all` and I'll enable "
                       "all previously disabled commands")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def enable(self, ctx, cmd):
-        """**Must have Administrater permissions**
+        """**Must have the Administrater permission**
         Enable a previously disabled command(s) for this server
         Format like this: `<prefix> enable <command OR "all">`
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         if not "disabled" in get_data("server")[str(ctx.guild.id)]:
             await ctx.send("This server doesn't have any disabled commands to begin with",
                            delete_after=6.0)
@@ -253,63 +256,31 @@ class Moderation:
 
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
-    async def kick(self, ctx, member: discord.Member=None, *, reason: ReasonForAction=None):
+    @commands.bot_has_permissions(kick_members=True)
+    @commands.has_permissions(kick_members=True)
+    async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason: str=None):
         """**Must have the "Kick Members" permission**
-        Kicks a member from the server
-        Format like this: `<prefix> kick <member> <reason for kicking>`
+        Kicks a member(s) from the server
+        Format like this: `<prefix> kick <@mention member(s)> <reason for kicking>`
         """
-        if not ctx.author.permissions_in(ctx.channel).kick_members:
-            await ctx.send("You don't have permission to kick members", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        if not members:
+            await ctx.send("You didn't format the command correctly, it's supposed to look like "
+                           "this: `<prefix> kick <@mention member(s)> <reason for kicking>`",
+                           delete_after=10.0)
+            return await delete_message(ctx, 10)
 
         if reason is None:
             reason = "No reason given"
+        if len(reason) + len(ctx.author.name) + 23 > 512:
+            max_length = 512 - (len(ctx.author.name) + 23)
+            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
 
-        if member is None:
-            await ctx.send(
-                "You didn't format the command correctly. It's supposed to look like this: "
-                "`<prefix> kick <@mention member or member's name/id> <reason for kicking>`",
-                delete_after=10.0)
-            return await delete_message(ctx, 10)
-        elif member == ctx.guild.me:
+        if ctx.guild.me in members:
             return await ctx.send(":rolling_eyes:")
 
-        embed = discord.Embed(
-            color=find_color(ctx), title=str(member) + " was kicked by " + ctx.author.name,
-            description="__Reason__: " + reason)
-        try:
-            await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
-            await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
-        except discord.Forbidden:
-            await ctx.send(
-                f"I don't have permissions to kick **{member.display_name}**. What's the point "
-                "of having all these moderation commmands if I can't use them?\nEither I don't "
-                "have perms to kick, period, or my role is too low. Can one of you guys in "
-                "charge fix that please?")
-
-    @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
-                      "`<prefix> masskick <reason for kicking> <members>`\n\nIf the reason is "
-                      "more than one word, surround it with \"quotation marks\"")
-    @commands.guild_only()
-    async def masskick(self, ctx, reason: ReasonForAction, *members: discord.Member):
-        """**Must have the "Kick Members" permission**
-        Mass kicks multiple members from the server
-        Format like this: `<prefix> masskick <reason for kicking> <members>`
-        Note: If the reason is more than one word, surround it with "quotation marks"
-        """
-        if not ctx.author.permissions_in(ctx.channel).kick_members:
-            await ctx.send("You don't have permission to kick members", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        if reason is None:
-            reason = "No reason given"
-
-        if not members:
-            raise commands.BadArgument
-
-        cant_kick = []
-        kicked = []
+        kicked, cant_kick = [], []
 
         temp = await ctx.send("Kicking...")
         with ctx.channel.typing():
@@ -318,38 +289,49 @@ class Moderation:
                     await member.kick(reason=reason + " | Action performed by " + ctx.author.name)
                     kicked.append(str(member))
                 except:
-                    cant_kick.append(member.mention)
-        await temp.delete()
+                    cant_kick.append(member)
+            await temp.delete()
 
-        if kicked:
+        if len(kicked) == 1:
             embed = discord.Embed(
-                title=ctx.author.name + " ran a mass kick", description="**Kicked** "
-                f"({len(kicked)}): `{'`, `'.join(kicked)}`\n\n**Reason**: " + reason,
+                title=f"{kicked[0]} was kicked by {ctx.author.name}",
+                description="__Reason__: " + reason, color=find_color(ctx))
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
+        elif kicked:
+            embed = discord.Embed(
+                title=f"{len(kicked)} members were kicked by {ctx.author.name}",
+                description=f"**Kicked**: `{'`, `'.join(kicked)}`\n__Reason__: " + reason,
                 color=find_color(ctx))
             await ctx.send(embed=embed)
             await send_log(ctx.guild, embed)
 
-        if cant_kick:
+        if len(cant_kick) == 1:
             embed = discord.Embed(
-                title="A problem arose", description="I couldn't kick everyone you listed. This "
-                "may be because I either don't have the Kick Members permission, or that the "
-                "members I was trying to kick had higher roles than me. Could one of you guys "
-                "in charge fix that?", color=find_color(ctx))
-            embed.add_field(
-                name="Here are the member(s) I couldn't kick:", value=", ".join(cant_kick))
+                title=f"I couldn't kick {cant_kick[0].name}",
+                description=f"{cant_kick[0].mention} has a role that's higher than mine in the "
+                "server hierarchy, so I couldn't kick them",
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
+
+        elif cant_kick:
+            embed = discord.Embed(
+                title="I couldn't kick all the members you listed",
+                description="Some of the members you listed have a role that's higher than mine in "
+                "the server hierarchy, so I couldn't kick them",
+                color=find_color(ctx))
+            embed.add_field(name="Here are the members I couldn't kick:",
+                            value=f"{', '.join(m.mention for m in cant_kick)}")
             await ctx.send(embed=embed)
 
     @commands.command()
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def nologs(self, ctx):
-        """**Must have Administrator permissions**
+        """**Must have the Administrator permission**
         Disables the logs channel
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         serverdata = get_data("server")
         serverdata[str(ctx.guild.id)]["logs"] = "false"
         dump_data(serverdata, "server")
@@ -358,24 +340,13 @@ class Moderation:
             "Logging moderation commands has been turned off for this server "
             f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
 
-    @commands.group(aliases=["remove", "delete"])
+    @commands.group(aliases=["remove"])
     @commands.guild_only()
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**
-        Mass-deletes messages from a certain channel
+        Mass-deletes messages from a certain channel.
+        There are several different ways to use this command. Type just `<prefix> purge` for help
         """
-        if not ctx.author.permissions_in(ctx.channel).manage_messages:
-            await ctx.send("You need the Manage Messages permission in order to use that command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        if (not ctx.guild.me.permissions_in(ctx.channel).manage_messages or
-                not ctx.guild.me.permissions_in(ctx.channel).read_message_history):
-            return await ctx.send(
-                "I don't have the proper permissions to execute this command. I need the Manage "
-                "Messages perm and the Read Message History perm. Could one of you guys in "
-                "charge fix that and then get back to me?")
-
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(
                 title="MAT's Purge Command | Help", description="An easy way to mass-delete "
@@ -387,15 +358,15 @@ class Moderation:
                             "delete that many messages. I default to 1000, and I can't go over "
                             "2000.", inline=False)
             embed.add_field(name="clear", value="Completely clears a channel by deleting and "
-                            "replacing it with an identical one. I need the Manage Channels "
+                            "replacing it with an identical one. I need the **Manage Channels** "
                             "permission in order to do this.", inline=False)
-            embed.add_field(name="member <mention user(s) or username(s)>", value="Deletes all "
-                            "messages by a certain member or members of the server", inline=False)
+            embed.add_field(name="member <mention user(s)>", value="Deletes all messages by a "
+                            "certain member or members of the server", inline=False)
             embed.add_field(name="contains <substring>", value="Deletes all messages that "
                             "contain a substring, which must be specified (not case-sensitive)",
                             inline=False)
-            embed.add_field(name="files", value="Deletes all messages with files attached to "
-                            "them", inline=False)
+            embed.add_field(name="files", value="Deletes all messages with files attached",
+                            inline=False)
             embed.add_field(name="embeds", value="Deletes all messages with embeds (The messages "
                             "with a colored line off to the side, like this one. This means a "
                             "lot of bot messages will be deleted, along with any links and/or "
@@ -405,6 +376,17 @@ class Moderation:
                             "that contain that prefix", inline=False)
             embed.add_field(name="emoji", value="Deletes all messages that contain a custom "
                             "emoji", inline=False)
+            embed.add_field(name="before <message ID> (OPTIONAL)<number>", value="Deletes a "
+                            "certain number of messages that come before the one with the given "
+                            "ID. See [here](https://support.discordapp.com/hc/en-us/articles/"
+                            "206346498-Where-can-I-find-my-User-Server-Message-ID-) if you don't "
+                            "know how to get a message's ID. If you don't put a number, I'll "
+                            "default to 100. I can go up to 2000.")
+            embed.add_field(name="after <message ID>", value="Deletes all messages that come "
+                            "after the one with the given message ID. See [here](https://support."
+                            "discordapp.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-"
+                            "Server-Message-ID-) if you don't know how to get a message's ID",
+                            inline=False)
             embed.add_field(name="reactions", value="Removes all reactions from messages that "
                             "have them", inline=False)
             embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Unpins all "
@@ -413,15 +395,19 @@ class Moderation:
 
             await ctx.send(embed=embed)
 
-    async def remove(self, ctx, limit, check, description: str):
+    async def remove(self, ctx, limit, check, description: str, before=None, after=None):
         if limit > 2000:
-            await ctx.send("I can't purge more than 2000 messages. Put in a smaller number.",
-                           delete_after=6.0)
+            await ctx.send(
+                "I can't purge more than 2000 messages at a time. Put a smaller number",
+                delete_after=6.0)
             return await delete_message(ctx, 6)
+
+        if before is None:
+            before = ctx.message
 
         temp = await ctx.send("Purging...")
         with ctx.channel.typing():
-            purged = await ctx.channel.purge(limit=limit, check=check, before=ctx.message)
+            purged = await ctx.channel.purge(limit=limit, check=check, before=before, after=after)
         await temp.delete()
         await ctx.message.delete()
 
@@ -451,14 +437,57 @@ class Moderation:
                 color=find_color(ctx))
             await ctx.send(embed=embed)
 
+    @purge.command(brief="Invalid formatting. You must format the command like this: "
+                   "`<prefix> purge after <message ID>`\nIf you don't know how to get a "
+                   "message's ID, see here:\nhttps://support.discordapp.com/hc/en-us/articles/"
+                   "206346498-Where-can-I-find-my-User-Server-Message-ID-")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
+    async def after(self, ctx, msg: int):
+
+        try:
+            message = await ctx.channel.get_message(msg)
+        except:
+            raise commands.BadArgument
+
+        await self.remove(
+            ctx, 1000, None, f"messages after [this one]({message.jump_url}) were deleted",
+            after=message)
+
     @purge.command(name="all", brief="Invalid formatting. You must format the command like this: "
                    "`<prefix> purge all (OPTIONAL)<number of messages to delete>`")
-    async def _all(self, ctx, limit: int=1000):
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
+    async def all_(self, ctx, limit: int=1000):
 
         await self.remove(ctx, limit, None, "messages were deleted")
 
+    @purge.command(brief="Invalid formatting. You must format the command like this: "
+                   "`<prefix> purge after <message ID> (OPTIONAL)<number>`\nIf you don't put a "
+                   "number, I'll default to 100.\nAlso, if you don't know how to get a message's "
+                   "ID, see here:\nhttps://support.discordapp.com/hc/en-us/articles/"
+                   "206346498-Where-can-I-find-my-User-Server-Message-ID-")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
+    async def before(self, ctx, msg: int, limit: int=100):
+
+        try:
+            message = await ctx.channel.get_message(msg)
+        except:
+            raise commands.BadArgument
+
+        await self.remove(
+            ctx, limit, None, f"messages before [this one]({message.jump_url}) were deleted",
+            before=message)
+
     @purge.command(name="bot", aliases=["bots"])
-    async def _bot(self, ctx, *, prefix=None):
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
+    async def bot_(self, ctx, *, prefix=None):
 
         def check(m):
             return m.webhook_id is None and m.author.bot or (
@@ -471,11 +500,11 @@ class Moderation:
                               f"prefix `{prefix}` were deleted")
 
     @purge.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(
+        manage_messages=True, read_message_history=True, manage_channels=True)
+    @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
-        if not ctx.guild.me.permissions_in(ctx.channel).manage_channels:
-                return await ctx.send(
-                    "I need the Manage Channels permission in order to do this command. Hey "
-                    "mods! You mind fixing that?")
 
         name = ctx.channel.name
         perms = dict(ctx.channel.overwrites)
@@ -483,13 +512,20 @@ class Moderation:
         topic = ctx.channel.topic
         pos = ctx.channel.position
         nsfw = ctx.channel.is_nsfw()
-        triggers = get_data("server")[str(ctx.guild.id)]["triggers"][str(ctx.channel.id)]
+
+        no_triggers = False
+        serverdata = get_data("server")
+        if "triggers_disabled" in serverdata[str(ctx.guild.id)]:
+            if str(ctx.channel.id) in serverdata[str(ctx.guild.id)]["triggers_disabled"]:
+                serverdata[str(ctx.guild.id)]["triggers_disabled"].remove(str(ctx.channel.id))
+                no_triggers = True
 
         await ctx.channel.delete(reason=ctx.author.name + " cleared the channel")
         cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
         await cleared.edit(topic=topic, position=pos, nsfw=nsfw)
-        serverdata[str(ctx.guild.id)]["triggers"][str(cleared.id)] = triggers
-        dump_data(serverdata, "server")
+        if no_triggers:
+            serverdata[str(ctx.guild.id)]["triggers_disabled"].append(str(cleared.id))
+            dump_data(serverdata, "server")
 
         embed = discord.Embed(
             title=ctx.author.name + " ran a purge command",
@@ -498,19 +534,29 @@ class Moderation:
         await cleared.send(embed=embed)
         await send_log(ctx.guild, embed)
 
-    @purge.command()
+    @purge.command(brief="Invalid formatting. You must include a substring for me to look "
+                   "for, like this: `<prefix> purge contains <substring>`")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def contains(self, ctx, *, substr: str):
 
         await self.remove(ctx, 1000, lambda m: re.search(substr, m.content, re.IGNORECASE),
                           f"messages containing the string `{substr}` were deleted")
 
     @purge.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def embeds(self, ctx):
 
         await self.remove(
             ctx, 1000, lambda m: len(m.embeds), "messages containing embeds were deleted")
 
     @purge.command(aliases=["emojis", "emote", "emotes"])
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def emoji(self, ctx):
 
         def check(m):
@@ -520,6 +566,9 @@ class Moderation:
         await self.remove(ctx, 1000, check, "messages containing custom emojis were deleted")
 
     @purge.command(aliases=["attachments"])
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def files(self, ctx):
 
         await self.remove(ctx, 1000, lambda m: len(m.attachments),
@@ -528,6 +577,9 @@ class Moderation:
     @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
                    "format the command like this: `<prefix> purge member <@memtion user(s) or "
                    "username(s)>`")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def member(self, ctx, *users: discord.Member):
 
         users = list(users)
@@ -539,6 +591,9 @@ class Moderation:
 
     @purge.command(brief="Invalid formatting. You're supposed to format the command like this: "
                    "`<prefix> purge pins (OPTIONAL)<number to leave pinned>`")
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def pins(self, ctx, leave: int=None):
 
         all_pins = await ctx.channel.pins()
@@ -550,9 +605,8 @@ class Moderation:
         with ctx.channel.typing():
             for m in all_pins:
                 await m.unpin()
-                if leave is not None:
-                    if len(await ctx.channel.pins()) == leave:
-                        break
+                if len(await ctx.channel.pins()) == leave:
+                    break
 
         embed = discord.Embed(
             title=ctx.author.name + " ran a purge command",
@@ -565,6 +619,9 @@ class Moderation:
         await send_log(ctx.guild, embed)
 
     @purge.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
     async def reactions(self, ctx):
 
         temp = await ctx.send("Please wait... This could take some time...")
@@ -592,16 +649,13 @@ class Moderation:
                       "@mentions or member names that I'll randomly choose from. Or don't put "
                       "anything and I'll randomly pick someone from the server")
     @commands.guild_only()
+    @commands.has_permissions(kick_members=True)
     async def randomkick(self, ctx, *members: discord.Member):
         """**Must have the "Kick Members" permission**
         Kicks a random member, feeling lucky?
         Format like this: `<prefix> randomkick (OPTIONAL)<list of members you want me to randomly pick from>`.
         If you don't mention anyone, I'll randomly select someone from the server.
         """
-        if not ctx.author.permissions_in(ctx.channel).kick_members:
-            await ctx.send("You don't have permission to kick members", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         rip_list = ["rip", "RIP", "Rip in spaghetti, never forgetti", "RIPeroni pepperoni",
                     "RIP in pieces", "Rest in pieces"]
         try:
@@ -615,14 +669,14 @@ class Moderation:
                 ctx.author.name)
             temp = await ctx.send("And the unlucky individual about to be kicked is...")
             with ctx.channel.typing():
-                await asyncio.sleep(2)
+                await asyncio.sleep(3)
                 await temp.delete()
                 await ctx.send(embed=discord.Embed(
                     color=find_color(ctx), title=member.name + "!!!",
                     description=random.choice(rip_list)))
         except discord.Forbidden:
             return await ctx.send(
-                "Damn, it looks like I don't have permission to kick this person. Could one of "
+                "Huh, it looks like I don't have permission to kick this person. Could one of "
                 "you guys check my role to make sure I have either the Kick Members privilege or "
                 "the Administrator privilege?\n\nIf I already, do, then I probably picked "
                 "someone with a role higher than mine. So try again, or better yet, put my role "
@@ -633,15 +687,11 @@ class Moderation:
 
     @commands.command(aliases=["snipe"])
     @commands.guild_only()
+    @commands.has_permissions(manage_messages=True)
     async def restore(self, ctx):
         """**Must have the "Manage Messages" permission**
         Restores the last deleted message by a non-bot member
         """
-        if not ctx.author.permissions_in(ctx.channel).manage_messages:
-            await ctx.send("You need the Manage Messages permission in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         try:
             last_delete = get_data("server")[str(ctx.guild.id)]["last_delete"]
         except:
@@ -669,15 +719,11 @@ class Moderation:
 
     @commands.command(hidden=True)
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def rmgoodbye(self, ctx):
         """**Must have Administrator permissions**
         Removes a previously set custom welcome message
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         serverdata = get_data("server")
         if "goodbye" not in serverdata[str(ctx.guild.id)]:
             await ctx.send("This server doesn't have a custom goodbye message. Use "
@@ -698,15 +744,11 @@ class Moderation:
 
     @commands.command(hidden=True)
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def rmwelcome(self, ctx):
         """**Must have Administrator permissions**
         Removes a previously set custom goodbye message
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         serverdata = get_data("server")
         if "welcome" not in serverdata[str(ctx.guild.id)]:
             await ctx.send("This server doesn't have a custom welcome message. Use "
@@ -729,20 +771,13 @@ class Moderation:
                       "channel or channel name>`.\nTo turn off the logs channel, use "
                       "the `nologs` command")
     @commands.guild_only()
-    async def setlogs(self, ctx, channel: discord.TextChannel=None):
+    @commands.has_permissions(administrator=True)
+    async def setlogs(self, ctx, channel: discord.TextChannel):
         """**Must have Administrator permissions**
         Sets a "logs" channel for me to keep a log of all of my moderation commands.
         Format like this: `<prefix> setlogs <mention channel or channel name>`
         To turn off the logs channel, use the `nologs` command
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        if channel is None:
-            raise commands.BadArgument
-
         serverinfo = get_data("server")
         serverinfo[str(ctx.guild.id)]["logs"] = str(channel.id)
         dump_data(serverinfo, "server")
@@ -759,6 +794,7 @@ class Moderation:
                       "member's name will go. It's required that you put the braces in "
                       "there somewhere")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def setgoodbye(self, ctx, channel: discord.TextChannel, *, msg: str):
         """**Must have Administrator permissions**
         Set a custom goodbye message to send whenever a member leaves the server.
@@ -766,11 +802,6 @@ class Moderation:
         When you're typing the message, put a pair of braces `{}` in to mark where the member's name will go. The braces are required.
         Finally, to remove the custom goodbye message, just use the `rmgoodbye` command
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         if "{}" not in msg:
             raise commands.BadArgument
 
@@ -791,6 +822,7 @@ class Moderation:
                       "member's name will go. It's required that you put the braces in "
                       "there somewhere")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def setwelcome(self, ctx, channel: discord.TextChannel, *, msg: str):
         """**Must have Administrator permissions**
         Set a custom welcome message to send whenever a new member joins the server.
@@ -798,11 +830,6 @@ class Moderation:
         When you're typing the message, put a pair of braces `{}` in to mark where the new member's name will go. The braces are required.
         Finally, to remove the custom welcome message, just use the `rmwelcome` command
         """
-        if not ctx.author.permissions_in(ctx.channel).administrator:
-            await ctx.send("You need to be an Administrator in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         if "{}" not in msg:
             raise commands.BadArgument
 
@@ -818,67 +845,79 @@ class Moderation:
 
     @commands.command()
     @commands.guild_only()
+    @commands.has_permissions(manage_messages=True)
     async def toggle(self, ctx):
         """**Must have the "Manage Messages" permission**
         Toggles my trigger words on/off for the channel the command was performed in
         """
-        if not ctx.author.permissions_in(ctx.channel).manage_messages:
-            await ctx.send("You need the Manage Messages permission in order to use this command",
-                           delete_after=5.0)
-            return await delete_message(ctx, 5)
-
         serverdata = get_data("server")
-        triggers = serverdata[str(ctx.guild.id)]["triggers"]
+        try:
+            no_triggers = serverdata[str(ctx.guild.id)]["triggers_disabled"]
+        except:
+            no_triggers = serverdata[str(ctx.guild.id)]["triggers_disabled"] = []
 
-        if triggers[str(ctx.channel.id)] == "true":
-            triggers[str(ctx.channel.id)] = "false"
+        if str(ctx.channel.id) not in no_triggers:
+            no_triggers.append(str(ctx.channel.id))
             await ctx.send("Ok, I'll stop reacting to triggers in this channel")
 
-        elif triggers[str(ctx.channel.id)] == "false":
-            triggers[str(ctx.channel.id)] = "true"
+        elif str(ctx.channel.id) in no_triggers:
+            no_triggers.remove(str(ctx.channel.id))
             await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
 
-        serverdata[str(ctx.guild.id)]["triggers"] = triggers
+        serverdata[str(ctx.guild.id)]["triggers_disabled"] = no_triggers
         dump_data(serverdata, "server")
 
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
-                      "members, use the `allbanned` command")
+                      "members, use the `allbanned` command.")
     @commands.guild_only()
-    async def unban(self, ctx, user: discord.User=None, *, reason: ReasonForAction=None):
+    @commands.bot_has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    async def unban(self, ctx, users: commands.Greedy[discord.User], *, reason: str=None):
         """**Must have the "Ban Members" permission**
-        Unbans a previously banned user from the server
-        Format like this: `<prefix> ban <user> (OPTIONAL)<reason for unbanning>`
-        (WIP. May not always work)
+        Unbans a previously banned user(s) from the server
+        Format like this: `<prefix> unban <user ID(s)> (OPTIONAL)<reason for unbanning>`
+        To see a list of all banned members from this server and their IDs, use the `allbanned` command
         """
-        #TODO: Finish this
-        if not ctx.author.permissions_in(ctx.channel).ban_members:
-            await ctx.send("You don't have permission to ban or unban members", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        if reason is None:
-            reason = "No reason given"
-
-        if user is None:
+        if not users:
             await ctx.send(
-                "You didn't format the command correctly. It's supposed to look like this: "
-                "`<prefix> unban <user's name/id> (OPTIONAL)<reason for unbanning>`",
+                "You didn't format the command correctly, it's supposed to look like this: "
+                "`<prefix> unban <user ID(s)> (OPTIONAL)<reason for unbanning>`",
                 delete_after=10.0)
             return await delete_message(ctx, 10)
 
-        embed = discord.Embed(
-            color=find_color(ctx), title=str(user) + " was unbanned by " + ctx.author.name,
-            description="__Reason__: " + reason)
-        try:
-            await ctx.guild.unban(
-                user=user, reason=reason + " | Action performed by " + ctx.author.name)
-            await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
-        except discord.Forbidden:
-            await ctx.send(
-                f"I don't have permissions to unban **{user.name}**. What's the point "
-                "of having all these moderation commmands if I can't use them?\nIn order to "
-                "unban someone, I need the Ban Members permission. Can one of you guys in "
-                "charge fix that please?")
+        if reason is None:
+            reason = "No reason given"
+        if len(reason) + len(ctx.author.name) + 23 > 512:
+            max_length = 512 - (len(ctx.author.name) + 23)
+            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        unbanned = []
+        temp = await ctx.send("Unbanning...")
+        with ctx.channel.typing():
+            for user in users:
+                try:
+                    await ctx.guild.unban(
+                        user=user, reason=reason + " | Action performed by " + ctx.author.name)
+                    unbanned.append(str(user))
+                except: pass
+            await temp.delete()
+
+        if not unbanned:
+            raise commands.BadArgument
+        elif len(unbanned) == 1:
+            embed = discord.Embed(
+                title=unbanned[0] + " has been unbanned by " + ctx.author.name,
+                description="__Reason__: " + reason, color=find_color(ctx))
+        else:
+            embed = discord.Embed(
+                title=f"{len(unbanned)} members have been unbanned by {ctx.author.name}",
+                description=f"**Unbanned**: `{'`, `'.join(unbanned)}`\n__Reason__: " + reason,
+                color=find_color(ctx))
+
+        await ctx.send(embed=embed)
+        await send_log(ctx.guild, embed)
 
 
 def setup(bot):
