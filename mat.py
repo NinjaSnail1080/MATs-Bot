@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = "0.7.4"
+__version__ = "0.7.5"
 
 from discord.ext import commands
 import discord
@@ -197,23 +197,11 @@ class MAT(commands.Bot):
 
         self.add_check(check_disabled)
 
-        #! Temporary
-        def no_mod(ctx):
-            if ctx.command.name != "toggle":
-                return ctx.command.cog_name != "Moderation"
-            else:
-                return True
-
-        self.add_check(no_mod)
-        #! Temporary ^
-
     async def on_ready(self):
         serverdata = get_data("server")
         for g in self.guilds:
             if str(g.id) not in serverdata:
-                serverdata[str(g.id)] = {"name": g.name, "triggers": {}}
-                for c in g.text_channels:
-                    serverdata[str(g.id)]["triggers"][str(c.id)] = "true"
+                serverdata[str(g.id)] = {"name": g.name}
         dump_data(serverdata, "server")
 
         print("\nLogged in as")
@@ -262,9 +250,7 @@ class MAT(commands.Bot):
         except: pass
 
         serverdata = get_data("server")
-        serverdata[str(guild.id)] = {"name": guild.name, "triggers": {}}
-        for c in guild.text_channels:
-            serverdata[str(guild.id)]["triggers"][str(c.id)] = "true"
+        serverdata[str(guild.id)] = {"name": guild.name}
         dump_data(serverdata, "server")
 
         joins = self.get_channel(465393762512797696)
@@ -321,19 +307,13 @@ class MAT(commands.Bot):
         serverdata[str(before.id)]["name"] = after.name
         dump_data(serverdata, "server")
 
-    async def on_guild_channel_create(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            serverdata = get_data("server")
-            serverdata[str(channel.guild.id)]["triggers"][str(channel.id)] = "true"
-            dump_data(serverdata, "server")
-
     async def on_guild_channel_delete(self, channel):
         if isinstance(channel, discord.TextChannel):
             serverdata = get_data("server")
-            serverdata[str(channel.guild.id)]["triggers"].pop(str(channel.id), None)
-            if serverdata[str(channel.guild.id)]["logs"] == str(channel.id):
-                serverdata[str(channel.guild.id)].pop("logs", None)
-            dump_data(serverdata, "server")
+            if "triggers_disabled" in serverdata[str(channel.guild.id)]:
+                if str(channel.id) in serverdata[str(channel.guild.id)]["triggers_disabled"]:
+                    serverdata[str(channel.guild.id)]["triggers_disabled"].remove(str(channel.id))
+                    dump_data(serverdata, "server")
 
     async def on_member_join(self, member):
         serverdata = get_data("server")
