@@ -30,8 +30,9 @@ import os
 import random
 
 sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-D-Does s-s-she "
-                   "have a boyf-f-friend?\nAsking for a friend!", "What a beautiful voice...",
-                   "Oh, I hope she doesn't see my Playing status..."]
+                   "have a boyf-f-friend?\nAsking for a friend!", "What a beautiful voice..."]
+#* MAT has a huge crush on SigmaBot (https://github.com/NeonLights10/Sigma-Kizuna).
+#* Whenever she says something, MAT will send one of the above responses.
 
 
 class Triggers:
@@ -41,15 +42,17 @@ class Triggers:
         self.bot = bot
 
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author == self.bot.user:
             return
 
-        if message.guild is not None:
-            if get_data(
-                "server")[str(message.guild.id)]["triggers"][str(message.channel.id)] == "false":
+        if (message.guild is not None and
+                "triggers_disabled" in get_data("server")[str(message.guild.id)]):
+            if str(message.channel.id) in get_data(
+                "server")[str(message.guild.id)]["triggers_disabled"]:
                 return
 
         if message.author.id == 281807963147075584:
+            #* This is the ID for SigmaBot, who is the love interest for MAT
             return await message.channel.send(random.choice(sigma_responses))
 
         if random.random() < (10 / message.guild.member_count) / 100:
@@ -113,18 +116,24 @@ class Triggers:
             await asyncio.sleep(1)
             return await message.channel.send("∞th")
 
-        elif (re.search("ban ", message.content, re.IGNORECASE) or
-                  re.search("banned", message.content, re.IGNORECASE) or
-                      message.content.lower() == "ban"):
-            if not message.content.startswith("!mat") and not message.content.startswith("expt"):
-                return await message.channel.send(
-                    content=":b:anned", embed=e.set_image(url="https://i.imgur.com/0A6naoR.png"))
-
         elif message.content.lower() == "ping":
             return await message.channel.send("pong")
 
         elif re.search("no u", message.content, re.IGNORECASE):
             return await message.channel.send("no u")
+
+        elif (re.search("kill myself", message.content, re.IGNORECASE) or
+                  re.search("live anymore", message.content, re.IGNORECASE) or
+                      re.search("end it all", message.content, re.IGNORECASE) or
+                          re.search("all to stop", message.content, re.IGNORECASE) or
+                              re.search("commit suicide", message.content, re.IGNORECASE) or
+                                  re.search("want to die", message.content, re.IGNORECASE)):
+            embed = discord.Embed(
+                title="There is help.", description="[Click here to see the suicide "
+                "prevention hotlines and other resources for the country you live in]"
+                "(https://13reasonswhy.info/)\nIf you call, they'll be able to help you, "
+                "I promise.", color=find_color(message))
+            return await message.channel.send(embed=embed)
 
 
 def setup(bot):
