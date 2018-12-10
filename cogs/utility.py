@@ -149,6 +149,18 @@ class Utility:
             "Here's my invite link so you can add me to your own server!\nhttps://discordapp.com/"
             "oauth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591")
 
+    @commands.command(aliases=["suicide"])
+    async def lifeline(self, ctx):
+        """Is someone on this server talking about ending their life? Use this command to bring up the suicide prevention hotlines and other resources for each country. It doesn't guarantee that they'll call it, but at least it's something you can do to try and help!"""
+
+        embed = discord.Embed(
+            title="There is help.", description="[Click here to see the suicide "
+            "prevention hotlines and other resources for the country you live in]"
+            "(https://13reasonswhy.info/)\nIf you call, they'll be able to help you, I promise.",
+            color=find_color(ctx))
+
+        await ctx.send(embed=embed)
+
     @commands.command(brief="You need to include some search terms. Format like this: `<prefix> "
                       "lmgtfy <search terms>`")
     async def lmgtfy(self, ctx, *, terms: str):
@@ -163,7 +175,7 @@ class Utility:
                             "d6746866850efe2a800a3e57052e1a2411.png")
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=["lifeprotip"])
+    @commands.command(aliases=["lifeprotip", "lifehack"])
     async def lpt(self, ctx):
         """Posts an LPT, or Life Pro Tip (i.e., a life hack that's actually useful)"""
 
@@ -187,6 +199,8 @@ class Utility:
                     embed = discord.Embed(
                         title=data["title"], url=data["url"], description=data["selftext"],
                         color=find_color(ctx))
+                    embed.set_author(
+                        name="Life Pro Tips", url="https://www.reddit.com/r/LifeProTips/")
                     embed.set_footer(text=f"👍 - {data['score']}")
 
                     await ctx.send(embed=embed)
@@ -304,14 +318,22 @@ class Utility:
         """Convert a color's RGB values to its hex value"""
 
         try:
-            new_color = discord.Color.from_rgb(r, g, b)
-            embed = discord.Embed(title="MAT's Color Converter", color=new_color)
+            color = discord.Color.from_rgb(r, g, b)
+            embed = discord.Embed(title="MAT's Color Converter", color=color)
             embed.add_field(name="RGB", value=f"({r}, {g}, {b})")
-            embed.add_field(name="Hex", value=new_color)
+            embed.add_field(name="Hex", value=color)
 
             await ctx.send(embed=embed)
         except:
             raise commands.BadArgument
+
+    @commands.command()
+    async def support(self, ctx):
+        """Having problems running me on your server and need some customer support? Just use this command and I'll send you a link to my support server"""
+
+        await ctx.send("Here's a link to my support server if you're having any problems running "
+                       "me! My owner and the other members will be glad to help!"
+                       "\nhttps://discord.gg/P4Fp3jA")
 
     @commands.command(aliases=["synonym", "synonyms", "antonym", "antonyms"], brief="You need to "
                       "include a word for me to get the synonyms and antonyms of")
@@ -338,9 +360,9 @@ class Utility:
                 color=find_color(ctx))
 
             if not s['synonyms']:
-                s['synonyms'].append("(None)")
+                s['synonyms'].append("[None found]")
             if not a['antonyms']:
-                a['antonyms'].append("(None)")
+                a['antonyms'].append("[None found]")
 
             embed.add_field(
                 name="Synonyms", value=f"`{'`, `'.join(s['synonyms'])}`", inline=False)
@@ -350,7 +372,7 @@ class Utility:
                 text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-        except KeyError:
+        except:
             if "word not found" in error:
                 await ctx.send("Word not found. Try again", delete_after=5.0)
                 return await delete_message(ctx, 5)
