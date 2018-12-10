@@ -39,8 +39,6 @@ import config
 #* MAT's Bot uses the NekoBot API for many of these commands.
 #* More info at https://docs.nekobot.xyz/
 
-#TODO: Use typing.Optional for some commands
-
 
 class Fun:
     """Fun stuff!"""
