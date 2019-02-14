@@ -186,7 +186,7 @@ async def get_reddit(ctx, loop, level: int, include_timestamp: bool, error_msg: 
             if include_timestamp:
                 embed = discord.Embed(
                     title=data["title"], description=data["selftext"],
-                    timestamp=datetime.datetime.fromtimestamp(data["created_utc"]),
+                    timestamp=datetime.datetime.utcfromtimestamp(data["created_utc"]),
                     url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
             else:
                 embed = discord.Embed(
@@ -216,7 +216,7 @@ async def get_reddit(ctx, loop, level: int, include_timestamp: bool, error_msg: 
                 embed = discord.Embed(
                     title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
                     f"com/user/{data['author']}/)\n\n{data['selftext']}",
-                    timestamp=datetime.datetime.fromtimestamp(data["created_utc"]),
+                    timestamp=datetime.datetime.utcfromtimestamp(data["created_utc"]),
                     url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
             else:
                 embed = discord.Embed(
