@@ -17,22 +17,23 @@
 """
 
 try:
-    from mat_experimental import find_color, delete_message
+    from mat_experimental import find_color, delete_message, get_reddit
 except ImportError:
-    from mat import find_color, delete_message
+    from mat import find_color, delete_message, get_reddit
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
 from zalgo_text.zalgo import zalgo
 import discord
-import asyncio
 import aiohttp
 import validators
-import typing
 
 import random
+import datetime
+import asyncio
 import os
 import string
+import typing
 
 import config
 
@@ -47,7 +48,7 @@ class Fun:
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
-    async def send_image(self, ctx, resp):
+    async def send_nekobot_image(self, ctx, resp):
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
                            "again later", delete_after=5.0)
@@ -55,21 +56,6 @@ class Fun:
 
         await ctx.send(
             embed=discord.Embed(color=find_color(ctx)).set_image(url=resp["message"]))
-
-    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> baguette (OPTIONAL)<@mention user>`")
-    async def baguette(self, ctx, user: discord.Member=None):
-        """Eat a baguette
-        Format like this: `<prefix> baguette (OPTIONAL)<@mention user>`
-        """
-        await ctx.channel.trigger_typing()
-        if user is None:
-            user = ctx.author
-        img = user.avatar_url_as(format="png")
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=baguette&url={img}") as w:
-            resp = await w.json()
-            await self.send_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
@@ -113,7 +99,7 @@ class Fun:
             f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
             f"&username={user.display_name}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> changemymind <text>`")
@@ -125,7 +111,7 @@ class Fun:
         async with self.session.get(
             f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> clyde <text>`")
@@ -137,7 +123,7 @@ class Fun:
         async with self.session.get(
             f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -150,74 +136,19 @@ class Fun:
             await temp.delete()
             await ctx.send(coin)
 
-    @commands.command()
-    async def commitstrip(self, ctx):
-        """Posts a random CommitStrip comic (Only for programmers)"""
-
-        try:
-            with ctx.channel.typing():
-                async with self.session.get("http://www.commitstrip.com/?random=1") as w:
-                    soup = BeautifulSoup(await w.text(), "lxml")
-
-                    url = str(w.url)
-                    title = soup.find("h1", "entry-title").get_text()
-                    date = soup.find("time", "entry-date").get_text()
-                    comic = soup.find("div", "entry-content")
-                    image = comic.p.img["src"]
-
-            embed = discord.Embed(title=title, color=find_color(ctx), url=url)
-
-            embed.set_author(name="CommitStrip",
-                             url="http://www.commitstrip.com/en/?")
-            embed.set_image(url=image)
-            embed.set_footer(text="Published: " + date)
-
-            await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
-                           " able to get a comic. Try again in a little bit.", delete_after=6.0)
-            return await delete_message(ctx, 6)
-
     @commands.command(aliases=["shitpost"])
     async def copypasta(self, ctx):
         """Posts a random copypasta
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW copypastas
         """
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    "https://www.reddit.com/r/copypasta/hot.json?sort=hot",
-                    headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"]:
-                        raise Exception
-                    if data["over_18"] and not ctx.channel.is_nsfw():
-                        raise Exception
-
-                    if len(data["selftext"]) > 2048:
-                        data["selftext"] = ("**Sorry, but this content is too long for me to "
-                                            "send here. To see it, just click the title above to "
-                                            "go straight to the post**")
-
-                    embed = discord.Embed(
-                        title=data["title"], url=data["url"], description=data["selftext"],
-                        color=find_color(ctx))
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a copypasta. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, self.bot.loop, 1, False, "a copypasta", "copypasta")
 
     @commands.command(aliases=["zalgo", "zalgofy"],
                       brief="You need to include some text for me to creepify")
     async def creepify(self, ctx, *, text: str):
         """Turns text into c̛̜̎ṟ͆̃e̲͛̋e͇̭̐p̮̺ͮy̷ͪ͡ ź͉ͯą͗ͪl̬̦̈g̯̪̊ờ͙ ṯ̸̦e͔̎̀x̡͈ͪṫ͟͞
-        Note: Due to an issue with Discord, this command won't work very well on large amounts of text. Use [this generator](https://lingojam.com/ZalgoText) if you want to convert large amounts of text
+        Note: Due to an issue with Discord, this command won't work very well on large amounts of text. Use [this generator](https://lingojam.com/ZalgoText) if you want to convert a lot of text
         """
         await ctx.channel.trigger_typing()
         creepified = zalgo().zalgofy(text)
@@ -254,6 +185,99 @@ class Fun:
                            " able to get a comic. Try again in a little bit.", delete_after=6.0)
             return await delete_message(ctx, 6)
 
+    @commands.command(aliases=["ddlcgen"],
+                      brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> ddlc <character> <background> <pose> <face> <text>`"
+                      "\nDo `!mat help ddlc` for more info on how to use this command.")
+    async def ddlc(self, ctx, character, background, pose, face, *, text: commands.clean_content(fix_channel_mentions=True)):
+        """Generate a DDLC (Doki Doki Literature Club) custom dialogue
+        Format like this: `<prefix> ddlc <character> <background> <pose> <face> <text>`
+        **Characters**: "sayori", "yuri", "natsuki", OR "monika"
+        **Backgrounds**: "bedroom", "class", "closet", "club", "corridor", "house", "kitchen", "residential", OR "sayori_bedroom"
+        See the following links to view the **poses** for [Sayori](https://imgur.com/a/qHzyX2w), [Yuri](https://imgur.com/a/tJ72NmL), [Natsuki](https://imgur.com/a/hk2xSfa), and [Monika](https://imgur.com/a/gHE2spo)
+        See the following links to view the **faces** for [Sayori](https://imgur.com/a/AD0WjfI), [Yuri](https://imgur.com/a/TtIv3x9), [Natsuki](https://imgur.com/a/Gl6aZSd), and [Monika](https://imgur.com/a/Akc9xtB)
+        Text must be less than 140 characters
+        """
+        characters = ["sayori", "yuri", "natsuki", "monika"]
+        backgrounds = ["bedroom", "class", "closet", "club", "corridor", "house", "kitchen",
+                       "residential", "sayori_bedroom"]
+        monika_faces = [x for x in "abcdefghijklmnopqr"]
+        natsuki_faces = [x for x in "abcdefghijklmnopqrstuvwxyz"]
+        natsuki_faces.extend(
+            ["1t", "2bt", "2bta", "2btb", "2btc", "2btd", "2bte", "2btf", "2btg", "2bth",
+            "2bti", "2t", "2ta", "2tb", "2tc", "2td", "2te", "2tf", "2tg", "2th", "2ti"])
+        sayori_faces = [x for x in "abcdefghijklmnopqrstuvwxy"]
+        yuri_faces = [x for x in "abcdefghijklmnopqrstuvwx"]
+        yuri_faces.extend(["y1", "y2", "y3", "y4", "y5", "y6", "y7"])
+        ddlc_items = {
+            "pose": {
+                "monika": [ "1", "2" ],
+                "natsuki": [ "1b", "1", "2b", "2"],
+                "yuri": ["1b", "1", "2b", "2"],
+                "sayori": ["1b", "1", "2b", "2"]
+            },
+            "face": {
+                "monika": monika_faces,
+                "natsuki": natsuki_faces,
+                "yuri": yuri_faces,
+                "sayori": sayori_faces
+            }
+        }
+
+        reference_links = {
+            "pose": {
+                "sayori": "https://imgur.com/a/qHzyX2w",
+                "yuri": "https://imgur.com/a/tJ72NmL",
+                "natsuki": "https://imgur.com/a/hk2xSfa",
+                "monika": "https://imgur.com/a/gHE2spo"
+            },
+            "face": {
+                "sayori": "https://imgur.com/a/AD0WjfI",
+                "yuri": "https://imgur.com/a/TtIv3x9",
+                "natsuki": "https://imgur.com/a/Gl6aZSd",
+                "monika": "https://imgur.com/a/Akc9xtB"
+            }
+        }
+
+        if len(text) >= 140:
+            await ctx.send("Text is too long. Must be under 140 characters", delete_after=5.0)
+            return await delete_message(ctx, 5)
+        character = character.lower()
+        if character not in characters:
+            await ctx.send(
+                "Not a valid character. Must be either `sayori`, `yuri`, `natsuki`, OR `monika`",
+                delete_after=7.0)
+            return await delete_message(ctx, 7)
+        background = background.lower()
+        if background not in backgrounds:
+            await ctx.send("Not a valid background. Must be either `bedroom`, `class`, `closet`, "
+                           "`club`, `corridor`, `house`, `kitchen`, `residential`, OR "
+                           "`sayori_bedroom`", delete_after=10.0)
+            return await delete_message(ctx, 10)
+
+        if not pose in ddlc_items.get("pose").get(character):
+            await ctx.send(
+                f"Not a valid pose for {character.capitalize()}. See "
+                f"{reference_links.get('pose').get(character)} to view her various poses",
+                delete_after=15.0)
+            return await delete_message(ctx, 15)
+        if not face in ddlc_items.get("face").get(character):
+            await ctx.send(
+                f"Not a valid face for {character.capitalize()}. See "
+                f"{reference_links.get('face').get(character)} to view her various faces",
+                delete_after=15.0)
+            return await delete_message(ctx, 15)
+
+        await ctx.channel.trigger_typing()
+        async with self.session.get("https://nekobot.xyz/api/imagegen?type=ddlc"
+                                    f"&character={character}"
+                                    f"&background={background}"
+                                    f"&body={pose}"
+                                    f"&face={face}"
+                                    f"&text={text}") as w:
+            resp = await w.json()
+        await self.send_nekobot_image(ctx, resp)
+
     @commands.command(brief="The number of sides must be an **integer above 2**. Try again.")
     async def diceroll(self, ctx, sides: int=6):
         """Rolls a dice. By default a 6-sided one though the number of sides can be specified.
@@ -284,30 +308,8 @@ class Fun:
         """Sends a joke
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW jokes
         """
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    f"https://www.reddit.com/r/jokes/hot.json?sort=hot",
-                    headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"]:
-                        raise Exception
-                    if data["over_18"] and not ctx.channel.is_nsfw():
-                        raise Exception
-
-                    embed = discord.Embed(
-                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        description=data["selftext"], color=find_color(ctx))
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a joke. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, self.bot.loop, 1, False, "a joke", "jokes")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`")
@@ -323,7 +325,7 @@ class Fun:
                                     f"&image={pfp}&text={comment}"
                                     f"&username={user.display_name}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def lenny(self, ctx):
@@ -350,57 +352,17 @@ class Fun:
     async def meirl(self, ctx):
         """Sends posts that are u irl"""
 
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    f"https://www.reddit.com/r/{random.choice(['meirl', 'me_irl'])}/hot.json?"
-                    "sort=hot", headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"] or data["over_18"]:
-                        raise Exception
-
-                    embed = discord.Embed(
-                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        color=find_color(ctx))
-                    embed.set_image(url=data["url"])
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(
+            ctx, self.bot.loop, 1, False, "a meme", "me_irl", "me_irl", "meirl")
 
     @commands.command()
     async def meme(self, ctx):
         """Posts a dank meme"""
 
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    f"https://www.reddit.com/r/{random.choice(['memes', 'dankmemes'])}/hot.json?"
-                    "sort=hot", headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"] or data["over_18"]:
-                        raise Exception
-
-                    embed = discord.Embed(
-                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        color=find_color(ctx))
-                    embed.set_image(url=data["url"])
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a meme. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(
+            ctx, self.bot.loop, 1, False, "a meme", "memes", "dankmemes", "dankmemes")
 
     @commands.command(aliases=["weirdspeak"])
     async def mock(self, ctx, *, stuff: str=None):
@@ -432,50 +394,12 @@ class Fun:
     @commands.command(brief="You're supposed to include a subreddit for me to get a random post "
                       "from after the command. Like this: `<prefix> reddit <subreddit>`")
     async def reddit(self, ctx, sub):
-        """Get a random post from a subreddit
+        """Get a random post from any subreddit
         Format like this: `<prefix> reddit <subreddit>`
-        Note: Capitalization doesn't matter when typing the name of the sub"""
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    f"https://www.reddit.com/r/{sub}/hot.json?sort=hot",
-                    headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["over_18"] and not ctx.channel.is_nsfw():
-                        return await ctx.send(
-                            "This particular post is rated NSFW. Either it just happened to be "
-                            "NSFW in a non-NSFW sub or the entire subreddit itself is rated "
-                            "NSFW.\n\nIf it's the first case, just try the command again and "
-                            "hopefully it won't pick another NSFW post. However, if it's the "
-                            "second one, then you will need to go into an NSFW-marked channel "
-                            "on this server to get a post from that sub")
-
-                    if len(data["selftext"]) > 2048:
-                        data["selftext"] = ("**Sorry, but this content is too long for me to "
-                                            "send here. To see it, just click the title above to "
-                                            "go straight to the post**")
-
-                    embed = discord.Embed(
-                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        description=data["selftext"], color=find_color(ctx))
-                    embed.set_author(
-                        name=data["subreddit_name_prefixed"],
-                        url="https://www.reddit.com/" + data["subreddit_name_prefixed"])
-                    embed.set_image(url=data["url"])
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except Exception as e:
-            if isinstance(e, KeyError) or isinstance(e, IndexError):
-                await ctx.send("This subreddit doesn't exist. Try again", delete_after=5.0)
-                return await delete_message(ctx, 5)
-            else:
-                await ctx.send("Huh, something went wrong and I wasn't able to get a post from "
-                               "this sub. Try again", delete_after=5.0)
-                return await delete_message(ctx, 5)
+        Notes: Capitalization doesn't matter when typing the name of the sub
+        """
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, self.bot.loop, 2, True, "a post from this sub", sub)
 
     @commands.command()
     async def reverse(self, ctx, *, stuff: str=None):
@@ -511,61 +435,16 @@ class Fun:
     async def showerthought(self, ctx):
         """Posts a random showerthought"""
 
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    "https://www.reddit.com/r/Showerthoughts/hot.json?sort=hot",
-                        headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"] or data["over_18"]:
-                        raise Exception
-
-                    if len(data["selftext"]) > 2048:
-                        data["selftext"] = ("**Sorry, but this content is too long for me to "
-                                            "send here. To see it, just click the title above to "
-                                            "go straight to the post**")
-
-                    embed = discord.Embed(
-                        title=data["title"], url=data["url"], description=data["selftext"],
-                        color=find_color(ctx))
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a showerthought. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, self.bot.loop, 1, False, "a showerthought", "showerthoughts")
 
     @commands.command()
     async def thanos(self, ctx):
         """Thanos did nothing wrong"""
 
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    f"https://www.reddit.com/r/thanosdidnothingwrong/hot.json?sort=hot",
-                    headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"] or data["over_18"]:
-                        raise Exception
-
-                    embed = discord.Embed(
-                        title=data["title"], url="https://www.reddit.com" + data["permalink"],
-                        description=data["selftext"], color=find_color(ctx))
-                    embed.set_image(url=data["url"])
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get a thanos "
-                           "shitpost. Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(
+            ctx, self.bot.loop, 1, False, "a thanos meme", "thanosdidnothingwrong")
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to "
                       "include some text for me to thiccify")
@@ -596,7 +475,7 @@ class Fun:
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> trap <@mention user>`")
     async def trap(self, ctx, member: discord.Member):
-        """Trap another user with yoir trapcard!
+        """Trap another user with your trapcard!
         Format like this: `<prefix> trap <@mention user>`
         """
         await ctx.channel.trigger_typing()
@@ -604,7 +483,7 @@ class Fun:
             f"https://nekobot.xyz/api/imagegen?type=trap&name={member.display_name}"
             f"&author={ctx.author.display_name}&image={member.avatar_url_as(format='png')}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
                       "some text for the tweet `<prefix> trumptweet <tweet>`")
@@ -616,7 +495,7 @@ class Fun:
         async with self.session.get(
             f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tweet <twitter usernamer> <tweet>`")
@@ -628,7 +507,7 @@ class Fun:
         async with self.session.get("https://nekobot.xyz/api/imagegen?type=tweet"
                                     f"&username={user}&text={tweet}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`")
@@ -644,7 +523,7 @@ class Fun:
         async with self.session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
                                     f"&user1={img1}&user2={img2}") as w:
             resp = await w.json()
-            await self.send_image(ctx, resp)
+            await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def xkcd(self, ctx):

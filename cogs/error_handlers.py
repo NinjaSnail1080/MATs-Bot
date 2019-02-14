@@ -23,8 +23,8 @@ except ImportError:
 
 from discord.ext import commands
 import discord
-import asyncio
 
+import asyncio
 import random
 
 
@@ -40,6 +40,7 @@ class Error_Handlers:
                         "Missing Permissions"):
             return
 
+
         elif "check functions for command" in str(exc):
             if ctx.command.cog_name == "NSFW" and not ctx.channel.is_nsfw():
                 await ctx.send("This command can only be used in NSFW channels", delete_after=6.0)
@@ -51,11 +52,13 @@ class Error_Handlers:
                                    "by one of its Administrators", delete_after=7.0)
                     return await delete_message(ctx, 7)
 
+
         elif str(exc) == "You do not own this bot.":
             app = await self.bot.application_info()
             await ctx.send(
-                f"Only my owner, **{app.owner.name}**, can use that command", delete_after=6.0)
+                f"Only my owner, **{app.owner}**, can use that command", delete_after=6.0)
             return await delete_message(ctx, 6)
+
 
         elif isinstance(exc, commands.BotMissingPermissions):
             if len(exc.missing_perms) == 1:
@@ -72,27 +75,36 @@ class Error_Handlers:
                     f"**{'**, **'.join(str(p).replace('_', ' ').title() for p in m_perms)}**\n"
                     "Could one of you guys in charge fix that and then get back to me?")
 
+
         elif isinstance(exc, commands.MissingPermissions):
             await ctx.send(
                 f"You need the **{str(exc.missing_perms[0]).replace('_', ' ').title()}** "
                 "permission in order to use this command", delete_after=7.0)
             return await delete_message(ctx, 7)
 
+
         elif isinstance(exc, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
 
+
         elif (isinstance(exc, commands.BadArgument) or
-                  isinstance(exc, commands.MissingRequiredArgument)):
+                  isinstance(exc, commands.MissingRequiredArgument) or
+                      isinstance(exc, commands.BadUnionArgument)):
+            #* I'm using command.brief as a custom error message for each command,
+            #* not as some brief help text like it's intended to be used as.
             await ctx.send(ctx.command.brief, delete_after=15.0)
             return await delete_message(ctx, 15)
+
 
         elif isinstance(exc, commands.NoPrivateMessage):
             return await ctx.send(
                 "This command cannot be used in private messages. You must be in a server")
 
+
         elif isinstance(exc, discord.Forbidden):
             return
+
 
         else:
             app = await self.bot.application_info()

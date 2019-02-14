@@ -17,9 +17,9 @@
 """
 
 try:
-    from mat_experimental import find_color, delete_message
+    from mat_experimental import find_color, delete_message, get_reddit
 except ImportError:
-    from mat import find_color, delete_message
+    from mat import find_color, delete_message, get_reddit
 
 from discord.ext import commands
 import discord
@@ -27,10 +27,10 @@ import qrcode
 import pyshorteners
 import validators
 import aiohttp
-import typing
 
 import random
 import string
+import typing
 import os
 
 import config
@@ -60,7 +60,7 @@ class Utility:
                       "also put an existing bit.ly link and I'll expand it back into the "
                       "original URL")
     async def bitly(self, ctx, *, url):
-        """Shortens a link with Bitly.
+        """Shortens or expands a link with Bitly.
         Format like this: `<prefix> bitly <URL to shorten>`
         You can also put an existing bit.ly link and I'll expand it into the original URL
         """
@@ -103,7 +103,7 @@ class Utility:
             resp = await w.json()
             try:
                 data = parse_definitions(resp)
-            except KeyError:
+            except:
                 if resp["message"] == "word not found":
                     await ctx.send("Word not found. Try again", delete_after=5.0)
                     return await delete_message(ctx, 5)
@@ -179,35 +179,8 @@ class Utility:
     async def lpt(self, ctx):
         """Posts an LPT, or Life Pro Tip (i.e., a life hack that's actually useful)"""
 
-        try:
-            with ctx.channel.typing():
-                async with self.session.get(
-                    "https://www.reddit.com/r/LifeProTips/hot.json?sort=hot",
-                    headers=config.R_USER_AGENT) as w:
-
-                    resp = await w.json()
-                    data = random.choice(resp["data"]["children"])["data"]
-
-                    if data["stickied"]:
-                        raise Exception
-
-                    if len(data["selftext"]) > 2048:
-                        data["selftext"] = ("**Sorry, but this content is too long for me to "
-                                            "send here. To see it, just click the title above to "
-                                            "go straight to the post**")
-
-                    embed = discord.Embed(
-                        title=data["title"], url=data["url"], description=data["selftext"],
-                        color=find_color(ctx))
-                    embed.set_author(
-                        name="Life Pro Tips", url="https://www.reddit.com/r/LifeProTips/")
-                    embed.set_footer(text=f"👍 - {data['score']}")
-
-                    await ctx.send(embed=embed)
-        except:
-            await ctx.send("Huh, something went wrong and I wasn't able to get an LPT. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, self.bot.loop, 1, False, "an LPT", "LifeProTips")
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
@@ -243,18 +216,17 @@ class Utility:
                            "`<prefix> qr <text to encode>`", delete_after=7.0)
             return await delete_message(ctx, 7)
         else:
-            try:
-                await ctx.channel.trigger_typing()
+            def encode():
                 qrcode.make(content).save("qr.png")
+
+            await ctx.channel.trigger_typing()
+            await self.bot.loop.run_in_executor(None, encode)
+            try:
                 await ctx.send(
                     content=f"```{content}``` as a QR code:", file=discord.File("qr.png"))
-
             except discord.HTTPException:
-                await ctx.send("The text you sent me was too long to encode. I ended up reaching "
-                               "Discord's character limit. Try again with a smaller amount of "
-                               "text.", delete_after=10.0)
-                await delete_message(ctx, 10)
-
+                await ctx.send(
+                    content=f"The above content as a QR code:", file=discord.File("qr.png"))
             os.remove("qr.png")
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
@@ -301,10 +273,8 @@ class Utility:
                         random.choice(string.printable) for _ in range(length + 1)) + "```")
             else:
                 raise commands.BadArgument
-                return
         except ValueError:
             raise commands.BadArgument
-            return
         except discord.HTTPException:
             #* In the unlikely event that the whitespaces in Level 5 cause the message length to
             #* be more than 2000 characters:
@@ -312,11 +282,12 @@ class Utility:
             return await delete_message(ctx, 5)
 
     @commands.command(brief="Invalid formatting. You're supposed to include a color's RGB "
-                      "values. Format the command like this:\n`<prefix> rgbtohex <r>, <g>, <b>`"
+                      "values. Format the command like this:\n`<prefix> rgbtohex <r> <g> <b>`"
                       "\nNote that all 3 numbers must be greater than 0 and less than 256")
     async def rgbtohex(self, ctx, r: int, g: int, b: int):
-        """Convert a color's RGB values to its hex value"""
-
+        """Convert a color's RGB values to its hex value
+        Format like this: `<prefix> rgbtohex <r> <g> <b>`
+        """
         try:
             color = discord.Color.from_rgb(r, g, b)
             embed = discord.Embed(title="MAT's Color Converter", color=color)
@@ -335,8 +306,8 @@ class Utility:
                        "me! My owner and the other members will be glad to help!"
                        "\nhttps://discord.gg/P4Fp3jA")
 
-    @commands.command(aliases=["synonym", "synonyms", "antonym", "antonyms"], brief="You need to "
-                      "include a word for me to get the synonyms and antonyms of")
+    @commands.command(aliases=["synonyms", "antonyms"], brief="You need to include a word for me "
+                      "to get the synonyms and antonyms of")
     async def thesaurus(self, ctx, *, word):
         """Get the synonyms and antonyms of a word"""
 

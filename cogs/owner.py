@@ -23,9 +23,8 @@ except ImportError:
 
 from discord.ext import commands
 import discord
-import asyncio
 
-import logging
+import asyncio
 import time
 import os
 
@@ -96,7 +95,6 @@ class Owner:
         else:
             raise TypeError("\"arg\" param must be either \"-r\" or None")
 
-        logging.info(f"Bot closed by {ctx.author.name} via \"quit\" command")
         await self.bot.logout()
 
     @commands.command(hidden=True)

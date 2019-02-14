@@ -23,8 +23,8 @@ except ImportError:
 
 from discord.ext import commands
 import discord
-import asyncio
 
+import asyncio
 import re
 import os
 import random
@@ -52,18 +52,17 @@ class Triggers:
                 return
 
         if message.author.id == 281807963147075584:
-            #* This is the ID for SigmaBot, who is the love interest for MAT
+            #* This is the user ID of SigmaBot, who is the love interest for MAT
             return await message.channel.send(random.choice(sigma_responses))
 
         if random.random() < (10 / message.guild.member_count) / 100:
             return await message.channel.send(file=discord.File(
-                f"assets{os.sep}{random.choice(['crater.png', 'autism.jpg'])}"))
-
-        e = discord.Embed(color=find_color(message))
+                os.path.join("assets", f"{random.choice(['autism.jpg', 'crater.png'])}")))
 
         if re.search("pinged", message.content, re.IGNORECASE):
-            return await message.channel.send(
-                content="Pinged?", embed=e.set_image(url="https://i.imgur.com/LelDalN.gif"))
+            embed = discord.Embed(color=find_color(message))
+            embed.set_image(url="https://i.imgur.com/LelDalN.gif")
+            return await message.channel.send(content="Pinged?", embed=embed)
 
         elif (re.search("think", message.content, re.IGNORECASE) or
                   re.search("thonk", message.content, re.IGNORECASE) or

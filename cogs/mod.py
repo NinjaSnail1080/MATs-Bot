@@ -23,9 +23,9 @@ except ImportError:
 
 from discord.ext import commands
 import discord
-import asyncio
 
 import random
+import asyncio
 import collections
 import re
 
@@ -561,7 +561,7 @@ class Moderation:
 
         def check(m):
             custom_emoji = re.compile(r"<:(\w+):(\d+)>")
-            return custom_emoji.search(m.content)
+            return custom_emoji.search(m.clean_content)
 
         await self.remove(ctx, 1000, check, "messages containing custom emojis were deleted")
 
@@ -691,6 +691,7 @@ class Moderation:
     async def restore(self, ctx):
         """**Must have the "Manage Messages" permission**
         Restores the last deleted message by a non-bot member
+        Note: Because of how Discord works, I can't restore attachments to messages, just the text of the message
         """
         try:
             last_delete = get_data("server")[str(ctx.guild.id)]["last_delete"]
@@ -699,23 +700,24 @@ class Moderation:
                 "Unable to find the last deleted message. Sorry!", delete_after=5.0)
             return await delete_message(ctx, 5)
 
-        embed = discord.Embed(
-            title="Restored last deleted message",
-            description=f"**Sent by**: {last_delete['author']}\n" + last_delete["creation"],
-            color=find_color(ctx))
         if len(f"```{last_delete['content']}```") <= 1024:
-            embed.add_field(
-                name="Message", value=f"```{last_delete['content']}```", inline=False)
+            embed = discord.Embed(
+                title="Restored last deleted message",
+                description=f"**Sent by**: {last_delete['author']}\n" + last_delete["creation"],
+                color=find_color(ctx))
+            embed.add_field(name="Message", value=f"```{last_delete['content']}```", inline=False)
+            embed.add_field(name="Channel", value=last_delete["channel"])
         else:
-            embed.add_field(
-                name="Message", value="*The message was too long to put here so I'll send it "
-                "after this embed*", inline=False)
-        embed.add_field(name="Channel", value=last_delete["channel"])
+            embed = discord.Embed(
+                title="Restored last deleted message",
+                description=f"**Message**:\n```{last_delete['content']}```",
+                color=find_color(ctx))
+            embed.add_field(name="Sent by", value=last_delete['author'])
+            embed.add_field(name="Channel", value=last_delete["channel"])
+            embed.add_field(name="Sent on", value=last_delete["creation"][13:])
         embed.set_footer(text="Restored by " + ctx.author.name)
 
         await ctx.send(embed=embed)
-        if len(f"```{last_delete['content']}```") > 1024:
-            await ctx.send(f"```{last_delete['content']}```")
 
     @commands.command(hidden=True)
     @commands.guild_only()

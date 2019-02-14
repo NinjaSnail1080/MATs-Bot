@@ -28,9 +28,10 @@ import discord
 import aiohttp
 import validators
 import pytesseract
-import typing
 import ascii
 
+import typing
+import functools
 import io
 import os
 import re
@@ -53,7 +54,7 @@ class Image:
     async def get_image(self, ctx, user_url: typing.Union[discord.Member, str]=None):
         if user_url is None and not ctx.message.attachments:
             found = False
-            async for m in ctx.channel.history(limit=5):
+            async for m in ctx.channel.history(limit=10):
                 if m.embeds:
                     img = m.embeds[0].image.url
                     if img is discord.Embed.Empty:
@@ -77,7 +78,7 @@ class Image:
             img = ctx.message.attachments[0].url
         return img
 
-    async def send_image(self, ctx, resp):
+    async def send_nekobot_image(self, ctx, resp):
         if not resp["success"]:
             await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
                            "again later", delete_after=5.0)
@@ -102,8 +103,8 @@ class Image:
                 art = "".join(art.split())
                 split_art = re.findall(".{1,1920}", art)
                 for a in split_art:
-                    art = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
-                    await ctx.send(f"```{art}```")
+                    art_portion = re.sub("(.{60})", "\\1\n", a, 0, re.DOTALL)
+                    await ctx.send(f"```{art_portion}```")
             else:
                 await ctx.send(f"```{art}```")
 
@@ -118,7 +119,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
@@ -131,7 +132,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["caption"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> caption (OPTIONAL)<@mention user OR "
@@ -172,7 +173,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=deepfry&image={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext (OPTIONAL)<@mention user OR attach an image OR "
@@ -181,25 +182,33 @@ class Image:
         """*Attempts* to read text from an image.
         Note: Works best with black text on a white background or vice versa
         """
-        try:
-            #* Aiohttp is being used here in this admittedly ugly block of code because for the
-            #* life of me I can't get the requests library to work for this
-            async with self.session.get(await self.get_image(ctx, member_url)) as resp:
-                img = IMG.open(io.BytesIO(await resp.read()))
-        except OSError:
-            await ctx.send("That's not an image file", delete_after=5.0)
-            return await delete_message(ctx, 5)
-        try:
-            await ctx.channel.trigger_typing()
+        def read_image(read):
+            try:
+                img = IMG.open(io.BytesIO(read))
+            except OSError:
+                return None
+
             img = img.filter(ImageFilter.MedianFilter())
             enhancer = ImageEnhance.Contrast(img)
             img = enhancer.enhance(2)
             img = img.convert("1")
             img.save("image.png")
-
             text = pytesseract.image_to_string(IMG.open("image.png"))
             os.remove("image.png")
-            if text == "":
+
+            return text
+
+        try:
+            await ctx.channel.trigger_typing()
+            async with self.session.get(await self.get_image(ctx, member_url)) as resp:
+                bytes = await resp.read()
+
+            text = await self.bot.loop.run_in_executor(
+                None, functools.partial(read_image, bytes))
+            if text is None:
+                await ctx.send("That's not an image file", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            elif text == "":
                 await ctx.send(
                     "I wasn't able to read any text from that image", delete_after=5.0)
                 return await delete_message(ctx, 5)
@@ -226,7 +235,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["magikify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
@@ -239,7 +248,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
@@ -252,7 +261,7 @@ class Image:
             async with self.session.get(
                 f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
                 resp = await w.json()
-                await self.send_image(ctx, resp)
+                await self.send_nekobot_image(ctx, resp)
 
 
 def setup(bot):

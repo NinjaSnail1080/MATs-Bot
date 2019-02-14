@@ -15,9 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = "0.7.5"
+__version__ = 0.8
 
 from discord.ext import commands
+from bs4 import BeautifulSoup
 import discord
 import asyncio
 import psutil
@@ -52,9 +53,8 @@ if __name__ == "__main__":
     initial_extensions = []
     for f in os.listdir("cogs"):
         if f.endswith(".py"):
-            if f != "__init__.py":
-                f = f[:-3]
-                initial_extensions.append("cogs." + f)
+            f = f[:-3]
+            initial_extensions.append("cogs." + f)
     # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
     #* Set up logger
@@ -147,23 +147,131 @@ async def delete_message(ctx, time):
     return
 
 
-def find_color(ctx):
-    """Find the color of the bot's top role in the guild. Or if it's a DM,
-    return Discord's "blurple" color
-    """
+async def get_reddit(ctx, loop, level: int, include_timestamp: bool, error_msg: str, *subs):
+    """Get a random post from a subreddit"""
+
     try:
-        if ctx.guild.me.top_role.color == discord.Color.default():
+        session = aiohttp.ClientSession(loop=loop)
+        async with session.get(
+            f"https://www.reddit.com/r/{random.choice(subs)}/hot.json?sort=hot",
+            headers=config.R_USER_AGENT) as w:
+
+            resp = await w.json()
+
+        is_nsfw = False
+        for p in resp["data"]["children"].copy():
+            if p["data"]["stickied"] or p["data"]["pinned"]:
+                resp["data"]["children"].remove(p)
+            elif p["data"]["over_18"] and not ctx.channel.is_nsfw():
+                resp["data"]["children"].remove(p)
+                is_nsfw = True
+
+        data = random.choice(resp["data"]["children"])["data"]
+
+        data["title"] = BeautifulSoup(data["title"], "lxml").get_text()
+        data["selftext"] = BeautifulSoup(data["selftext"], "lxml").get_text()
+
+        zwspace = re.compile("&#x200b;", re.IGNORECASE)
+        data["title"] = zwspace.sub("\u200B", data["title"])
+        data["selftext"] = zwspace.sub("\u200B", data["selftext"])
+
+        if len(data["title"]) > 256:
+            data["title"] = data["title"][:253] + "..."
+
+        if level == 1:
+            if len(data["selftext"]) > 2048:
+                data["selftext"] = ("*Sorry, but this content is too long for me to send in "
+                                    "a single message. Click on the title above to go "
+                                    "straight to the post*")
+            if include_timestamp:
+                embed = discord.Embed(
+                    title=data["title"], description=data["selftext"],
+                    timestamp=datetime.datetime.fromtimestamp(data["created_utc"]),
+                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+            else:
+                embed = discord.Embed(
+                    title=data["title"], description=data["selftext"],
+                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+
+            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "bmp", "webp")):
+                embed.set_image(url=data["url"])
+            else:
+                if data["thumbnail"] != "self":
+                    embed.set_thumbnail(url=data["thumbnail"])
+            if ctx.command.cog_name == "NSFW":
+                embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
+            else:
+                embed.set_footer(text=f"👍 - {data['score']}")
+
+            return await ctx.send(embed=embed)
+
+        elif level == 2:
+            description = (f"By [u/{data['author']}](http://www.reddit.com/user"
+                           f"/{data['author']}/)\n\n{data['selftext']}")
+            if len(data["selftext"]) > 2048 - len(description):
+                data["selftext"] = ("*Sorry, but this content is too long for me to send in "
+                                    "a single message. Click on the title above to go "
+                                    "straight to the post*")
+            if include_timestamp:
+                embed = discord.Embed(
+                    title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
+                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
+                    timestamp=datetime.datetime.fromtimestamp(data["created_utc"]),
+                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+            else:
+                embed = discord.Embed(
+                    title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
+                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
+                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
+
+            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "bmp", "webp")):
+                embed.set_image(url=data["url"])
+            else:
+                if data["thumbnail"] != "self":
+                    embed.set_thumbnail(url=data["thumbnail"])
+
+            if ctx.command.name == "reddit":
+                embed.set_author(name=f"Random post from {data['subreddit_name_prefixed']}",
+                                 url=f"https://www.reddit.com/{data['subreddit_name_prefixed']}")
+            else:
+                embed.set_author(name=data["subreddit_name_prefixed"],
+                                 url=f"https://www.reddit.com/{data['subreddit_name_prefixed']}")
+            embed.set_footer(
+                text=f"👍 - {data['score']}\u3000💬 - {data['num_comments']}")
+
+            return await ctx.send(embed=embed)
+
+    except Exception as e:
+        if isinstance(e, KeyError) or isinstance(e, IndexError):
+            if not is_nsfw:
+                await ctx.send("This subreddit doesn't exist. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            else:
+                await ctx.send("This subreddit is NSFW, which means you must be in an "
+                               "NSFW-marked channel in order to get a post from it",
+                               delete_after=7.0)
+                return await delete_message(ctx, 7)
+        else:
+            await ctx.send(f"Huh, something went wrong and I wasn't able to get {error_msg}. "
+                           "Try again", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+
+def find_color(ctx):
+    """Find the bot's rendered color. Or if it's a DM, return Discord's "blurple" color"""
+
+    try:
+        if ctx.guild.me.color == discord.Color.default():
             color = discord.Color.blurple()
         else:
-            color = ctx.guild.me.top_role.color
-        return color
+            color = ctx.guild.me.color
     except AttributeError:  #* If it's a DM channel
         color = discord.Color.blurple()
-        return color
+    return color
 
 
 async def get_prefix(bot, message):
-    prefixes = ["!mat ", "mat/", "mat."]
+    prefixes = ["!mat "]
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
@@ -236,7 +344,7 @@ class MAT(commands.Bot):
             sent = False
             for c in guild.text_channels:
                 if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
-                    "general", c.name):
+                    "general", c.name) or re.search("bot", c.name):
                     await c.send(
                         embed=discord.Embed(description=message, color=discord.Color.blurple()))
                     sent = True
@@ -263,7 +371,7 @@ class MAT(commands.Bot):
         embed = discord.Embed(
             title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
             "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
-            color=joins.guild.me.top_role.color)
+            color=joins.guild.me.color)
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Roles", value=len(guild.roles))
@@ -358,9 +466,12 @@ class MAT(commands.Bot):
     async def on_message_delete(self, message):
         if not isinstance(message.channel, discord.DMChannel):
             if not message.author.bot:
-                content = message.clean_content + "\n"
-                for a in message.attachments:
-                    content = content + "\n" + a.url
+                content = message.clean_content
+
+                #* The following code is to better format custom emojis that appear in the content
+                custom_emoji = re.compile(r"<:(\w+):(\d+)>")
+                for m in custom_emoji.finditer(content):
+                    content = content.replace(m.group(), m.group()[1:-19])
 
                 last_delete = {"author": message.author.mention,
                                "content": content,

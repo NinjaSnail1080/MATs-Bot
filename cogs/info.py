@@ -17,14 +17,15 @@
 """
 
 try:
-    from mat_experimental import find_color, __version__, delete_message
+    from mat_experimental import find_color, delete_message, __version__
 except ImportError:
-    from mat import find_color, __version__, delete_message
+    from mat import find_color, delete_message, __version__
 
 from discord.ext import commands
 import discord
 
 import datetime
+import typing
 
 
 class Info:
@@ -127,13 +128,12 @@ class Info:
         await ctx.send(embed=embed)
 
     @commands.command(brief="Invalid formatting. You need to format the command like this: "
-                      "`<prefix> channelinfo (OPTIONAL)<#mention text channel or channel name>`"
-                      "\n\nIf you don't provide a channel, I'll default to this one. Keep in "
-                      "mind that this command only works with text channels")
+                      "`<prefix> channelinfo (OPTIONAL)<text channel OR voice channel (case-"
+                      "sensitive)>`\n\nIf you don't provide a channel, I'll default to this one")
     @commands.guild_only()
-    async def channelinfo(self, ctx, channel: discord.TextChannel=None):
-        """Info about a text channel. By default I'll show info about the channel the command was performed in, although you can specify a different one.
-        Format like this: `<prefix> channelinfo (OPTIONAL)<text channel>`
+    async def channelinfo(self, ctx, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
+        """Info about a text or voice channel on this server. By default I'll show info about the channel the command was performed in, although you can specify a different one.
+        Format like this: `<prefix> channelinfo (OPTIONAL)<text channel OR voice channel>`
         """
         await ctx.channel.trigger_typing()
         if channel is None:
@@ -141,32 +141,65 @@ class Info:
         else:
             c = channel
 
-        embed = discord.Embed(
-            title=c.name, description=f"**Channel ID**: {c.id}", color=find_color(ctx))
+        embed = discord.Embed(color=find_color(ctx))
+        if isinstance(c, discord.TextChannel):
+            try:
+                embed.add_field(name="Channel", value=c.mention)
+                embed.add_field(name="ID", value=c.id)
+                embed.add_field(name="Category", value=str(c.category))
+                if await c.pins():
+                    embed.add_field(name="Messages Pinned", value=len(await c.pins()))
+                else:
+                    embed.add_field(name="Messages Pinned", value="None")
+                embed.add_field(name="Position", value=c.position + 1)
+                if c.is_nsfw():
+                    embed.add_field(name="NSFW?", value="Yes")
+                else:
+                    embed.add_field(name="NSFW?", value="No")
+                embed.add_field(name="Members With Access",
+                                value=f"{len(c.members)} out of {c.guild.member_count}")
+                if c.overwrites:
+                    embed.add_field(name="Overwrites", value=len(c.overwrites))
+                else:
+                    embed.add_field(name="Overwrites", value="None")
+                embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
+                if c.topic is None or c.topic == "":
+                    embed.add_field(name="Channel topic", value="```No topic```", inline=False)
+                else:
+                    embed.add_field(name="Channel topic", value=f"```{c.topic}```", inline=False)
 
-        try:
-            embed.add_field(name="Channel", value=c.mention)
-            embed.add_field(name="Server", value=c.guild.name)
-            embed.add_field(name="Category", value=str(c.category))
-            embed.add_field(name="Messages pinned", value=len(await c.pins()))
-            embed.add_field(name="Position", value=c.position)
-            if c.is_nsfw():
-                embed.add_field(name="NSFW?", value="Yes")
-            else:
-                embed.add_field(name="NSFW?", value="No")
-            embed.add_field(name="Members with access", value=len(c.members))
-            embed.add_field(name="Roles overwritten", value=len(c.changed_roles))
-            embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
-            if c.topic is None or c.topic == "":
-                embed.add_field(name="Channel topic", value="```No topic```", inline=False)
-            else:
-                embed.add_field(name="Channel topic", value=f"```{c.topic}```", inline=False)
-        except discord.Forbidden:
-            await ctx.send("Unfortunately, I don't have access to that channel, so I wasn't able "
-                           "to get information from it", delete_after=7.0)
-            return await delete_message(ctx, 7)
+                await ctx.send(embed=embed)
+            except discord.Forbidden:
+                await ctx.send("Unfortunately, I don't have access to that channel, so I wasn't "
+                               "able to get information from it", delete_after=7.0)
+                return await delete_message(ctx, 7)
 
-        await ctx.send(embed=embed)
+        elif isinstance(c, discord.VoiceChannel):
+            try:
+                embed.add_field(name="Channel", value=f"\U0001f509{c.name}")
+                embed.add_field(name="ID", value=c.id)
+                embed.add_field(name="Category", value=str(c.category))
+                if c.user_limit == 0:
+                    embed.add_field(name="User Limit", value="No limit")
+                else:
+                    embed.add_field(name="User Limit", value=c.user_limit)
+                embed.add_field(name="Position", value=c.position + 1)
+                embed.add_field(name="Bitrate", value=f"{c.bitrate // 1000} kbps")
+                if c.members:
+                    embed.add_field(name="Members Inside", value=len(c.members))
+                else:
+                    embed.add_field(name="Members Inside", value="No members inside")
+                if c.overwrites:
+                    embed.add_field(name="Overwrites", value=len(c.overwrites))
+                else:
+                    embed.add_field(name="Overwrites", value="None")
+                embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
+
+                await ctx.send(embed=embed)
+            except discord.Forbidden:
+                await ctx.send("Unfortunately, I don't have access to that channel, so I wasn't "
+                               "able to get information from it", delete_after=7.0)
+                return await delete_message(ctx, 7)
 
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
                       "Discord's default emojis. You must put a custom emoji after the command "
@@ -182,8 +215,7 @@ class Info:
             return await delete_message(ctx, 7)
 
         embed = discord.Embed(
-            title=f"Info on the :{emoji.name}: emoji", description=str(emoji),
-            color=find_color(ctx))
+            title=f"Info on the {emoji} emoji", color=find_color(ctx))
 
         embed.set_thumbnail(url=emoji.url)
         embed.add_field(name="Name", value=emoji.name)
@@ -197,9 +229,9 @@ class Info:
         else:
             embed.add_field(name="Animated?", value="No")
         if emoji.managed:
-            embed.add_field(name="Managed by integration?", value="Yes")
+            embed.add_field(name="Managed By Integration?", value="Yes")
         else:
-            embed.add_field(name="Managed by integration?", value="No")
+            embed.add_field(name="Managed By Integration?", value="No")
         embed.add_field(
             name="Created", value=emoji.created_at.strftime("%b %-d, %Y"))
         embed.add_field(name="URL", value=emoji.url, inline=False)
@@ -245,11 +277,11 @@ class Info:
         else:
             embed.add_field(name="Custom Emojis", value=len(s.emojis))
         embed.add_field(name="Bots", value=len(bots))
-        embed.add_field(name="Region", value=str(s.region).upper())
-        embed.add_field(
-            name="Verification Level", value=str(s.verification_level).capitalize())
-        embed.add_field(
-            name="Explicit Content Filter", value=str(s.explicit_content_filter).title())
+        embed.add_field(name="Region", value=str(
+            s.region).replace("-", " ").title().replace("Us", "U.S.").replace("Eu", "EU"))
+        embed.add_field(name="Verification Level", value=str(s.verification_level).capitalize())
+        embed.add_field(name="Explicit Content Filter",
+                        value=str(s.explicit_content_filter).replace("_", " ").title())
         if s.afk_channel is not None:
             if s.afk_timeout // 60 == 1:
                 minute_s = " minute"
@@ -277,8 +309,6 @@ class Info:
         h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60  #* etc.
         se = int(delta.total_seconds()) % 60
-        #! Do not change "int(delta.totalseconds())" to "delta.seconds"
-        #! For reasons I don't fully understand, it doesn't work
 
         footer = []
         if y != 0:
@@ -369,8 +399,6 @@ class Info:
         h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
         mi = int(delta.total_seconds()) // 60 % 60  #* etc.
         se = int(delta.total_seconds()) % 60
-        #! Do not change "int(delta.totalseconds())" to "delta.seconds"
-        #! For reasons I don't fully understand, it doesn't work
 
         footer = []
         if y != 0:
