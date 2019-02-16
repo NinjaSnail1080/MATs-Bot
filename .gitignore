@@ -147,5 +147,5 @@ six.py
 # Ignore config file
 config.py
 
-#Ignore test file if I make one
+# Ignore test file if I make one
 test.py
