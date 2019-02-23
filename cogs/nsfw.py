@@ -79,7 +79,8 @@ class NSFW:
 
         await ctx.channel.trigger_typing()
         return await get_reddit(ctx, self.bot.loop, 1, False, "a post", "AsianHotties",
-                                "nextdoorasians", "asianbabes", "bustyasians", "juicyasians")
+                                "Sexy_Asians", "asianbabes", "bustyasians", "juicyasians",
+                                "AsiansGoneWild")
 
     @commands.command(aliases=["butt", "butts", "booty"])
     @commands.guild_only()
@@ -196,12 +197,12 @@ class NSFW:
     @commands.guild_only()
     @commands.is_nsfw()
     async def gonewild(self, ctx):
-        """Sends a random post from either r/gonewild, r/gonewildcurvy, r/AsiansGoneWild, r/PetiteGoneWild, or r/RealGirls"""
+        """Sends a random post from either r/gonewild, r/gonewildcurvy, r/GoneWildSmiles, r/PetiteGoneWild, or r/RealGirls"""
 
         await ctx.channel.trigger_typing()
         return await get_reddit(
             ctx, self.bot.loop, 2, True, "a post", "gonewild", "gonewildcurvy",
-            "AsiansGoneWild", "PetiteGoneWild", "RealGirls")
+            "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
     @commands.guild_only()

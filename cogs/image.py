@@ -57,11 +57,10 @@ class Image:
             async for m in ctx.channel.history(limit=10):
                 if m.embeds:
                     img = m.embeds[0].image.url
-                    if img is discord.Embed.Empty:
-                        continue
-                    found = True
-                    break
-                elif m.attachments:
+                    if img is not discord.Embed.Empty:
+                        found = True
+                        break
+                if m.attachments:
                     img = m.attachments[0].url
                     found = True
                     break
@@ -94,11 +93,18 @@ class Image:
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
     async def ascii(self, ctx, member_url: typing.Union[discord.Member, str]=None):
-        """Converts an image or a member's avatar into ascii art. Will work for most images"""
+        """Converts an image or a member's avatar into ascii art. Will work for most images
+        __Note__: For some images, you might want to zoom out to see the full ascii art (Ctrl – OR ⌘ –)
+        """
+
+        def make_ascii(url: str, columns: int, color: bool):
+            ascii_art = ascii.loadFromUrl(url, columns, color)
+            return ascii_art
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            art = ascii.loadFromUrl(img, 60, False)
+            art = await self.bot.loop.run_in_executor(
+                None, functools.partial(make_ascii, img, 60, False))
             if len(art) > 1994:
                 art = "".join(art.split())
                 split_art = re.findall(".{1,1920}", art)
@@ -199,26 +205,26 @@ class Image:
             return text
 
         try:
-            await ctx.channel.trigger_typing()
-            async with self.session.get(await self.get_image(ctx, member_url)) as resp:
-                bytes = await resp.read()
+            with ctx.channel.typing():
+                async with self.session.get(await self.get_image(ctx, member_url)) as resp:
+                    bytes = await resp.read()
 
-            text = await self.bot.loop.run_in_executor(
-                None, functools.partial(read_image, bytes))
-            if text is None:
-                await ctx.send("That's not an image file", delete_after=5.0)
-                return await delete_message(ctx, 5)
-            elif text == "":
-                await ctx.send(
-                    "I wasn't able to read any text from that image", delete_after=5.0)
-                return await delete_message(ctx, 5)
-            elif len(text) > 1941:
-                await ctx.send("This text is too long for me to send here. Try an image that "
-                               "doesn't have so many words in it", delete_after=6.0)
-                return await delete_message(ctx, 6)
-            else:
-                return await ctx.send(
-                    f"Here's the text I was able to read from that image:\n```\n{text}```")
+                text = await self.bot.loop.run_in_executor(
+                     None, functools.partial(read_image, bytes))
+                if text is None:
+                    await ctx.send("That's not an image file", delete_after=5.0)
+                    return await delete_message(ctx, 5)
+                elif text == "":
+                    await ctx.send(
+                        "I wasn't able to read any text from that image", delete_after=5.0)
+                    return await delete_message(ctx, 5)
+                elif len(text) > 1941:
+                    await ctx.send("This text is too long for me to send here. Try an image that "
+                                   "doesn't have so many words in it", delete_after=6.0)
+                    return await delete_message(ctx, 6)
+                else:
+                    return await ctx.send(
+                        f"Here's the text I was able to read from that image:\n```\n{text}```")
         except:
             await ctx.send("Hmm, something went wrong while I was trying to read the text from "
                            "this image. Try again", delete_after=6.0)
