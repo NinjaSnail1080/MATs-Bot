@@ -73,7 +73,7 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with self.session.get("https://thispersondoesnotexist.com/") as w:
+                async with self.session.get("https://thispersondoesnotexist.com/image") as w:
                     resp = await w.read()
                 await self.bot.loop.run_in_executor(None, functools.partial(save_image, resp))
 
@@ -234,13 +234,13 @@ class Fun:
         characters = ["sayori", "yuri", "natsuki", "monika"]
         backgrounds = ["bedroom", "class", "closet", "club", "corridor", "house", "kitchen",
                        "residential", "sayori_bedroom"]
-        monika_faces = [x for x in "abcdefghijklmnopqr"]
-        natsuki_faces = [x for x in "abcdefghijklmnopqrstuvwxyz"]
+        monika_faces = [i for i in "abcdefghijklmnopqr"]
+        natsuki_faces = [i for i in "abcdefghijklmnopqrstuvwxyz"]
         natsuki_faces.extend(
             ["1t", "2bt", "2bta", "2btb", "2btc", "2btd", "2bte", "2btf", "2btg", "2bth",
             "2bti", "2t", "2ta", "2tb", "2tc", "2td", "2te", "2tf", "2tg", "2th", "2ti"])
-        sayori_faces = [x for x in "abcdefghijklmnopqrstuvwxy"]
-        yuri_faces = [x for x in "abcdefghijklmnopqrstuvwx"]
+        sayori_faces = [i for i in "abcdefghijklmnopqrstuvwxy"]
+        yuri_faces = [i for i in "abcdefghijklmnopqrstuvwx"]
         yuri_faces.extend(["y1", "y2", "y3", "y4", "y5", "y6", "y7"])
         ddlc_items = {
             "pose": {
@@ -256,7 +256,6 @@ class Fun:
                 "sayori": sayori_faces
             }
         }
-
         reference_links = {
             "pose": {
                 "sayori": "https://imgur.com/a/qHzyX2w",
@@ -271,7 +270,6 @@ class Fun:
                 "monika": "https://imgur.com/a/Akc9xtB"
             }
         }
-
         if len(text) >= 140:
             await ctx.send("Text is too long. Must be under 140 characters", delete_after=5.0)
             return await delete_message(ctx, 5)
