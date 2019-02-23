@@ -20,13 +20,14 @@ __version__ = 0.8
 from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
-import asyncio
+import aiohttp
 import psutil
 import rapidjson as json
 
 import collections
 import datetime
 import logging
+import asyncio
 import random
 import os
 import re
@@ -92,6 +93,22 @@ def get_data(to_return=None):
             userdata = {}
             json.dump(userdata, f)
 
+    if os.path.exists("reminders.data.json"):
+        with open("reminders.data.json", "r") as f:
+            reminders = list(json.load(f))
+    else:
+        with open("reminders.data.json", "w") as f:
+            reminders = []
+            json.dump(reminders, f)
+
+    if os.path.exists("giveaways.data.json"):
+        with open("giveaways.data.json", "r") as f:
+            giveaways = list(json.load(f))
+    else:
+        with open("giveaways.data.json", "w") as f:
+            giveaways = []
+            json.dump(giveaways, f)
+
     if to_return is None:
         return
     elif to_return == "bot":
@@ -100,8 +117,13 @@ def get_data(to_return=None):
         return serverdata
     elif to_return == "user":
         return userdata
+    elif to_return == "reminders":
+        return reminders
+    elif to_return == "giveaways":
+        return giveaways
     else:
-        raise TypeError("\"to_return\" param must be either \"bot\", \"server\", or \"user\"")
+        raise TypeError("\"to_return\" param must be either \"bot\", \"server\", \"user\", "
+                        "\"reminders\", or \"giveaways\"")
 
 
 def dump_data(to_dump, file):
@@ -118,8 +140,17 @@ def dump_data(to_dump, file):
     elif file == "user":
         with open("user.data.json", "w") as f:
             json.dump(to_dump, f, indent=4)
+
+    elif file == "reminders":
+        with open("reminders.data.json", "w") as f:
+            json.dump(to_dump, f, indent=4)
+
+    elif file == "giveaways":
+        with open("giveaways.data.json", "w") as f:
+            json.dump(to_dump, f, indent=4)
     else:
-        raise TypeError("\"file\" param must be either \"bot\", \"server\", or \"user\"")
+        raise TypeError("\"file\" param must be either \"bot\", \"server\", \"user\", "
+                        "\"reminders\", or \"giveaways\"")
 
 
 def restart_bot():
@@ -312,6 +343,8 @@ class MAT(commands.Bot):
                 serverdata[str(g.id)] = {"name": g.name}
         dump_data(serverdata, "server")
 
+        self.loop.create_task(self.switch_games())
+
         print("\nLogged in as")
         print(bot.user)
         print(bot.user.id)
@@ -490,7 +523,6 @@ class MAT(commands.Bot):
             await asyncio.sleep(random.randint(5, 10))
 
     def run(self, token):
-        self.loop.create_task(self.switch_games())
         super().run(token)
 
 
