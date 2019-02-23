@@ -17,9 +17,9 @@
 """
 
 try:
-    from mat_experimental import find_color, delete_message, get_reddit
+    from mat_experimental import find_color, delete_message, get_reddit, get_data, dump_data
 except ImportError:
-    from mat import find_color, delete_message, get_reddit
+    from mat import find_color, delete_message, get_reddit, get_data, dump_data
 
 from discord.ext import commands
 import discord
@@ -27,25 +27,17 @@ import qrcode
 import pyshorteners
 import validators
 import aiohttp
+import pytimeparse
 
 import random
 import string
 import typing
+import datetime
+import asyncio
+import functools
 import os
 
 import config
-
-
-def parse_definitions(resp):
-    """Parses definitions for the "define" command"""
-
-    sort_defs = {}
-    for d in resp["definitions"]:
-        if d["partOfSpeech"] not in sort_defs:
-            sort_defs[d["partOfSpeech"]] = []
-        sort_defs[d["partOfSpeech"]].append(d["definition"])
-
-    return sort_defs
 
 
 class Utility:
@@ -54,6 +46,28 @@ class Utility:
     def __init__(self, bot):
         self.bot = bot
         self.session = aiohttp.ClientSession(loop=self.bot.loop)
+
+    async def on_ready(self):
+        self.bot.loop.create_task(self.check_reminders())
+
+    async def check_reminders(self):
+        while True:
+            reminders = get_data("reminders")
+            for r in reminders.copy():
+                if datetime.datetime.utcnow() >= datetime.datetime.fromtimestamp(
+                    float(r["started_at"]) + float(r["time"])):
+
+                    author = self.bot.get_user(int(r["author"]))
+                    formatted_dt = datetime.datetime.fromtimestamp(
+                        float(r["started_at"])).strftime("%B %-d, %Y at %X UTC")
+                    await author.send(
+                        f"{author.name}, on __{formatted_dt}__, in the server, "
+                        f"*{r['server']}*, you used the `remindme` command so that I could "
+                        f"remind you of something important later. The time has come, so here "
+                        f"it is:```{r['remind_of']}```")
+                    reminders.remove(r)
+                    dump_data(reminders, "reminders")
+            await asyncio.sleep(1)
 
     @commands.command(aliases=["shorten"], brief="You need to include a link to shorten. Format "
                       "like this: `<prefix> bitly <URL to shorten>`\n\nAlternatively, you can "
@@ -95,7 +109,19 @@ class Utility:
 
     @commands.command(brief="You need to include a word for me to define")
     async def define(self, ctx, *, word):
-        """Get the definition for a word"""
+        """Get the definition of a word"""
+
+        def parse_definitions(resp):
+            """Parses definitions for the "define" command"""
+
+            sort_defs = {}
+            for d in resp["definitions"]:
+                if d["partOfSpeech"] not in sort_defs:
+                    sort_defs[d["partOfSpeech"]] = []
+                sort_defs[d["partOfSpeech"]].append(d["definition"])
+            sort_defs.pop(None, None)
+
+            return sort_defs
 
         await ctx.channel.trigger_typing()
         async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/definitions",
@@ -113,16 +139,36 @@ class Utility:
                         "If this problem persists, get in touch with my owner, NinjaSnail1080. "
                         "You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/examples",
+                                    headers=config.WORDS_API) as w:
+            resp = await w.json()
+            examples = resp["examples"]
+            random.shuffle(examples)
+
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}",
+                                    headers=config.WORDS_API) as w:
+            resp = await w.json()
+            syllables = resp["syllables"]["list"]
+            syllables[0] = syllables[0].capitalize()
+
         embed = discord.Embed(
             title=f"Definitions of {word.title()}",
-            description="Powered by [WordsAPI](https://www.wordsapi.com/)\n\u200b",
+            description="Powered by [WordsAPI](https://www.wordsapi.com/)\n\n"
+            f"__**{' • '.join(syllables)}**__\n\u200b",
             color=find_color(ctx))
         embed.set_footer(
             text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
         for part, meanings in data.items():
             embed.add_field(
-                name=part, value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b", inline=False)
+                name=part.title(), value="*" + "*,\n\n*".join(meanings[:4]) + "*\n\u200b",
+                inline=False)
+
+        if examples:
+            embed.add_field(
+                name="EXAMPLES",
+                value="*" + "*,\n*".join([e.capitalize() for e in examples[:4]]) + "*\n\u200b",
+                inline=False)
 
         await ctx.send(embed=embed)
 
@@ -254,23 +300,23 @@ class Utility:
             if level == 1:
                 await ctx.send(
                     "```" + "".join(
-                        random.choice(string.ascii_lowercase) for _ in range(length + 1)) + "```")
+                        random.choice(string.ascii_lowercase) for _ in range(length)) + "```")
             elif level == 2:
                 await ctx.send(
                     "```" + "".join(
-                        random.choice(string.ascii_letters) for _ in range(length + 1)) + "```")
+                        random.choice(string.ascii_letters) for _ in range(length)) + "```")
             elif level == 3:
                 await ctx.send(
                     "```" + "".join(random.choice(
-                        string.ascii_letters + string.digits) for _ in range(length + 1)) + "```")
+                        string.ascii_letters + string.digits) for _ in range(length)) + "```")
             elif level == 4:
                 await ctx.send(
                     "```" + "".join(random.choice(
                         string.ascii_letters + string.digits + string.punctuation) for _ in range(
-                            length + 1)) + "```")
+                            length)) + "```")
             elif level == 5:
                     await ctx.send("```" + "".join(
-                        random.choice(string.printable) for _ in range(length + 1)) + "```")
+                        random.choice(string.printable) for _ in range(length)) + "```")
             else:
                 raise commands.BadArgument
         except ValueError:
@@ -280,6 +326,42 @@ class Utility:
             #* be more than 2000 characters:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
+
+    @commands.command(brief="Invalid formatting")
+    async def remindme(self, ctx, time: str, *, remind_of: str=None):
+        """Need to be reminded of something in the future? Don't worry, just use this command!
+        Format like this: `<prefix> <time till I remind you> <text to remind you of>`
+        The time should look something like this: `2w` OR `7h30m` OR `5d8h45m`
+        The only characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`
+        """
+        parsed_time = pytimeparse.parse(time)
+        if parsed_time is None or remind_of is None:
+            raise commands.BadArgument
+        if parsed_time < 300 or parsed_time > 15778800:
+            await ctx.send("The time until I remind you has to be longer than 5 minutes and "
+                           "shorter than 6 months", delete_after=7.0)
+            return await delete_message(ctx, 7)
+        if len(remind_of) > 1800:
+            await ctx.send(
+                "The text I'll remind you of must be no more than 1800 characters long",
+                delete_after=6.0)
+            return await delete_message(ctx, 6)
+
+        formatted_dt = datetime.datetime.fromtimestamp(
+            datetime.datetime.utcnow().timestamp() + parsed_time).strftime("%B %-d, %Y at %X UTC")
+        await ctx.send(f"Ok {ctx.author.mention}, in **{time}**, on __{formatted_dt}__, I'll "
+                       f"remind you of this:```{remind_of}```")
+
+        new_reminder = {
+            "author": str(ctx.author.id),
+            "server": ctx.guild.name,
+            "started_at": str(datetime.datetime.utcnow().timestamp()),
+            "time": str(parsed_time),
+            "remind_of": remind_of
+        }
+        reminders = get_data("reminders")
+        reminders.append(new_reminder)
+        dump_data(reminders, "reminders")
 
     @commands.command(brief="Invalid formatting. You're supposed to include a color's RGB "
                       "values. Format the command like this:\n`<prefix> rgbtohex <r> <g> <b>`"
@@ -297,6 +379,54 @@ class Utility:
             await ctx.send(embed=embed)
         except:
             raise commands.BadArgument
+
+    @commands.command(brief="You need to include a word so I can get ones that rhyme with it")
+    async def rhymes(self, ctx, *, word):
+        """Get words that rhyme with another word"""
+
+        await ctx.channel.trigger_typing()
+        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/rhymes",
+                                    headers=config.WORDS_API) as w:
+            try:
+                resp = await w.json()
+                rhyming_words = resp["rhymes"]
+                if len(rhyming_words) > 1:
+                    rhyming_words.pop("all", None)
+
+                for words in rhyming_words.values():
+                    random.shuffle(words)
+                    for rhyme in words:
+                        if rhyme == word.lower():
+                            words.remove(rhyme)
+                    while sum(len(i) for i in words) > 450:
+                        words.pop(-1)
+            except:
+                if resp["message"] == "word not found":
+                    await ctx.send("Word not found. Try again", delete_after=5.0)
+                    return await delete_message(ctx, 5)
+                else:
+                    return await ctx.send(
+                        f"An unknown error has occured:```{resp['message']}```"
+                        "If this problem persists, get in touch with my owner, NinjaSnail1080. "
+                        "You can reach him at my support server: https://discord.gg/P4Fp3jA")
+
+        if not rhyming_words:
+            await ctx.send(
+                f"I couldn't find any words that rhyme with `{word}`. Sorry about that!",
+                delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        embed = discord.Embed(
+            title=f"Words that rhyme with {word.title()}",
+            description="Powered by [WordsAPI](https://www.wordsapi.com/)",
+            color=find_color(ctx))
+        embed.set_footer(
+            text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+
+        for title, words in rhyming_words.items():
+            embed.add_field(name=title.title(), value=f"`{'`, `'.join(words)}`", inline=False)
+
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def support(self, ctx):
