@@ -60,10 +60,10 @@ class Help:
         return check
 
     async def send_help_embeds(self, ctx, msg, embeds):
-        duration = datetime.timedelta(minutes=5) + datetime.timedelta(seconds=-9.6)
+        duration = datetime.timedelta(minutes=10) + datetime.timedelta(seconds=-9.6)
         #* A second timedelta is being added because for some reason I don't understand, there's
         #* always an offset of about 9.6 seconds (time_passed is always about -9.6 seconds on the
-        #* first loop through, which makes no sense because it should be close to 0)
+        #* first loop through, which makes no sense because it should pretty much 0)
         await msg.add_reaction(self.back)
         await msg.add_reaction(self.next)
         index = 0
@@ -164,7 +164,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
@@ -201,7 +201,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
@@ -233,7 +233,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
@@ -256,7 +256,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
@@ -291,7 +291,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
@@ -323,7 +323,7 @@ class Help:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
                         "previous one. This help message will be automatically deleted after "
-                        "5 minutes")
+                        "10 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
