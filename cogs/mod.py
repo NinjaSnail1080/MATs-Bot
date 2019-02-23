@@ -23,11 +23,14 @@ except ImportError:
 
 from discord.ext import commands
 import discord
+import pytimeparse
 
+import re
 import random
 import asyncio
 import collections
-import re
+import typing
+import datetime
 
 
 async def send_log(guild, send_embed):
@@ -61,9 +64,73 @@ class Moderation:
     def __init__(self, bot):
         self.bot = bot
 
+    async def on_ready(self):
+        self.bot.loop.create_task(self.check_giveaways())
+
     async def on_message(self, message):
         #TODO: Eventually this will contain the antispam and antiraid features
         pass
+
+    async def on_reaction_add(self, reaction, user):
+        #* This function checks if a giveaway is cancelled by it's creator
+        if reaction.emoji == "\U0001f6d1":
+            giveaways = get_data("giveaways")
+            if (not any(int(g.get("msg", None)) == reaction.message.id for g in giveaways) or
+                    not any(int(g.get("author", None)) == user.id for g in giveaways)):
+                return
+            for g in giveaways.copy():
+                if g["msg"] == str(reaction.message.id):
+                    giveaways.remove(g)
+                    dump_data(giveaways, "giveaways")
+                    return await reaction.message.channel.send(
+                        f"{reaction.message.channel.guild.get_member(int(g['author'])).mention}'s"
+                        f" giveaway for the prize, **{g['prize']}** has been cancelled")
+
+    async def check_giveaways(self):
+        while True:
+            giveaways = get_data("giveaways")
+            for g in giveaways.copy():
+                if datetime.datetime.utcnow() >= datetime.datetime.fromtimestamp(
+                    float(g["end_time"])):
+
+                    try:
+                        channel = self.bot.get_channel(int(g["channel"]))
+                        msg = await channel.get_message(int(g["msg"]))
+                        author = channel.guild.get_member(int(g["author"]))
+                        blacklist = g["blacklist"]
+                        prize = g["prize"]
+                    except:
+                        giveaways.remove(g)
+                        dump_data(giveaways, "giveaways")
+                        continue
+
+                    for r in msg.reactions:
+                        if r.emoji == "\U0001f3ab":
+                            pool = await r.users().flatten()
+                    pool.remove(channel.guild.me)
+                    for i in blacklist:
+                        member = channel.guild.get_member(int(i))
+                        if member in pool:
+                            pool.remove(member)
+
+                    try:
+                        winner = random.choice(pool)
+                    except IndexError:
+                        await channel.send(f"{author.mention}'s giveaway is over and no one "
+                                           f"entered. This means nobody won **{prize}**")
+                        giveaways.remove(g)
+                        dump_data(giveaways, "giveaways")
+                        continue
+                    embed = discord.Embed(color=channel.guild.me.color)
+                    embed.set_author(
+                        name=f"\U0001f31f \U00002b50 {winner.display_name} won {prize}! "
+                        "\U00002b50 \U0001f31f", icon_url=winner.avatar_url)
+                    await channel.send(
+                        f"{winner.mention} won {author.mention}'s giveaway! \U0001f3c6",
+                        embed=embed)
+                    giveaways.remove(g)
+                    dump_data(giveaways, "giveaways")
+            await asyncio.sleep(1)
 
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
@@ -254,6 +321,66 @@ class Moderation:
                   cmd.lower() not in set(c.name for c in self.bot.commands)):
             raise commands.BadArgument
 
+    @commands.command(aliases=["raffle"], brief="Invalid formatting. The command should look "
+                      "like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> "
+                      "<duration> <prize name>`\nFor the blacklist, mention any users who aren't "
+                      "allowed to compete in this giveaway\nIf you don't mention a channel, I'll "
+                      "just use the channel the command was performed in\nFor the duration, "
+                      "there's a specific format it should be in. Here are some examples of what "
+                      "it should look like: `1w3d` for 1 week and 3 days, `5h15m` for 5 hours "
+                      "and 15 minutes, `2w` for 2 weeks, `45m` for 45 minutes, etc.")
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, duration: str=None, *, prize: str=None):
+        """**Must have the "Manage Server" permission**
+        Start a giveaway/raffle!
+        Format like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> <duration> <prize name>`
+        For the blacklist, mention any users who aren't allowed to compete in this giveaway
+        If you don't mention a channel, I'll just use the channel the command was performed in
+        Note: The duration should look something like this: `2w` OR `30d12h30m` OR `1d30m`
+        """
+        parsed_duration = pytimeparse.parse(duration)
+        if prize is None or parsed_duration is None:
+            raise commands.BadArgument
+        if parsed_duration < 900 or parsed_duration > 2592000:
+            await ctx.send("The duration of the giveaway must be longer than 15 minutes and no "
+                           "more than 30 days", delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        if channel is None:
+            channel = ctx.channel
+        end_time = datetime.datetime.utcnow().timestamp() + parsed_duration
+        description = (f"__Prize__: **{prize}**\n__Duration__: **{duration}**\nReact with "
+                       "\U0001f3ab to enter the giveaway!\nJust remove your reaction to exit the "
+                       f"giveaway.\n\nAs the creator of this raffle, {ctx.author.mention} can "
+                       "cancel it by reacting with \U0001f6d1\nNote: Don't delete this message, "
+                       "or the giveaway won't work!")
+        if blacklist:
+            description += ("\n\nIf you're on the blacklist, you can react all you want, but you "
+                            "won't be part of the drawing pool when a winner is selected")
+        embed = discord.Embed(description=description, color=find_color(ctx),
+                              timestamp=datetime.datetime.fromtimestamp(end_time))
+        embed.set_author(
+            name=f"{ctx.author.display_name} started a giveaway!", icon_url=ctx.author.avatar_url)
+        if blacklist:
+            embed.add_field(name="Blacklist", value=", ".join(m.mention for m in blacklist))
+        embed.set_footer(text="This giveaway will end:")
+        msg = await channel.send(embed=embed)
+        await msg.add_reaction("\U0001f3ab")
+        await msg.add_reaction("\U0001f6d1")
+
+        new_giveaway = {
+            "msg": str(msg.id),
+            "channel": str(channel.id),
+            "author": str(ctx.author.id),
+            "end_time": str(end_time),
+            "blacklist": [str(m.id) for m in blacklist],
+            "prize": prize
+        }
+        giveaways = get_data("giveaways")
+        giveaways.append(new_giveaway)
+        dump_data(giveaways, "giveaways")
+
     @commands.command(brief="Member not found. Try again")
     @commands.guild_only()
     @commands.bot_has_permissions(kick_members=True)
@@ -401,6 +528,53 @@ class Moderation:
                 "I can't purge more than 2000 messages at a time. Put a smaller number",
                 delete_after=6.0)
             return await delete_message(ctx, 6)
+
+        def check_reaction(message, author):
+            def check(reaction, user):
+                if reaction.message.id != message.id or user != author:
+                    return False
+                elif reaction.emoji == "\U00002705":
+                    return True
+                elif reaction.emoji == "\U0000274c":
+                    return True
+                return False
+            return check
+
+        if limit >= 20:
+            if ctx.command.name == "all":
+                confirm = await ctx.send("React with \U00002705 to confirm that you want to "
+                                         "purge 20+ messages in this channel. React with "
+                                         "\U0000274c to cancel")
+            else:
+                confirm = await ctx.send("React with \U00002705 to confirm that you want to "
+                                         "purge messages in this channel. React with \U0000274c "
+                                         "to cancel")
+            await confirm.add_reaction("\U00002705")
+            await confirm.add_reaction("\U0000274c")
+
+            try:
+                react, user = await self.bot.wait_for(
+                    "reaction_add", timeout=15, check=check_reaction(confirm, ctx.author))
+            except asyncio.TimeoutError:
+                await ctx.send(
+                    "You took too long to react so the operation was cancelled", delete_after=6.0)
+                await delete_message(ctx, 6)
+                return await confirm.delete()
+
+            if react.emoji == "\U0000274c":
+                await ctx.send("Ok, the operation has been cancelled", delete_after=5.0)
+                await delete_message(ctx, 5)
+                return await confirm.delete()
+
+            await confirm.delete()
+
+            countdown = await ctx.send("Purge starting in **3**")
+            await asyncio.sleep(1)
+            await countdown.edit(content="Purge starting in **2**")
+            await asyncio.sleep(1)
+            await countdown.edit(content="Purge starting in **1**")
+            await asyncio.sleep(1)
+            await countdown.delete()
 
         if before is None:
             before = ctx.message
