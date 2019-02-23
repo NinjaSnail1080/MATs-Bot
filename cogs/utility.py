@@ -394,12 +394,12 @@ class Utility:
                     rhyming_words.pop("all", None)
 
                 for words in rhyming_words.values():
-                    random.shuffle(words)
                     for rhyme in words:
                         if rhyme == word.lower():
                             words.remove(rhyme)
-                    while sum(len(i) for i in words) > 450:
+                    while sum(len(i + "`, `") for i in words) > 1022:
                         words.pop(-1)
+                        random.shuffle(words)
             except:
                 if resp["message"] == "word not found":
                     await ctx.send("Word not found. Try again", delete_after=5.0)
