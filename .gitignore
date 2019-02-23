@@ -135,9 +135,13 @@ idna_ssl.py
 /pycparser
 /pyshorteners
 /pytesseract
+/pytimeparse
 /qrcode
 /requests
 six.py
+/soupsieve
+typing_extensions.py
+typing.py
 /urllib3
 /validators
 /websockets
