@@ -87,8 +87,15 @@ class Fun:
             await ctx.send(
                 "Hmm, something went wrong and I wasn't able to get an image. Try again later",
                 delete_after=5.0)
-            return await delete_message(ctx, 5)
-        os.remove("aiface.png")
+            await delete_message(ctx, 5)
+        if os.path.isfile("aiface.png"):
+            os.remove("aiface.png")
+
+    @commands.command(hidden=True)
+    async def akinator(self, ctx):
+        """Start an akinator game!"""
+        await ctx.send("WIP", delete_after=5.0)
+        return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
@@ -561,7 +568,9 @@ class Fun:
         """Posts a random xkcd comic"""
         try:
             with ctx.channel.typing():
-                async with self.session.get("https://c.xkcd.com/random/comic/") as w:
+                # async with self.session.get("https://c.xkcd.com/random/comic/") as w:
+                #! Not working at the moment, so here's a temporary solution:
+                async with self.session.get(f"https://xkcd.com/{random.randint(1, 2118)}/") as w:
                     soup = BeautifulSoup(await w.text(), "lxml")
 
                     url = str(w.url)
