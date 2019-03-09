@@ -15,14 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-__version__ = 0.8
 
 from discord.ext import commands
-from bs4 import BeautifulSoup
+from utils import get_data, dump_data, CommandDisabled
 import discord
-import aiohttp
-import psutil
-import rapidjson as json
 
 import collections
 import datetime
@@ -31,7 +27,6 @@ import asyncio
 import random
 import os
 import re
-import sys
 
 import config
 #* This module contains a variable called "TOKEN", which is assigned to a string that contains
@@ -46,10 +41,6 @@ games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for 
          "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma"]
 
 if __name__ == "__main__":
-    import urllib3
-
-    urllib3.disable_warnings()
-
     #* Load cogs
     initial_extensions = []
     for f in os.listdir("cogs"):
@@ -59,246 +50,11 @@ if __name__ == "__main__":
     # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
     #* Set up logger
-    logger = logging.getLogger()
+    logger = logging.getLogger("discord")
     logger.setLevel(logging.DEBUG)
     handler = logging.FileHandler(filename="mat.log", encoding="utf-8", mode="w")
     handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
     logger.addHandler(handler)
-
-
-def get_data(to_return=None):
-    """Gets data from all of the .data.json file"""
-
-    if os.path.exists("bot.data.json"):
-        with open("bot.data.json", "r") as f:
-            botdata = dict(json.load(f))
-    else:
-        with open("bot.data.json", "w") as f:
-            botdata = {"messages_read": {}, "commands_used": {}}
-            json.dump(botdata, f)
-
-    if os.path.exists("server.data.json"):
-        with open("server.data.json", "r") as f:
-            serverdata = dict(json.load(f))
-    else:
-        with open("server.data.json", "w") as f:
-            serverdata = {}
-            json.dump(serverdata, f)
-
-    if os.path.exists("user.data.json"):
-        with open("user.data.json", "r") as f:
-            userdata = dict(json.load(f))
-    else:
-        with open("user.data.json", "w") as f:
-            userdata = {}
-            json.dump(userdata, f)
-
-    if os.path.exists("reminders.data.json"):
-        with open("reminders.data.json", "r") as f:
-            reminders = list(json.load(f))
-    else:
-        with open("reminders.data.json", "w") as f:
-            reminders = []
-            json.dump(reminders, f)
-
-    if os.path.exists("giveaways.data.json"):
-        with open("giveaways.data.json", "r") as f:
-            giveaways = list(json.load(f))
-    else:
-        with open("giveaways.data.json", "w") as f:
-            giveaways = []
-            json.dump(giveaways, f)
-
-    if to_return is None:
-        return
-    elif to_return == "bot":
-        return botdata
-    elif to_return == "server":
-        return serverdata
-    elif to_return == "user":
-        return userdata
-    elif to_return == "reminders":
-        return reminders
-    elif to_return == "giveaways":
-        return giveaways
-    else:
-        raise TypeError("\"to_return\" param must be either \"bot\", \"server\", \"user\", "
-                        "\"reminders\", or \"giveaways\"")
-
-
-def dump_data(to_dump, file):
-    """Dumps data to the .data.json files"""
-
-    if file == "bot":
-        with open("bot.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "server":
-        with open("server.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "user":
-        with open("user.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "reminders":
-        with open("reminders.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "giveaways":
-        with open("giveaways.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-    else:
-        raise TypeError("\"file\" param must be either \"bot\", \"server\", \"user\", "
-                        "\"reminders\", or \"giveaways\"")
-
-
-def restart_bot():
-    """Restarts the current program after cleaning up file objects and descriptors"""
-
-    try:
-        p = psutil.Process(os.getpid())
-        for handler in p.get_open_files() + p.connections():
-            os.close(handler.fd)
-    except Exception as exc:
-        logging.error(exc)
-
-    python = sys.executable
-    os.execl(python, python, *sys.argv)
-
-
-async def delete_message(ctx, time):
-    """Deletes a command's message if the command was formatted incorectly"""
-
-    await asyncio.sleep(time)
-    try:
-        await ctx.message.delete()
-    except:
-        pass
-    return
-
-
-async def get_reddit(ctx, loop, level: int, include_timestamp: bool, error_msg: str, *subs):
-    """Get a random post from a subreddit"""
-
-    try:
-        session = aiohttp.ClientSession(loop=loop)
-        async with session.get(
-            f"https://www.reddit.com/r/{random.choice(subs)}/hot.json?sort=hot",
-            headers=config.R_USER_AGENT) as w:
-
-            resp = await w.json()
-
-        is_nsfw = False
-        for p in resp["data"]["children"].copy():
-            if p["data"]["stickied"] or p["data"]["pinned"]:
-                resp["data"]["children"].remove(p)
-            elif p["data"]["over_18"] and not ctx.channel.is_nsfw():
-                resp["data"]["children"].remove(p)
-                is_nsfw = True
-
-        data = random.choice(resp["data"]["children"])["data"]
-
-        data["title"] = BeautifulSoup(data["title"], "lxml").get_text()
-        data["selftext"] = BeautifulSoup(data["selftext"], "lxml").get_text()
-
-        zwspace = re.compile("&#x200b;", re.IGNORECASE)
-        data["title"] = zwspace.sub("\u200B", data["title"])
-        data["selftext"] = zwspace.sub("\u200B", data["selftext"])
-
-        if len(data["title"]) > 256:
-            data["title"] = data["title"][:253] + "..."
-
-        if level == 1:
-            if len(data["selftext"]) > 2048:
-                data["selftext"] = ("*Sorry, but this content is too long for me to send in "
-                                    "a single message. Click on the title above to go "
-                                    "straight to the post*")
-            if include_timestamp:
-                embed = discord.Embed(
-                    title=data["title"], description=data["selftext"],
-                    timestamp=datetime.datetime.utcfromtimestamp(data["created_utc"]),
-                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
-            else:
-                embed = discord.Embed(
-                    title=data["title"], description=data["selftext"],
-                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
-
-            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "bmp", "webp")):
-                embed.set_image(url=data["url"])
-            else:
-                if data["thumbnail"] != "self":
-                    embed.set_thumbnail(url=data["thumbnail"])
-            if ctx.command.cog_name == "NSFW":
-                embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
-            else:
-                embed.set_footer(text=f"👍 - {data['score']}")
-
-            return await ctx.send(embed=embed)
-
-        elif level == 2:
-            description = (f"By [u/{data['author']}](http://www.reddit.com/user"
-                           f"/{data['author']}/)\n\n{data['selftext']}")
-            if len(data["selftext"]) > 2048 - len(description):
-                data["selftext"] = ("*Sorry, but this content is too long for me to send in "
-                                    "a single message. Click on the title above to go "
-                                    "straight to the post*")
-            if include_timestamp:
-                embed = discord.Embed(
-                    title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
-                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
-                    timestamp=datetime.datetime.utcfromtimestamp(data["created_utc"]),
-                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
-            else:
-                embed = discord.Embed(
-                    title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
-                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
-                    url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
-
-            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "bmp", "webp")):
-                embed.set_image(url=data["url"])
-            else:
-                if data["thumbnail"] != "self":
-                    embed.set_thumbnail(url=data["thumbnail"])
-
-            if ctx.command.name == "reddit":
-                embed.set_author(name=f"Random post from {data['subreddit_name_prefixed']}",
-                                 url=f"https://www.reddit.com/{data['subreddit_name_prefixed']}")
-            else:
-                embed.set_author(name=data["subreddit_name_prefixed"],
-                                 url=f"https://www.reddit.com/{data['subreddit_name_prefixed']}")
-            embed.set_footer(
-                text=f"👍 - {data['score']}\u3000💬 - {data['num_comments']}")
-
-            return await ctx.send(embed=embed)
-
-    except Exception as e:
-        if isinstance(e, KeyError) or isinstance(e, IndexError):
-            if not is_nsfw:
-                await ctx.send("This subreddit doesn't exist. Try again", delete_after=5.0)
-                return await delete_message(ctx, 5)
-            else:
-                await ctx.send("This subreddit is NSFW, which means you must be in an "
-                               "NSFW-marked channel in order to get a post from it",
-                               delete_after=7.0)
-                return await delete_message(ctx, 7)
-        else:
-            await ctx.send(f"Huh, something went wrong and I wasn't able to get {error_msg}. "
-                           "Try again", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-
-def find_color(ctx):
-    """Find the bot's rendered color. Or if it's a DM, return Discord's "blurple" color"""
-
-    try:
-        if ctx.guild.me.color == discord.Color.default():
-            color = discord.Color.blurple()
-        else:
-            color = ctx.guild.me.color
-    except AttributeError:  #* If it's a DM channel
-        color = discord.Color.blurple()
-    return color
 
 
 async def get_prefix(bot, message):
@@ -322,19 +78,23 @@ class MAT(commands.Bot):
 
         get_data()
 
-        for extention in initial_extensions:
-            self.load_extension(extention)
+        for extension in initial_extensions:
+            self.load_extension(extension)
 
         self.commands_used = collections.Counter(get_data("bot")["commands_used"])
         self.messages_read = collections.Counter(get_data("bot")["messages_read"])
 
         def check_disabled(ctx):
-            if "disabled" in get_data("server")[str(ctx.guild.id)]:
-                return ctx.command.name not in get_data("server")[str(ctx.guild.id)]["disabled"]
-            else:
-                return True
+            if ctx.channel.guild is not None:
+                if "disabled" in get_data("server")[str(ctx.guild.id)]:
+                    if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
+                        raise CommandDisabled
+            return True
 
         self.add_check(check_disabled)
+
+    async def on_connect(self):
+        print("\nConnected to Discord")
 
     async def on_ready(self):
         serverdata = get_data("server")
@@ -345,7 +105,7 @@ class MAT(commands.Bot):
 
         self.loop.create_task(self.switch_games())
 
-        print("\nLogged in as")
+        print("\nLogged in as:")
         print(bot.user)
         print(bot.user.id)
         print("-----------------")
@@ -470,7 +230,7 @@ class MAT(commands.Bot):
             channel = self.get_channel(int(
                 serverdata[str(member.guild.id)]["goodbye"]["channel"]))
             await channel.send(
-                serverdata[str(member.guild.id)]["goodbye"]["message"].format(member.name))
+                serverdata[str(member.guild.id)]["goodbye"]["message"].format(member.mention))
 
     async def on_command_completion(self, ctx):
         if not ctx.command.hidden:
@@ -523,7 +283,19 @@ class MAT(commands.Bot):
             await asyncio.sleep(random.randint(5, 10))
 
     def run(self, token):
-        super().run(token)
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(self.start(token))
+        except KeyboardInterrupt:
+            print("\n\nClosing...\n")
+            for task in asyncio.Task.all_tasks(loop):
+                task.cancel()
+                print("Cancelled task")
+            print("\nLogging out...")
+            loop.run_until_complete(self.logout())
+        finally:
+            loop.close()
+            print("\nClosed\n")
 
 
 if __name__ == "__main__":
