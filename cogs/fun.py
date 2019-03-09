@@ -16,15 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, delete_message, get_reddit
-except ImportError:
-    from mat import find_color, delete_message, get_reddit
+from utils import find_color, delete_message, get_reddit
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
 from PIL import Image
 from zalgo_text.zalgo import zalgo
+from akinator.async_aki import Akinator
+import akinator as akinator_lib
 import discord
 import aiohttp
 import validators
@@ -46,12 +45,11 @@ import config
 #TODO: Add some more commands and make `thanos` unhidden
 
 
-class Fun:
+class Fun(commands.Cog):
     """Fun stuff!"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
     async def send_nekobot_image(self, ctx, resp):
         if not resp["success"]:
@@ -73,8 +71,9 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with self.session.get("https://thispersondoesnotexist.com/image") as w:
-                    resp = await w.read()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("https://thispersondoesnotexist.com/image") as w:
+                        resp = await w.read()
                 await self.bot.loop.run_in_executor(None, functools.partial(save_image, resp))
 
                 embed = discord.Embed(description="Courtesy of [thispersondoesnotexist.com]"
@@ -91,11 +90,249 @@ class Fun:
         if os.path.isfile("aiface.png"):
             os.remove("aiface.png")
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def akinator(self, ctx):
         """Start an akinator game!"""
-        await ctx.send("WIP", delete_after=5.0)
-        return await delete_message(ctx, 5)
+
+        aki_up = ["https://i.imgur.com/ACUMdmP.png", "https://i.imgur.com/MV0i5Gn.png",
+                  "https://i.imgur.com/RqXE9qK.png", "https://i.imgur.com/Cl9ZRlQ.png"]
+        aki_down = ["https://i.imgur.com/9Ye1mO6.png", "https://i.imgur.com/ViH8vlJ.png",
+                    "https://i.imgur.com/AKyk283.png", "https://i.imgur.com/Dt75nWE.png",
+                    "https://i.imgur.com/myNRsFe.png", "https://i.imgur.com/MLhxgPk.png"]
+
+        yes = "<:Yes:552243795358646282>"
+        no = "<:No:552244932669341696>"
+        idk = "<:IDontKnow:552251490304131102>"
+        p = "<:Probably:552243821958922298>"
+        pn = "<:ProbablyNot:552248243145277462>"
+        back = "<:BackToPreviousQuestion:552254952744157184>"
+        cancel = "<:CancelGame:552255531499126784>"
+
+        def check_aki_reactions(message, author, in_game=False):
+            def check(reaction, user):
+                if reaction.message.id != message.id or user != author:
+                    return False
+                elif reaction.emoji == "\U00002611":
+                    return True
+                elif reaction.emoji == "\U0000274c":
+                    return True
+                return False
+
+            def check_game(reaction, user):
+                if reaction.message.id != message.id or user != author:
+                    return False
+                elif str(reaction.emoji) in [yes, no, idk, p, pn, back, cancel]:
+                    return True
+                return False
+
+            if in_game:
+                return check_game
+            else:
+                return check
+
+        def add_to_embed(embed, include_author=True):
+            if include_author:
+                embed.set_author(name=f"{ctx.author.name} is playing", icon_url=ctx.author.avatar_url)
+            embed.set_footer(
+                text="Akinator.com\u2000|\u2000Brought to you by MAT's Bot",
+                icon_url="https://is4-ssl.mzstatic.com/image/thumb/Purple128/v4/f5/11/6d/f5116d77"
+                "-c0cf-3a38-f2fa-e2fa1624d594/source/512x512bb.jpg")
+
+        async def play_akinator(game, player):
+            await game.edit(content="***Loading...***")
+            aki = Akinator()
+            await aki.start_game()
+            target_progress = 90
+            previous_progress = 0
+            no_question = False
+
+            while True:
+                await game.clear_reactions()
+                await game.add_reaction(yes[1:-1])
+                await game.add_reaction(no[1:-1])
+                await game.add_reaction(idk[1:-1])
+                await game.add_reaction(p[1:-1])
+                await game.add_reaction(pn[1:-1])
+                await game.add_reaction(back[1:-1])
+                await game.add_reaction(cancel[1:-1])
+
+                while aki.progression <= target_progress:
+                    embed = discord.Embed(
+                        title=f"{aki.step + 1}. {aki.question}",
+                        description="Answer with one of the emojis below. Mouseover them to see "
+                        "what each one means", color=find_color(ctx))
+                    add_to_embed(embed)
+                    if aki.step == 0:
+                        embed.set_thumbnail(url="https://i.imgur.com/ACUMdmP.png")
+                    else:
+                        if aki.progression > previous_progress:
+                            embed.set_thumbnail(url=random.choice(aki_up))
+                        else:
+                            embed.set_thumbnail(url=random.choice(aki_down))
+
+                    await game.edit(content=None, embed=embed)
+                    try:
+                        react, user = await self.bot.wait_for(
+                            "reaction_add", timeout=300,
+                            check=check_aki_reactions(game, player, True))
+                    except asyncio.TimeoutError:
+                        await ctx.send(
+                            f"{player.mention} took too long to answer and their "
+                            "Akinator game timed out. Next time, don't wait longer than 5 "
+                            "minutes to answer each question")
+                        await game.delete()
+                        return await ctx.message.delete()
+
+                    if str(react.emoji) == cancel:
+                        await ctx.send(
+                            f"Ok, {ctx.author.mention}'s Akinator game has been cancelled",
+                            delete_after=5.0)
+                        await delete_message(ctx, 5)
+                        return await game.delete()
+
+                    previous_progress = aki.progression
+                    await game.edit(content="***Loading...***")
+                    try:
+                        if str(react.emoji) == yes:
+                            await aki.answer(0)
+                        elif str(react.emoji) == no:
+                            await aki.answer(1)
+                        elif str(react.emoji) == idk:
+                            await aki.answer(2)
+                        elif str(react.emoji) == p:
+                            await aki.answer(3)
+                        elif str(react.emoji) == pn:
+                            await aki.answer(4)
+                        elif str(react.emoji) == back:
+                            try:
+                                await aki.back()
+                            except akinator_lib.CantGoBackAnyFurther:
+                                pass
+                    except akinator_lib.AkiNoQuestions:
+                        no_question = True
+                        break
+                    await game.remove_reaction(react, user)
+
+                if no_question:
+                    break
+                await aki.win()
+                embed = discord.Embed(title="I think of...",
+                                      description=f"**{aki.name}** ({aki.description})\n\n"
+                                      "Was I correct?",
+                                      color=find_color(ctx))
+                embed.set_image(url=aki.picture)
+                embed.set_thumbnail(url=random.choice(aki_up))
+                add_to_embed(embed)
+
+                await game.clear_reactions()
+                await game.edit(content=None, embed=embed)
+                await game_msg.add_reaction("\U00002611")
+                await game_msg.add_reaction("\U0000274c")
+
+                try:
+                    react, user = await self.bot.wait_for(
+                        "reaction_add", timeout=300, check=check_aki_reactions(game, player))
+                except asyncio.TimeoutError:
+                    await ctx.send(
+                        f"{player.mention} took way too long to react after Akinator guessed who "
+                        "their character was in the game they started, so the session timed out. "
+                        "Sorry, shouldn't have waited so long. There's a time limit of 5 minutes")
+                    await game.delete()
+                    return ctx.message.delete()
+
+                if react.emoji == "\U00002611":
+                    embed = discord.Embed(
+                        title="Great, guessed right one more time!",
+                        description=f"**{aki.name}** ({aki.description})",
+                        color=find_color(ctx))
+                    embed.set_image(url="https://i.imgur.com/cb6SLnJ.png")
+                    add_to_embed(embed, False)
+                    embed.set_author(
+                        name=f"{player.name}'s game has ended", icon_url=player.avatar_url)
+
+                    await game.clear_reactions()
+                    return await game.edit(content=None, embed=embed)
+
+                #* If the player selected the "no" emoji when Aki guessed their character
+                if aki.progression > 99:
+                    break
+                embed = discord.Embed(title="Would you like to continue?", color=find_color(ctx))
+                add_to_embed(embed)
+
+                await game.remove_reaction(react, user)
+                await game.edit(content=None, embed=embed)
+
+                try:
+                    react, user = await self.bot.wait_for(
+                        "reaction_add", timeout=300, check=check_aki_reactions(game, player))
+                except asyncio.TimeoutError:
+                    await ctx.send(
+                        f"{player.mention} took way too long to react after Akinator guessed who "
+                        "their character was in the game they started, so the session timed out. "
+                        "Sorry, shouldn't have waited so long. There's a time limit of 5 minutes")
+                    await game.delete()
+                    return ctx.message.delete()
+
+                if react.emoji == "\U00002611":
+                    target_progress = 99
+                    await game.edit(content="***Loading...***")
+                else:
+                    break
+
+            #* If Aki loses
+            if no_question:
+                desc = "I couldn't guess your character"
+            else:
+                desc = ""
+            embed = discord.Embed(
+                title="Bravo, you have defeated me!", description=desc, color=find_color(ctx))
+            embed.set_image(url="https://i.imgur.com/Msmzzii.png")
+            add_to_embed(embed, False)
+            embed.set_author(
+                name=f"{player.name}'s game has ended", icon_url=player.avatar_url)
+
+            await game.clear_reactions()
+            return await game.edit(content=None, embed=embed)
+
+        embed = discord.Embed(
+            title="Hello, I am Akinator",
+            description="Think about a real or fictional character. I will ask you questions and "
+            "try to guess who it is.\n\nPress \U00002611 to play or \U0000274c to cancel",
+            url="https://www.akinator.com", color=find_color(ctx))
+        embed.set_image(
+            url="https://en.akinator.com/bundles/elokencesite/images/akinator.png?v95")
+        add_to_embed(embed)
+
+        game_msg = await ctx.send(embed=embed)
+        await game_msg.add_reaction("\U00002611")
+        await game_msg.add_reaction("\U0000274c")
+
+        try:
+            react, user = await self.bot.wait_for(
+                "reaction_add", timeout=60, check=check_aki_reactions(game_msg, ctx.author))
+        except asyncio.TimeoutError:
+            await ctx.send(f"{ctx.author.mention} took too long to react to the Akinator game "
+                           "they started, so I had to cancel it", delete_after=6.0)
+            await delete_message(ctx, 6)
+            return await game_msg.delete()
+
+        if react.emoji == "\U0000274c":
+            await ctx.send(
+                f"Ok, {ctx.author.mention}'s game has been cancelled", delete_after=5.0)
+            await delete_message(ctx, 5)
+            return await game_msg.delete()
+
+        try:
+            return await play_akinator(game_msg, ctx.author)
+        except Exception as e:
+            await game_msg.delete()
+            await ctx.message.delete()
+            return await ctx.send(
+                f"```{e}```{ctx.author.mention}, due to an unexpected error, the Akinator game "
+                "you started was cancelled. This is most likely an isolated incident. Try again "
+                "later, and if the problem persists, please notify my creator, "
+                "NinjaSnail1080#8581. You can reach him at my support server: "
+                "https://discord.gg/P4Fp3jA")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
@@ -135,11 +372,12 @@ class Fun:
         if user is None:
             user = ctx.author
         img = user.avatar_url_as(format="png")
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
-            f"&username={user.display_name}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://nekobot.xyz/api/imagegen?type=captcha&url={img}"
+                f"&username={user.display_name}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> changemymind <text>`")
@@ -148,10 +386,11 @@ class Fun:
         Format like this: `<prefix> changemymind <text>`
         """
         await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://nekobot.xyz/api/imagegen?type=changemymind&text={text}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> clyde <text>`")
@@ -160,10 +399,11 @@ class Fun:
         Format like this: `<prefix> clyde <text>`
         """
         await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://nekobot.xyz/api/imagegen?type=clyde&text={text}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def coinflip(self, ctx):
@@ -182,7 +422,7 @@ class Fun:
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW copypastas
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, self.bot.loop, 1, False, "a copypasta", "copypasta")
+        return await get_reddit(ctx, 1, False, "a copypasta", "copypasta")
 
     @commands.command(aliases=["zalgo", "zalgofy"],
                       brief="You need to include some text for me to creepify")
@@ -205,21 +445,22 @@ class Fun:
 
         try:
             with ctx.channel.typing():
-                async with self.session.get("http://explosm.net/comics/random") as w:
-                    soup = BeautifulSoup(await w.text(), "lxml")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://explosm.net/comics/random") as w:
+                        soup = BeautifulSoup(await w.text(), "lxml")
+                        url = str(w.url)
 
-                    url = str(w.url)
-                    number = url.replace("http://explosm.net/comics/", "")[:-1]
-                    image = "http:" + soup.find("img", id="main-comic")["src"]
-                    info = soup.find("div", id="comic-author").get_text()
+                number = url.replace("http://explosm.net/comics/", "")[:-1]
+                image = "http:" + soup.find("img", id="main-comic")["src"]
+                info = soup.find("div", id="comic-author").get_text()
 
-                    embed = discord.Embed(
-                        title=f"Cyanide and Happiness #{number}", url=url, color=find_color(ctx))
-                    embed.set_author(name="Explosm", url="http://explosm.net/")
-                    embed.set_image(url=image)
-                    embed.set_footer(text=info)
+                embed = discord.Embed(
+                    title=f"Cyanide and Happiness #{number}", url=url, color=find_color(ctx))
+                embed.set_author(name="Explosm", url="http://explosm.net/")
+                embed.set_image(url=image)
+                embed.set_footer(text=info)
 
-                    await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
         except:
             await ctx.send("Huh, something went wrong. It looks like servers are down so I wasn't"
                            " able to get a comic. Try again in a little bit.", delete_after=6.0)
@@ -307,13 +548,14 @@ class Fun:
             return await delete_message(ctx, 15)
 
         await ctx.channel.trigger_typing()
-        async with self.session.get("https://nekobot.xyz/api/imagegen?type=ddlc"
-                                    f"&character={character}"
-                                    f"&background={background}"
-                                    f"&body={pose}"
-                                    f"&face={face}"
-                                    f"&text={text}") as w:
-            resp = await w.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://nekobot.xyz/api/imagegen?type=ddlc"
+                                   f"&character={character}"
+                                   f"&background={background}"
+                                   f"&body={pose}"
+                                   f"&face={face}"
+                                   f"&text={text}") as w:
+                resp = await w.json()
         await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="The number of sides must be an **integer above 2**. Try again.")
@@ -347,7 +589,7 @@ class Fun:
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW jokes
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, self.bot.loop, 1, False, "a joke", "jokes")
+        return await get_reddit(ctx, 1, False, "a joke", "jokes")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`")
@@ -359,11 +601,12 @@ class Fun:
         if user is None:
             user = ctx.author
         pfp = user.avatar_url_as(format="png")
-        async with self.session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
-                                    f"&image={pfp}&text={comment}"
-                                    f"&username={user.display_name}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://nekobot.xyz/api/imagegen?type=phcomment"
+                                f"&image={pfp}&text={comment}"
+                                f"&username={user.display_name}") as w:
+                resp = await w.json()
+        await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def lenny(self, ctx):
@@ -391,16 +634,14 @@ class Fun:
         """Sends posts that are u irl"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(
-            ctx, self.bot.loop, 1, False, "a meme", "me_irl", "me_irl", "meirl")
+        return await get_reddit(ctx, 1, False, "a meme", "me_irl", "meirl")
 
     @commands.command()
     async def meme(self, ctx):
         """Posts a dank meme"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(
-            ctx, self.bot.loop, 1, False, "a meme", "memes", "dankmemes", "dankmemes")
+        return await get_reddit(ctx, 1, False, "a meme", "dankmemes")
 
     @commands.command(aliases=["weirdspeak"])
     async def mock(self, ctx, *, stuff: str=None):
@@ -437,7 +678,7 @@ class Fun:
         Notes: Capitalization doesn't matter when typing the name of the sub
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, self.bot.loop, 2, True, "a post from this sub", sub)
+        return await get_reddit(ctx, 2, True, "a post from this sub", sub)
 
     @commands.command()
     async def reverse(self, ctx, *, stuff: str=None):
@@ -474,15 +715,14 @@ class Fun:
         """Posts a random showerthought"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, self.bot.loop, 1, False, "a showerthought", "showerthoughts")
+        return await get_reddit(ctx, 1, False, "a showerthought", "showerthoughts")
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def thanos(self, ctx):
         """Thanos did nothing wrong"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(
-            ctx, self.bot.loop, 1, False, "a thanos meme", "thanosdidnothingwrong")
+        return await get_reddit(ctx, 1, False, "a thanos meme", "thanosdidnothingwrong")
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to "
                       "include some text for me to thiccify")
@@ -517,11 +757,12 @@ class Fun:
         Format like this: `<prefix> trap <@mention user>`
         """
         await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=trap&name={member.display_name}"
-            f"&author={ctx.author.display_name}&image={member.avatar_url_as(format='png')}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://nekobot.xyz/api/imagegen?type=trap&name={member.display_name}&author="
+                f"{ctx.author.display_name}&image={member.avatar_url_as(format='png')}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
                       "some text for the tweet `<prefix> trumptweet <tweet>`")
@@ -530,10 +771,11 @@ class Fun:
         Format like this: `<prefix> trumptweet <tweet>`
         """
         await ctx.channel.trigger_typing()
-        async with self.session.get(
-            f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://nekobot.xyz/api/imagegen?type=trumptweet&text={tweet}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tweet <twitter usernamer> <tweet>`")
@@ -542,10 +784,11 @@ class Fun:
         Format like this: `<prefix> tweet <twitter username> <tweet>`
         """
         await ctx.channel.trigger_typing()
-        async with self.session.get("https://nekobot.xyz/api/imagegen?type=tweet"
-                                    f"&username={user}&text={tweet}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://nekobot.xyz/api/imagegen?type=tweet"
+                                   f"&username={user}&text={tweet}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`")
@@ -558,34 +801,34 @@ class Fun:
             user2 = ctx.author
         img1 = user1.avatar_url_as(format="png")
         img2 = user2.avatar_url_as(format="png")
-        async with self.session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
-                                    f"&user1={img1}&user2={img2}") as w:
-            resp = await w.json()
-            await self.send_nekobot_image(ctx, resp)
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://nekobot.xyz/api/imagegen?type=whowouldwin"
+                                f"&user1={img1}&user2={img2}") as w:
+                resp = await w.json()
+                await self.send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""
         try:
             with ctx.channel.typing():
-                # async with self.session.get("https://c.xkcd.com/random/comic/") as w:
-                #! Not working at the moment, so here's a temporary solution:
-                async with self.session.get(f"https://xkcd.com/{random.randint(1, 2118)}/") as w:
-                    soup = BeautifulSoup(await w.text(), "lxml")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("https://c.xkcd.com/random/comic/") as w:
+                        soup = BeautifulSoup(await w.text(), "lxml")
+                        url = str(w.url)
 
-                    url = str(w.url)
-                    number = url.replace("https://xkcd.com/", "")[:-1]
-                    title = soup.find("div", id="ctitle").get_text()
-                    comic = soup.find("div", id="comic")
-                    image = "https:" + comic.img["src"]
-                    caption = comic.img["title"]
+                number = url.replace("https://xkcd.com/", "")[:-1]
+                title = soup.find("div", id="ctitle").get_text()
+                comic = soup.find("div", id="comic")
+                image = "https:" + comic.img["src"]
+                caption = comic.img["title"]
 
-            embed = discord.Embed(
-                title=f"{title} | #{number}", color=find_color(ctx), url=url)
+                embed = discord.Embed(
+                    title=f"{title} | #{number}", color=find_color(ctx), url=url)
 
-            embed.set_author(name="xkcd", url="https://xkcd.com/")
-            embed.set_image(url=image)
-            embed.set_footer(text=caption)
+                embed.set_author(name="xkcd", url="https://xkcd.com/")
+                embed.set_image(url=image)
+                embed.set_footer(text=caption)
 
             await ctx.send(embed=embed)
         except:
