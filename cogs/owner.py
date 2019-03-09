@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import restart_bot, delete_message
-except ImportError:
-    from mat import restart_bot, delete_message
+from utils import restart_bot, delete_message
 
 from discord.ext import commands
 import discord
@@ -29,14 +26,18 @@ import time
 import os
 
 
-class Owner:
+class Owner(commands.Cog, command_attrs={"hidden": True}):
     """Commands that can only be performed by the bot owner"""
 
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
+    async def cog_check(self, ctx):
+        if not await self.bot.is_owner(ctx.author):
+            raise commands.NotOwner
+        return True
+
+    @commands.command()
     async def armageddon(self, ctx, runtime: float=3.0):
         """Unleash hell upon a Discord server"""
 
@@ -75,8 +76,7 @@ class Owner:
 
         self.bot.loop.create_task(the_end(ctx, runtime * 60))
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
+    @commands.command()
     async def quit(self, ctx, *, arg: str=None):
         """Quit the bot's program"""
 
@@ -84,21 +84,31 @@ class Owner:
             await ctx.message.delete()
         except discord.Forbidden:
             pass
-        await self.bot.wait_until_ready()
-
-        if arg is None:
-            pass
-        elif arg == "-r":
-            os.remove("bot.data.json")
-            os.remove("server.data.json")
-            os.remove("user.data.json")
-        else:
-            raise TypeError("\"arg\" param must be either \"-r\" or None")
-
+        for task in asyncio.Task.all_tasks(self.bot.loop):
+            task.cancel()
         await self.bot.logout()
 
-    @commands.command(hidden=True)
-    @commands.is_owner()
+    @commands.command()
+    async def reload(self, ctx, *, cog=None):
+        """Reload one or all of MAT's cogs"""
+
+        try:
+            if cog is None:
+                for extension in self.bot.extensions.keys():
+                    self.bot.unload_extension(extension)
+                    self.bot.load_extension(extension)
+                await ctx.send(f"Reloaded all cogs", delete_after=5.0)
+                return await delete_message(ctx, 5.0)
+            else:
+                self.bot.unload_extension("cogs." + cog.lower())
+                self.bot.load_extension("cogs." + cog.lower())
+                await ctx.send(f"Reloaded `{cog.capitalize()}`", delete_after=5.0)
+                return await delete_message(ctx, 5.0)
+        except:
+            await ctx.send("Invalid cog name", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+    @commands.command()
     async def restart(self, ctx, *, arg: str=None):
         """Restart the bot's program"""
 

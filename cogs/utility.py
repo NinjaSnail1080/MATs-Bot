@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, delete_message, get_reddit, get_data, dump_data
-except ImportError:
-    from mat import find_color, delete_message, get_reddit, get_data, dump_data
+from utils import find_color, delete_message, get_reddit, get_data, dump_data
 
 from discord.ext import commands
 import discord
@@ -40,13 +37,13 @@ import os
 import config
 
 
-class Utility:
+class Utility(commands.Cog):
     """Utility commands"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.session = aiohttp.ClientSession(loop=self.bot.loop)
 
+    @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.check_reminders())
 
@@ -124,32 +121,35 @@ class Utility:
             return sort_defs
 
         await ctx.channel.trigger_typing()
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/definitions",
-                                    headers=config.WORDS_API) as w:
-            resp = await w.json()
-            try:
-                data = parse_definitions(resp)
-            except:
-                if resp["message"] == "word not found":
-                    await ctx.send("Word not found. Try again", delete_after=5.0)
-                    return await delete_message(ctx, 5)
-                else:
-                    return await ctx.send(
-                        f"An unknown error has occured:```{resp['message']}```"
-                        "If this problem persists, get in touch with my owner, NinjaSnail1080. "
-                        "You can reach him at my support server: https://discord.gg/P4Fp3jA")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/definitions",
+                                   headers=config.WORDS_API) as w:
+                resp = await w.json()
+        try:
+            data = parse_definitions(resp)
+        except:
+            if resp["message"] == "word not found":
+                await ctx.send("Word not found. Try again", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            else:
+                return await ctx.send(
+                    f"An unknown error has occured:```{resp['message']}```"
+                    "If this problem persists, get in touch with my owner, NinjaSnail1080. "
+                    "You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/examples",
-                                    headers=config.WORDS_API) as w:
-            resp = await w.json()
-            examples = resp["examples"]
-            random.shuffle(examples)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/examples",
+                                   headers=config.WORDS_API) as w:
+                resp = await w.json()
+                examples = resp["examples"]
+                random.shuffle(examples)
 
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}",
-                                    headers=config.WORDS_API) as w:
-            resp = await w.json()
-            syllables = resp["syllables"]["list"]
-            syllables[0] = syllables[0].capitalize()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}",
+                                   headers=config.WORDS_API) as w:
+                resp = await w.json()
+                syllables = resp["syllables"]["list"]
+                syllables[0] = syllables[0].capitalize()
 
         embed = discord.Embed(
             title=f"Definitions of {word.title()}",
@@ -226,7 +226,7 @@ class Utility:
         """Posts an LPT, or Life Pro Tip (i.e., a life hack that's actually useful)"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, self.bot.loop, 1, False, "an LPT", "LifeProTips")
+        return await get_reddit(ctx, 1, False, "an LPT", "LifeProTips")
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
@@ -273,6 +273,7 @@ class Utility:
             except discord.HTTPException:
                 await ctx.send(
                     content=f"The above content as a QR code:", file=discord.File("qr.png"))
+        if os.path.isfile("aiface.png"):
             os.remove("qr.png")
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
@@ -327,11 +328,14 @@ class Utility:
             await ctx.send("Huh, something went wrong here. Try again", delete_after=5.0)
             return await delete_message(ctx, 5)
 
-    @commands.command(brief="Invalid formatting")
+    @commands.command(brief="Invalid formatting. The command is supposed to be formatted like "
+                      "this: `<prefix> <time till I remind you> <text to remind you of>`\nThe "
+                      "time should look something like these: `3w`, `5d`, `3h30m`, `6d12h45m`, "
+                      "etc. (NO SPACES)")
     async def remindme(self, ctx, time: str, *, remind_of: str=None):
         """Need to be reminded of something in the future? Don't worry, just use this command!
         Format like this: `<prefix> <time till I remind you> <text to remind you of>`
-        The time should look something like this: `2w` OR `7h30m` OR `5d8h45m`
+        The time should look something like this: `2w` OR `7h30m` OR `5d8h45m` (NO SPACES)
         The only characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`
         """
         parsed_time = pytimeparse.parse(time)
@@ -385,30 +389,31 @@ class Utility:
         """Get words that rhyme with another word"""
 
         await ctx.channel.trigger_typing()
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/rhymes",
-                                    headers=config.WORDS_API) as w:
-            try:
-                resp = await w.json()
-                rhyming_words = resp["rhymes"]
-                if len(rhyming_words) > 1:
-                    rhyming_words.pop("all", None)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/rhymes",
+                                   headers=config.WORDS_API) as w:
+                try:
+                    resp = await w.json()
+                    rhyming_words = resp["rhymes"]
+                    if len(rhyming_words) > 1:
+                        rhyming_words.pop("all", None)
 
-                for words in rhyming_words.values():
-                    for rhyme in words:
-                        if rhyme == word.lower():
-                            words.remove(rhyme)
-                    while sum(len(i + "`, `") for i in words) > 1022:
-                        words.pop(-1)
-                        random.shuffle(words)
-            except:
-                if resp["message"] == "word not found":
-                    await ctx.send("Word not found. Try again", delete_after=5.0)
-                    return await delete_message(ctx, 5)
-                else:
-                    return await ctx.send(
-                        f"An unknown error has occured:```{resp['message']}```"
-                        "If this problem persists, get in touch with my owner, NinjaSnail1080. "
-                        "You can reach him at my support server: https://discord.gg/P4Fp3jA")
+                    for words in rhyming_words.values():
+                        for rhyme in words:
+                            if rhyme == word.lower():
+                                words.remove(rhyme)
+                        while sum(len(i + "`, `") for i in words) > 1022:
+                            words.pop(-1)
+                            random.shuffle(words)
+                except:
+                    if resp["message"] == "word not found":
+                        await ctx.send("Word not found. Try again", delete_after=5.0)
+                        return await delete_message(ctx, 5)
+                    else:
+                        return await ctx.send(
+                            f"An unknown error has occured:```{resp['message']}```If this "
+                            "problem persists, get in touch with my owner, NinjaSnail1080. You "
+                            "can reach him at my support server: https://discord.gg/P4Fp3jA")
 
         if not rhyming_words:
             await ctx.send(
@@ -424,7 +429,8 @@ class Utility:
             text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
         for title, words in rhyming_words.items():
-            embed.add_field(name=title.title(), value=f"`{'`, `'.join(words)}`", inline=False)
+            embed.add_field(
+                name=title.title(), value=f"`{'`, `'.join(sorted(words))}`", inline=False)
 
         await ctx.send(embed=embed)
 
@@ -443,16 +449,18 @@ class Utility:
 
         await ctx.channel.trigger_typing()
         error = []
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
-                                    headers=config.WORDS_API) as w:
-            s = await w.json()
-            if "message" in s:
-                error.append(s["message"])
-        async with self.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/antonyms",
-                                    headers=config.WORDS_API) as w:
-            a = await w.json()
-            if "message" in a:
-                error.append(a["message"])
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
+                                   headers=config.WORDS_API) as w:
+                s = await w.json()
+                if "message" in s:
+                    error.append(s["message"])
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/antonyms",
+                                   headers=config.WORDS_API) as w:
+                a = await w.json()
+                if "message" in a:
+                    error.append(a["message"])
 
         try:
             embed = discord.Embed(
@@ -460,15 +468,15 @@ class Utility:
                 description="Powered by [WordsAPI](https://www.wordsapi.com/)",
                 color=find_color(ctx))
 
-            if not s['synonyms']:
-                s['synonyms'].append("[None found]")
-            if not a['antonyms']:
-                a['antonyms'].append("[None found]")
+            if not s["synonyms"]:
+                s["synonyms"].append("[None found]")
+            if not a["antonyms"]:
+                a["antonyms"].append("[None found]")
 
             embed.add_field(
-                name="Synonyms", value=f"`{'`, `'.join(s['synonyms'])}`", inline=False)
+                name="Synonyms", value=f"`{'`, `'.join(sorted(s['synonyms']))}`", inline=False)
             embed.add_field(
-                name="Antonyms", value=f"`{'`, `'.join(a['antonyms'])}`", inline=False)
+                name="Antonyms", value=f"`{'`, `'.join(sorted(a['antonyms']))}`", inline=False)
             embed.set_footer(
                 text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
 
