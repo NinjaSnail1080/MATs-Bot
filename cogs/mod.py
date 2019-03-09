@@ -16,14 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, get_data, dump_data, delete_message
-except ImportError:
-    from mat import find_color, get_data, dump_data, delete_message
+from utils import find_color, get_data, dump_data, delete_message
 
 from discord.ext import commands
 import discord
 import pytimeparse
+import aiohttp
+import rapidjson as json
 
 import re
 import random
@@ -31,6 +30,8 @@ import asyncio
 import collections
 import typing
 import datetime
+import time
+import string
 
 
 async def send_log(guild, send_embed):
@@ -58,21 +59,29 @@ async def send_log(guild, send_embed):
     await logs.send(embed=send_embed)
 
 
-class Moderation:
+class Moderation(commands.Cog):
     """Moderation tools"""
 
     def __init__(self, bot):
         self.bot = bot
 
+    async def cog_check(self, ctx):
+        if ctx.guild is None:
+            raise commands.NoPrivateMessage
+        return True
+
+    @commands.Cog.listener()
     async def on_ready(self):
         self.bot.loop.create_task(self.check_giveaways())
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         #TODO: Eventually this will contain the antispam and antiraid features
         pass
 
+    @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
-        #* This function checks if a giveaway is cancelled by it's creator
+        #* This function checks if a giveaway is cancelled by its creator
         if reaction.emoji == "\U0001f6d1":
             giveaways = get_data("giveaways")
             if (not any(int(g.get("msg", None)) == reaction.message.id for g in giveaways) or
@@ -82,9 +91,11 @@ class Moderation:
                 if g["msg"] == str(reaction.message.id):
                     giveaways.remove(g)
                     dump_data(giveaways, "giveaways")
-                    return await reaction.message.channel.send(
-                        f"{reaction.message.channel.guild.get_member(int(g['author'])).mention}'s"
-                        f" giveaway for the prize, **{g['prize']}** has been cancelled")
+                    embed = discord.Embed(
+                        description=f"{user.mention}'s giveaway for the prize, **{g['prize']}** "
+                        "has been cancelled", color=reaction.message.guild.me.color)
+                    await reaction.message.clear_reactions()
+                    return await reaction.message.edit(embed=embed)
 
     async def check_giveaways(self):
         while True:
@@ -98,6 +109,7 @@ class Moderation:
                         msg = await channel.get_message(int(g["msg"]))
                         author = channel.guild.get_member(int(g["author"]))
                         blacklist = g["blacklist"]
+                        num_winners = int(g["winners"])
                         prize = g["prize"]
                     except:
                         giveaways.remove(g)
@@ -107,30 +119,69 @@ class Moderation:
                     for r in msg.reactions:
                         if r.emoji == "\U0001f3ab":
                             pool = await r.users().flatten()
-                    pool.remove(channel.guild.me)
-                    for i in blacklist:
-                        member = channel.guild.get_member(int(i))
-                        if member in pool:
-                            pool.remove(member)
+                    for m in pool.copy():
+                        if m.bot or str(m.id) in blacklist:
+                            pool.remove(m)
 
                     try:
-                        winner = random.choice(pool)
-                    except IndexError:
-                        await channel.send(f"{author.mention}'s giveaway is over and no one "
-                                           f"entered. This means nobody won **{prize}**")
+                        winners = random.sample(pool, num_winners)
+                    except ValueError:
+                        await channel.send(f"{author.mention}'s giveaway is over and not enough "
+                                           f"people entered. This means nobody won **{prize}**")
+                        embed = discord.Embed(
+                            description=f"Nobody won **{prize}** in this giveaway",
+                            timestamp=datetime.datetime.utcnow(),
+                            color=channel.guild.me.color)
+                        embed.set_author(name=f"{author.name}'s giveaway is over!",
+                                         icon_url=author.avatar_url)
+                        embed.set_footer(text="This giveaway ended:")
+                        await msg.clear_reactions()
+                        await msg.edit(embed=embed)
                         giveaways.remove(g)
                         dump_data(giveaways, "giveaways")
                         continue
-                    embed = discord.Embed(color=channel.guild.me.color)
-                    embed.set_author(
-                        name=f"\U0001f31f \U00002b50 {winner.display_name} won {prize}! "
-                        "\U00002b50 \U0001f31f", icon_url=winner.avatar_url)
+
+                    for w in winners:
+                        await w.send(f"\U0001f3c6 You just won **{prize}** in {author.mention}'s "
+                                     f"giveaway in the server, __{msg.guild.name}__! \U0001f3c6")
+
+                    if len(winners) == 1:
+                        embed = discord.Embed(
+                            description="\U0001f31f \U00002b50 Congratulations to "
+                            f"{winners[0].mention}, who won **{prize}**! \U00002b50 \U0001f31f",
+                            timestamp=datetime.datetime.utcnow(), color=channel.guild.me.color)
+                    else:
+                        embed = discord.Embed(
+                            description=f"\U0001f31f \U00002b50 Congratulations to the "
+                            f"{num_winners} winners of **{prize}**! \U00002b50 \U0001f31f",
+                            timestamp=datetime.datetime.utcnow(),
+                            color=channel.guild.me.color)
+                        embed.add_field(
+                            name="Winners", value="\n".join(w.mention for w in winners))
+                    embed.set_author(name=f"{author.name}'s giveaway is over!",
+                                     icon_url=author.avatar_url)
+                    embed.set_footer(text="This giveaway ended:")
+
+                    await msg.clear_reactions()
+                    await msg.edit(embed=embed)
                     await channel.send(
-                        f"{winner.mention} won {author.mention}'s giveaway! \U0001f3c6",
-                        embed=embed)
+                        f"Congratulations to {','.join(w.mention for w in winners)} for winning "
+                        f"**{prize}** in {author.mention}'s giveaway! \U0001f3c6")
                     giveaways.remove(g)
                     dump_data(giveaways, "giveaways")
             await asyncio.sleep(1)
+
+    def check_reaction(self, message, author):
+        """For the purge command"""
+        def check(reaction, user):
+            if reaction.message.id != message.id or user != author:
+                return False
+            elif reaction.emoji == "\U00002705":
+                return True
+            elif reaction.emoji == "\U0000274c":
+                return True
+            return False
+        return check
 
     @commands.command(brief="User not found. Try again")
     @commands.guild_only()
@@ -138,7 +189,7 @@ class Moderation:
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, users: commands.Greedy[discord.User], *, reason: str=None):
         """**Must have the "Ban Members" permission**
-        Bans a user(s) from the server
+        Bans user(s) from the server
         Format like this: `<prefix> ban <@mention user(s)> <reason for banning>`
         """
         if not users:
@@ -206,6 +257,68 @@ class Moderation:
                             value=f"{', '.join(u.mention for u in cant_ban)}")
             await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(manage_nicknames=True)
+    @commands.has_permissions(manage_guild=True)
+    async def dehoist(self, ctx, include_num: str=None):
+        """**Must have the "Manage Server" permission**
+        Dehoists members who have hoisted themselves (This means they've started their nickname with a special character like !, $, etc. for the sole purpose of appearing at the top of the members list).
+        This command will change their nickname to "Hoisted"
+        By default, this command will dehoist all members who's display names start with a special character. If you want to be extra strict and also dehoist members who's names start with a number, add `-strict` to the end of the command
+        """
+        members_dehoisted, members_failed = [], []
+        start_time = time.time()
+        if include_num == "-strict":
+            bad_characters = list(string.punctuation + string.digits)
+        else:
+            bad_characters = list(string.punctuation)
+
+        msg = await ctx.send("Dehoisting... Please wait...")
+        with ctx.channel.typing():
+            for member in ctx.guild.members:
+                try:
+                    if member.display_name[0] in bad_characters:
+                        await member.edit(
+                            nick="Hoisted", reason=f"Hoisted by {ctx.author.name}")
+                        members_dehoisted.append(
+                            f"{member.name} - User ID: {member.id}")
+                except:
+                    members_failed.append(
+                        f"{member.name} - User ID: {member.id}")
+
+            if len(members_dehoisted) == 0 and len(members_failed) == 0:
+                await asyncio.sleep(1)
+                await msg.delete()
+                await ctx.send("No one in this server needed to be dehoisted", delete_after=6.0)
+                return await delete_message(ctx, 6)
+
+            content = (f"=======================\nMembers Dehoisted ({len(members_dehoisted)}):"
+                       "\n=======================\n\n" + "\n".join(members_dehoisted))
+            if members_failed:
+                content += (f"\n\n\n===================\nMembers Failed ({len(members_failed)}):"
+                            "\n===================\n\n" + "\n".join(members_failed))
+            async with aiohttp.ClientSession() as session:
+                async with session.post("https://hastebin.com/documents",
+                                        data=content.encode("utf-8")) as w:
+                    #* For whatever reason, "await w.json()" doesn't work, so I'm using this instead
+                    post = json.loads(await w.read())
+                    link = f"https://hastebin.com/raw/{post['key']}"
+
+            seconds = round(time.time() - start_time, 1)
+            if seconds.is_integer():
+                seconds = int(seconds)
+            embed = discord.Embed(
+                title=f"{ctx.author.name} performed a dehoist",
+                description=f"**{len(members_dehoisted)}** members dehoisted in "
+                f"__{seconds}__ seconds\n**{len(members_failed)}** members failed to "
+                f"dehoist\n[Detailed list]({link})",
+                color=find_color(ctx))
+
+            await msg.delete()
+            await ctx.send(embed=embed)
+            await send_log(ctx.guild, embed)
+
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> disable <command OR category>`\n\nYou can put a command and "
                       "I'll disable it for this server or you could put in a category (Fun, "
@@ -224,7 +337,7 @@ class Moderation:
 
         elif cmd.lower() == "enable":
             await ctx.send("I don't think I need to explain why it would be a bad idea to "
-                           "disable this command", delete_after=7.0)
+                           "disable that command", delete_after=7.0)
             return await delete_message(ctx, 7)
 
         if "disabled" in get_data("server")[str(ctx.guild.id)]:
@@ -323,25 +436,31 @@ class Moderation:
 
     @commands.command(aliases=["raffle"], brief="Invalid formatting. The command should look "
                       "like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> "
-                      "<duration> <prize name>`\nFor the blacklist, mention any users who aren't "
-                      "allowed to compete in this giveaway\nIf you don't mention a channel, I'll "
-                      "just use the channel the command was performed in\nFor the duration, "
-                      "there's a specific format it should be in. Here are some examples of what "
-                      "it should look like: `1w3d` for 1 week and 3 days, `5h15m` for 5 hours "
-                      "and 15 minutes, `2w` for 2 weeks, `45m` for 45 minutes, etc.")
+                      "(OPTIONAL)<number of winners (defaults to 1)> <duration> <prize name>`\n"
+                      "For the blacklist, mention any users who aren't allowed to compete in "
+                      "this giveaway\nIf you don't mention a channel, I'll just use the channel "
+                      "the command was performed in\nFor the duration, there's a specific format "
+                      "it should be in. Here are some examples of what it should look like: "
+                      "`1w3d` for 1 week and 3 days, `5h15m` for 5 hours and 15 minutes, `2w` "
+                      "for 2 weeks, `45m` for 45 minutes, etc. (NO SPACES)")
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
-    async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, duration: str=None, *, prize: str=None):
+    async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, num_winners: typing.Optional[int]=1, duration: str=None, *, prize: str=None):
         """**Must have the "Manage Server" permission**
         Start a giveaway/raffle!
-        Format like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> <duration> <prize name>`
+        Format like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> (OPTIONAL)<number of winners (defaults to 1)> <duration> <prize name>`
         For the blacklist, mention any users who aren't allowed to compete in this giveaway
         If you don't mention a channel, I'll just use the channel the command was performed in
-        Note: The duration should look something like this: `2w` OR `30d12h30m` OR `1d30m`
+        Note: The duration should look something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES)
         """
         parsed_duration = pytimeparse.parse(duration)
         if prize is None or parsed_duration is None:
             raise commands.BadArgument
+        if num_winners < 1:
+            await ctx.send(
+                f"There must be at least one winner of the giveaway. You put {num_winners}",
+                delete_after=6.0)
+            return await delete_message(ctx, 6)
         if parsed_duration < 900 or parsed_duration > 2592000:
             await ctx.send("The duration of the giveaway must be longer than 15 minutes and no "
                            "more than 30 days", delete_after=7.0)
@@ -364,7 +483,8 @@ class Moderation:
             name=f"{ctx.author.display_name} started a giveaway!", icon_url=ctx.author.avatar_url)
         if blacklist:
             embed.add_field(name="Blacklist", value=", ".join(m.mention for m in blacklist))
-        embed.set_footer(text="This giveaway will end:")
+        embed.set_footer(text=f"{num_winners} winner{'' if num_winners == 1 else 's'} | "
+                         "This giveaway will end:")
         msg = await channel.send(embed=embed)
         await msg.add_reaction("\U0001f3ab")
         await msg.add_reaction("\U0001f6d1")
@@ -375,6 +495,7 @@ class Moderation:
             "author": str(ctx.author.id),
             "end_time": str(end_time),
             "blacklist": [str(m.id) for m in blacklist],
+            "winners": str(num_winners),
             "prize": prize
         }
         giveaways = get_data("giveaways")
@@ -387,7 +508,7 @@ class Moderation:
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason: str=None):
         """**Must have the "Kick Members" permission**
-        Kicks a member(s) from the server
+        Kicks member(s) from the server
         Format like this: `<prefix> kick <@mention member(s)> <reason for kicking>`
         """
         if not members:
@@ -529,17 +650,6 @@ class Moderation:
                 delete_after=6.0)
             return await delete_message(ctx, 6)
 
-        def check_reaction(message, author):
-            def check(reaction, user):
-                if reaction.message.id != message.id or user != author:
-                    return False
-                elif reaction.emoji == "\U00002705":
-                    return True
-                elif reaction.emoji == "\U0000274c":
-                    return True
-                return False
-            return check
-
         if limit >= 20:
             if ctx.command.name == "all":
                 confirm = await ctx.send("React with \U00002705 to confirm that you want to "
@@ -554,7 +664,7 @@ class Moderation:
 
             try:
                 react, user = await self.bot.wait_for(
-                    "reaction_add", timeout=15, check=check_reaction(confirm, ctx.author))
+                    "reaction_add", timeout=15, check=self.check_reaction(confirm, ctx.author))
             except asyncio.TimeoutError:
                 await ctx.send(
                     "You took too long to react so the operation was cancelled", delete_after=6.0)
@@ -567,14 +677,6 @@ class Moderation:
                 return await confirm.delete()
 
             await confirm.delete()
-
-            countdown = await ctx.send("Purge starting in **3**")
-            await asyncio.sleep(1)
-            await countdown.edit(content="Purge starting in **2**")
-            await asyncio.sleep(1)
-            await countdown.edit(content="Purge starting in **1**")
-            await asyncio.sleep(1)
-            await countdown.delete()
 
         if before is None:
             before = ctx.message
@@ -693,6 +795,27 @@ class Moderation:
             if str(ctx.channel.id) in serverdata[str(ctx.guild.id)]["triggers_disabled"]:
                 serverdata[str(ctx.guild.id)]["triggers_disabled"].remove(str(ctx.channel.id))
                 no_triggers = True
+
+        confirm = await ctx.send("React with \U00002705 to confirm that you want to "
+                                 "clear this channel. React with \U0000274c to cancel")
+        await confirm.add_reaction("\U00002705")
+        await confirm.add_reaction("\U0000274c")
+
+        try:
+            react, user = await self.bot.wait_for(
+                "reaction_add", timeout=15, check=self.check_reaction(confirm, ctx.author))
+        except asyncio.TimeoutError:
+            await ctx.send(
+                "You took too long to react so the operation was cancelled", delete_after=6.0)
+            await delete_message(ctx, 6)
+            return await confirm.delete()
+
+        if react.emoji == "\U0000274c":
+            await ctx.send("Ok, the operation has been cancelled", delete_after=5.0)
+            await delete_message(ctx, 5)
+            return await confirm.delete()
+
+        await confirm.delete()
 
         await ctx.channel.delete(reason=ctx.author.name + " cleared the channel")
         cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
@@ -968,7 +1091,7 @@ class Moderation:
                       "`<prefix> setgoodbye <#mention channel> <goodbye message>`\n\nWhen you're "
                       "typing the message, put a pair of braces `{}` in to mark where the new "
                       "member's name will go. It's required that you put the braces in "
-                      "there somewhere")
+                      "there somewhere, but only once")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def setgoodbye(self, ctx, channel: discord.TextChannel, *, msg: str):
@@ -976,9 +1099,9 @@ class Moderation:
         Set a custom goodbye message to send whenever a member leaves the server.
         Format like this: `<prefix> setgoodbye <#mention channel> <goodbye message>`
         When you're typing the message, put a pair of braces `{}` in to mark where the member's name will go. The braces are required.
-        Finally, to remove the custom goodbye message, just use the `rmgoodbye` command
+        Finally, to remove the custom goodbye message, just do `<prefix> rmgoodbye`
         """
-        if "{}" not in msg:
+        if len(re.findall("{}", msg)) != 1:
             raise commands.BadArgument
 
         serverdata = get_data("server")
@@ -991,12 +1114,11 @@ class Moderation:
         await ctx.send(embed=embed)
         await send_log(ctx.guild, embed)
 
-
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> setwelcome <#mention channel> <welcome message>`\n\nWhen you're "
                       "typing the message, put a pair of braces `{}` in to mark where the new "
                       "member's name will go. It's required that you put the braces in "
-                      "there somewhere")
+                      "there somewhere, but only once")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def setwelcome(self, ctx, channel: discord.TextChannel, *, msg: str):
@@ -1004,9 +1126,9 @@ class Moderation:
         Set a custom welcome message to send whenever a new member joins the server.
         Format like this: `<prefix> setwelcome <#mention channel> <welcome message>`
         When you're typing the message, put a pair of braces `{}` in to mark where the new member's name will go. The braces are required.
-        Finally, to remove the custom welcome message, just use the `rmwelcome` command
+        Finally, to remove the custom welcome message, just do `<prefix> rmwelcome`
         """
-        if "{}" not in msg:
+        if len(re.findall("{}", msg)) != 1:
             raise commands.BadArgument
 
         serverdata = get_data("server")
