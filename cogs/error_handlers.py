@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import get_data, delete_message
-except ImportError:
-    from mat import get_data, delete_message
+from utils import get_data, delete_message, CommandDisabled, ChannelNotNSFW
 
 from discord.ext import commands
 import discord
@@ -28,39 +25,43 @@ import asyncio
 import random
 
 
-class Error_Handlers:
+class Error_Handlers(commands.Cog):
     """Error Handlers for commands"""
 
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
     async def on_command_error(self, ctx, exception):
-        exc = exception
-        if str(exc) == ("Command raised an exception: Forbidden: FORBIDDEN (status code: 403): "
-                        "Missing Permissions"):
+        if str(exception) == ("Command raised an exception: Forbidden: FORBIDDEN (status code: "
+                              "403): Missing Permissions"):
             return
 
 
-        elif "check functions for command" in str(exc):
-            if ctx.command.cog_name == "NSFW" and not ctx.channel.is_nsfw():
-                await ctx.send("This command can only be used in NSFW channels", delete_after=6.0)
-                return await delete_message(ctx, 6)
-
-            elif "disabled" in get_data("server")[str(ctx.guild.id)]:
-                if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
-                    await ctx.send("Sorry, but this command has been disabled on your server "
-                                   "by one of its Administrators", delete_after=7.0)
-                    return await delete_message(ctx, 7)
+        elif str(exception) == ("Command raised an exception: NotFound: NOT FOUND (status code: "
+                                "404): Unknown Message"):
+            return
 
 
-        elif str(exc) == "You do not own this bot.":
+        elif isinstance(exception, ChannelNotNSFW):
+            await ctx.send("This command can only be used in NSFW channels", delete_after=6.0)
+            return await delete_message(ctx, 6)
+
+
+        elif isinstance(exception, CommandDisabled):
+            await ctx.send("Sorry, but this command has been disabled on your server by one of "
+                           "its Administrators", delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+
+        elif isinstance(exception, commands.NotOwner):
             app = await self.bot.application_info()
             await ctx.send(
                 f"Only my owner, **{app.owner}**, can use that command", delete_after=6.0)
             return await delete_message(ctx, 6)
 
 
-        elif isinstance(exc, commands.BotMissingPermissions):
+        elif isinstance(exception, commands.BotMissingPermissions):
             if len(exc.missing_perms) == 1:
                 return await ctx.send(
                     "I don't have the proper perms to perform this command. To do this, I would "
@@ -76,42 +77,46 @@ class Error_Handlers:
                     "Could one of you guys in charge fix that and then get back to me?")
 
 
-        elif isinstance(exc, commands.MissingPermissions):
+        elif isinstance(exception, commands.MissingPermissions):
             await ctx.send(
                 f"You need the **{str(exc.missing_perms[0]).replace('_', ' ').title()}** "
                 "permission in order to use this command", delete_after=7.0)
             return await delete_message(ctx, 7)
 
 
-        elif isinstance(exc, commands.CommandNotFound):
+        elif isinstance(exception, commands.CommandNotFound):
             return await ctx.message.add_reaction(random.choice(
                 ["\U00002753", "\U00002754", "\U0001f615", "\U0001f937", "\U0001f645"]))
 
 
-        elif (isinstance(exc, commands.BadArgument) or
-                  isinstance(exc, commands.MissingRequiredArgument) or
-                      isinstance(exc, commands.BadUnionArgument)):
+        elif (isinstance(exception, commands.BadArgument) or
+                  isinstance(exception, commands.MissingRequiredArgument) or
+                      isinstance(exception, commands.BadUnionArgument)):
             #* I'm using command.brief as a custom error message for each command,
             #* not as some brief help text like it's intended to be used as.
             await ctx.send(ctx.command.brief, delete_after=15.0)
             return await delete_message(ctx, 15)
 
 
-        elif isinstance(exc, commands.NoPrivateMessage):
+        elif isinstance(exception, commands.NoPrivateMessage):
             return await ctx.send(
                 "This command cannot be used in private messages. You must be in a server")
 
 
-        elif isinstance(exc, discord.Forbidden):
+        elif isinstance(exception, discord.Forbidden):
+            return
+
+
+        elif isinstance(exception, discord.NotFound):
             return
 
 
         else:
             app = await self.bot.application_info()
             return await ctx.send(
-                f"```Command: {ctx.command.name}\n{exc}```An unknown error occured and I wasn't "
-                "able to complete that command. Sorry!\n\nPlease get in touch with my "
-                "owner, NinjaSnail1080, and tell him what happened so he can try and fix this "
+                f"```Command: {ctx.command.name}\n{type(exc)}: {exc}```An unknown error occured "
+                "and I wasn't able to complete that command. Sorry!\n\nPlease get in touch with "
+                "my owner, NinjaSnail1080, and tell him what happened so he can try and fix this "
                 "issue. You can reach him at my support server: https://discord.gg/P4Fp3jA")
 
 
