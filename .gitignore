@@ -115,6 +115,7 @@ mat_experimental.py
 # Ignore requirments
 /aiodns
 /aiohttp
+/akinator
 /ascii
 /async_timeout
 /attr
