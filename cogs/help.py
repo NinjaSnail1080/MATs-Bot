@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, get_data, delete_message
-except ImportError:
-    from mat import find_color, get_data, delete_message
+from utils import find_color, get_data, delete_message
 
 from discord.ext import commands
 import discord
@@ -37,7 +34,7 @@ def chunks(L, s):
         yield L[i:i + s]
 
 
-class Help:
+class Help(commands.Cog, command_attrs={"hidden": True}):
     """Help commands"""
 
     def __init__(self, bot):
