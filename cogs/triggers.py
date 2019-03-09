@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, get_data
-except ImportError:
-    from mat import find_color, get_data
+from utils import find_color, get_data
 
 from discord.ext import commands
 import discord
@@ -35,12 +32,13 @@ sigma_responses = ["Woah, who is that other bot? She looks g-g-gorgeous...", "D-
 #* Whenever she says something, MAT will send one of the above responses.
 
 
-class Triggers:
+class Triggers(commands.Cog):
     """Trigger words that the bot will respond to"""
 
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
             return

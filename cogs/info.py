@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, delete_message, __version__
-except ImportError:
-    from mat import find_color, delete_message, __version__
+from utils import find_color, delete_message, __version__
 
 from discord.ext import commands
 import discord
@@ -28,7 +25,7 @@ import datetime
 import typing
 
 
-class Info:
+class Info(commands.Cog):
     """Information"""
 
     def __init__(self, bot):
@@ -114,7 +111,7 @@ class Info:
     @commands.command()
     @commands.guild_only()
     async def allroles(self, ctx):
-        """Sends a list of all the roles in the server (not necessarily in order)"""
+        """Sends a list of all the roles in the server"""
 
         await ctx.channel.trigger_typing()
         embed = discord.Embed(title=f"All of the roles in {ctx.guild.name}",

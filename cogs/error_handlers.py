@@ -112,6 +112,7 @@ class Error_Handlers(commands.Cog):
 
 
         else:
+            exc = exception
             app = await self.bot.application_info()
             return await ctx.send(
                 f"```Command: {ctx.command.name}\n{type(exc)}: {exc}```An unknown error occured "

@@ -16,10 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-try:
-    from mat_experimental import find_color, delete_message
-except ImportError:
-    from mat import find_color, delete_message
+from utils import find_color, delete_message
 
 from discord.ext import commands
 from PIL import Image as IMG
@@ -29,6 +26,7 @@ import aiohttp
 import validators
 import pytesseract
 import ascii
+import urllib3
 
 import typing
 import functools
@@ -44,12 +42,14 @@ pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
 #* More info at https://docs.nekobot.xyz/
 
 
-class Image:
+class Image(commands.Cog):
     """Image Manipulation commands"""
 
     def __init__(self, bot):
         self.bot = bot
-        self.session = aiohttp.ClientSession(loop=self.bot.loop)
+
+        #* Disables warnings that show up when the "ascii" command is used
+        urllib3.disable_warnings()
 
     async def get_image(self, ctx, user_url: typing.Union[discord.Member, str]=None):
         if user_url is None and not ctx.message.attachments:
@@ -122,10 +122,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
@@ -135,10 +136,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["caption"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> caption (OPTIONAL)<@mention user OR "
@@ -151,9 +153,10 @@ class Image:
             headers = {"Content-Type": "application/json; charset=utf-8"}
             payload = {"Content": img, "Type": "CaptionRequest"}
             try:
-                async with self.session.post("https://captionbot.azurewebsites.net/api/messages",
-                                             headers=headers, json=payload) as w:
-                    caption = await w.text()
+                async with aiohttp.ClientSession() as session:
+                    async with session.post("https://captionbot.azurewebsites.net/api/messages",
+                                            headers=headers, json=payload) as w:
+                        caption = await w.text()
                 embed = discord.Embed(
                     title=str(caption),
                     description="*Powered by [CaptionBot](https://www.captionbot.ai/)*",
@@ -176,10 +179,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=deepfry&image={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=deepfry&image={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext (OPTIONAL)<@mention user OR attach an image OR "
@@ -206,25 +210,26 @@ class Image:
 
         try:
             with ctx.channel.typing():
-                async with self.session.get(await self.get_image(ctx, member_url)) as resp:
-                    bytes = await resp.read()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(await self.get_image(ctx, member_url)) as resp:
+                        bytes = await resp.read()
 
                 text = await self.bot.loop.run_in_executor(
                      None, functools.partial(read_image, bytes))
-                if text is None:
-                    await ctx.send("That's not an image file", delete_after=5.0)
-                    return await delete_message(ctx, 5)
-                elif text == "":
-                    await ctx.send(
-                        "I wasn't able to read any text from that image", delete_after=5.0)
-                    return await delete_message(ctx, 5)
-                elif len(text) > 1941:
-                    await ctx.send("This text is too long for me to send here. Try an image that "
-                                   "doesn't have so many words in it", delete_after=6.0)
-                    return await delete_message(ctx, 6)
-                else:
-                    return await ctx.send(
-                        f"Here's the text I was able to read from that image:\n```\n{text}```")
+            if text is None:
+                await ctx.send("That's not an image file", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            elif text == "":
+                await ctx.send(
+                    "I wasn't able to read any text from that image", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            elif len(text) > 1941:
+                await ctx.send("This text is too long for me to send here. Try an image that "
+                                "doesn't have so many words in it", delete_after=6.0)
+                return await delete_message(ctx, 6)
+            else:
+                return await ctx.send(
+                    f"Here's the text I was able to read from that image:\n```\n{text}```")
         except:
             await ctx.send("Hmm, something went wrong while I was trying to read the text from "
                            "this image. Try again", delete_after=6.0)
@@ -238,10 +243,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["magikify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
@@ -251,10 +257,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
@@ -264,10 +271,11 @@ class Image:
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with self.session.get(
-                f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
-                resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
+                    resp = await w.json()
+                    await self.send_nekobot_image(ctx, resp)
 
 
 def setup(bot):
