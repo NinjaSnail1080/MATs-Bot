@@ -417,9 +417,9 @@ class Utility(commands.Cog):
 
         if not rhyming_words:
             await ctx.send(
-                f"I couldn't find any words that rhyme with `{word}`. Sorry about that!",
-                delete_after=7.0)
-            return await delete_message(ctx, 7)
+                f"I couldn't find any words that rhyme with `{word}`",
+                delete_after=6.0)
+            return await delete_message(ctx, 6)
 
         embed = discord.Embed(
             title=f"Words that rhyme with {word.title()}",
