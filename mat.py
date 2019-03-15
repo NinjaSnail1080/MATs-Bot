@@ -283,18 +283,17 @@ class MAT(commands.Bot):
             await asyncio.sleep(random.randint(5, 10))
 
     def run(self, token):
-        loop = asyncio.get_event_loop()
         try:
-            loop.run_until_complete(self.start(token))
+            self.loop.run_until_complete(self.start(token))
         except KeyboardInterrupt:
             print("\n\nClosing...\n")
-            for task in asyncio.Task.all_tasks(loop):
+            for task in asyncio.Task.all_tasks(self.loop):
                 task.cancel()
                 print("Cancelled task")
             print("\nLogging out...")
-            loop.run_until_complete(self.logout())
+            self.loop.run_until_complete(self.logout())
         finally:
-            loop.close()
+            self.loop.close()
             print("\nClosed\n")
 
 
