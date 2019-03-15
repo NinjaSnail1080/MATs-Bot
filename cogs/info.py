@@ -128,7 +128,7 @@ class Info(commands.Cog):
                       "`<prefix> channelinfo (OPTIONAL)<text channel OR voice channel (case-"
                       "sensitive)>`\n\nIf you don't provide a channel, I'll default to this one")
     @commands.guild_only()
-    async def channelinfo(self, ctx, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
+    async def channelinfo(self, ctx, *, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
         """Info about a text or voice channel on this server. By default I'll show info about the channel the command was performed in, although you can specify a different one.
         Format like this: `<prefix> channelinfo (OPTIONAL)<text channel OR voice channel>`
         """
@@ -274,8 +274,19 @@ class Info(commands.Cog):
         else:
             embed.add_field(name="Custom Emojis", value=len(s.emojis))
         embed.add_field(name="Bots", value=len(bots))
+        embed.add_field(name="Webhooks", value=len(await s.webhooks()))
+        if s.system_channel is not None:
+            embed.add_field(name="System Channel", value=s.system_channel.mention)
+        else:
+            embed.add_field(name="System Channel", value="No System Channel")
         embed.add_field(name="Region", value=str(
             s.region).replace("-", " ").title().replace("Us", "U.S.").replace("Eu", "EU"))
+        if s.mfa_level:
+            embed.add_field(name="Requires 2FA?", value="Yes")
+        else:
+            embed.add_field(name="Requires 2FA?", value="No")
+        embed.add_field(name="Default Notification Level",
+                        value=str(s.default_notifications)[18:].replace("_", " ").title())
         embed.add_field(name="Verification Level", value=str(s.verification_level).capitalize())
         embed.add_field(name="Explicit Content Filter",
                         value=str(s.explicit_content_filter).replace("_", " ").title())
@@ -328,8 +339,9 @@ class Info(commands.Cog):
     @commands.guild_only()
     async def userinfo(self, ctx, user: discord.Member=None):
         """Info about a user. By default I'll show your user info, but you can specify a different member of your server.
-        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user or user's name/id>`
+        Format like this: `<prefix> userinfo (OPTIONAL)<@mention user>`
         """
+        #TODO: Add more things to this
         await ctx.channel.trigger_typing()
         if user is None:
             user = ctx.author
