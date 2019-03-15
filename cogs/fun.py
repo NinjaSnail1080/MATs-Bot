@@ -92,7 +92,7 @@ class Fun(commands.Cog):
 
     @commands.command()
     async def akinator(self, ctx):
-        """Start an akinator game!"""
+        """Start a game with the legendary Akinator!"""
 
         aki_up = ["https://i.imgur.com/ACUMdmP.png", "https://i.imgur.com/MV0i5Gn.png",
                   "https://i.imgur.com/RqXE9qK.png", "https://i.imgur.com/Cl9ZRlQ.png"]
@@ -130,9 +130,13 @@ class Fun(commands.Cog):
             else:
                 return check
 
-        def add_to_embed(embed, include_author=True):
-            if include_author:
-                embed.set_author(name=f"{ctx.author.name} is playing", icon_url=ctx.author.avatar_url)
+        def add_to_embed(embed, in_game=True):
+            if in_game:
+                embed.set_author(
+                    name=f"{ctx.author.name} is playing", icon_url=ctx.author.avatar_url)
+            else:
+                embed.set_author(
+                    name=f"{ctx.author.name}'s game has ended", icon_url=ctx.author.avatar_url)
             embed.set_footer(
                 text="Akinator.com\u2000|\u2000Brought to you by MAT's Bot",
                 icon_url="https://is4-ssl.mzstatic.com/image/thumb/Purple128/v4/f5/11/6d/f5116d77"
@@ -143,8 +147,7 @@ class Fun(commands.Cog):
             aki = Akinator()
             await aki.start_game()
             target_progress = 90
-            previous_progress = 0
-            no_question = False
+            previous_progress = aki.progression #* 0 at the start
 
             while True:
                 await game.clear_reactions()
@@ -209,13 +212,13 @@ class Fun(commands.Cog):
                             except akinator_lib.CantGoBackAnyFurther:
                                 pass
                     except akinator_lib.AkiNoQuestions:
-                        no_question = True
                         break
                     await game.remove_reaction(react, user)
 
-                if no_question:
+                try:
+                    await aki.win()
+                except akinator_lib.AkiFailedToConnect:
                     break
-                await aki.win()
                 embed = discord.Embed(title="I think of...",
                                       description=f"**{aki.name}** ({aki.description})\n\n"
                                       "Was I correct?",
@@ -247,8 +250,6 @@ class Fun(commands.Cog):
                         color=find_color(ctx))
                     embed.set_image(url="https://i.imgur.com/cb6SLnJ.png")
                     add_to_embed(embed, False)
-                    embed.set_author(
-                        name=f"{player.name}'s game has ended", icon_url=player.avatar_url)
 
                     await game.clear_reactions()
                     return await game.edit(content=None, embed=embed)
@@ -280,20 +281,17 @@ class Fun(commands.Cog):
                     break
 
             #* If Aki loses
-            if no_question:
-                desc = "I couldn't guess your character"
-            else:
-                desc = ""
             embed = discord.Embed(
-                title="Bravo, you have defeated me!", description=desc, color=find_color(ctx))
+                title="Bravo, you have defeated me!",
+                description="I couldn't guess your character",
+                color=find_color(ctx))
             embed.set_image(url="https://i.imgur.com/Msmzzii.png")
             add_to_embed(embed, False)
-            embed.set_author(
-                name=f"{player.name}'s game has ended", icon_url=player.avatar_url)
 
             await game.clear_reactions()
             return await game.edit(content=None, embed=embed)
 
+        #* Start of command
         embed = discord.Embed(
             title="Hello, I am Akinator",
             description="Think about a real or fictional character. I will ask you questions and "
