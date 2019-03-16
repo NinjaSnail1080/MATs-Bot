@@ -154,13 +154,13 @@ async def delete_message(ctx, time: float):
     return
 
 
-async def get_reddit(ctx, level: int, include_timestamp: bool, error_msg: str, *subs):
+async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timestamp: bool, error_msg: str, *subs):
     """Get a random post from a subreddit"""
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"https://www.reddit.com/r/{'+'.join(subs)}/hot.json?sort=hot",
+                f"https://www.reddit.com/r/{'+'.join(subs)}/hot.json?limit={limit}",
                 headers=config.R_USER_AGENT) as w:
 
                 resp = await w.json()
@@ -172,12 +172,23 @@ async def get_reddit(ctx, level: int, include_timestamp: bool, error_msg: str, *
             elif p["data"]["over_18"] and not ctx.channel.is_nsfw():
                 resp["data"]["children"].remove(p)
                 is_nsfw = True
+            elif img_only:
+                if not p["data"]["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "webp")):
+                    if "imgur.com" in p["data"]["url"] and "/a/" not in p["data"]["url"]:
+                        copy = p
+                        copy["data"]["url"] += ".png"
+                        resp["data"]["children"] = [
+                            copy if x == p else x for x in resp["data"]["children"]]
+                    else:
+                        resp["data"]["children"].remove(p)
 
         data = random.choice(resp["data"]["children"])["data"]
 
+        #* To format some special characters (like &, <, >, etc.) correctly
         data["title"] = BeautifulSoup(data["title"], "lxml").get_text()
         data["selftext"] = BeautifulSoup(data["selftext"], "lxml").get_text()
 
+        #* To change the html code for a zero-width space into something Python can understand
         zwspace = re.compile("&#x200b;", re.IGNORECASE)
         data["title"] = zwspace.sub("\u200B", data["title"])
         data["selftext"] = zwspace.sub("\u200B", data["selftext"])
@@ -231,7 +242,7 @@ async def get_reddit(ctx, level: int, include_timestamp: bool, error_msg: str, *
                     f"com/user/{data['author']}/)\n\n{data['selftext']}",
                     url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
 
-            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "bmp", "webp")):
+            if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "webp")):
                 embed.set_image(url=data["url"])
             else:
                 if data["thumbnail"] != "self":
