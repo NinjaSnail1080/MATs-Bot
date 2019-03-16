@@ -420,7 +420,7 @@ class Fun(commands.Cog):
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW copypastas
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a copypasta", "copypasta")
+        return await get_reddit(ctx, 1, 50, False, False, "a copypasta", "copypasta")
 
     @commands.command(aliases=["zalgo", "zalgofy"],
                       brief="You need to include some text for me to creepify")
@@ -587,7 +587,7 @@ class Fun(commands.Cog):
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW jokes
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a joke", "jokes")
+        return await get_reddit(ctx, 1, 50, False, False, "a joke", "jokes")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`")
@@ -632,14 +632,14 @@ class Fun(commands.Cog):
         """Sends posts that are u irl"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a meme", "me_irl", "meirl")
+        return await get_reddit(ctx, 1, 100, True, False, "a meme", "me_irl", "meirl")
 
     @commands.command()
     async def meme(self, ctx):
         """Posts a dank meme"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a meme", "dankmemes")
+        return await get_reddit(ctx, 1, 100, True, False, "a meme", "dankmemes")
 
     @commands.command(aliases=["weirdspeak"])
     async def mock(self, ctx, *, stuff: str=None):
@@ -671,12 +671,12 @@ class Fun(commands.Cog):
     @commands.command(brief="You're supposed to include a subreddit for me to get a random post "
                       "from after the command. Like this: `<prefix> reddit <subreddit>`")
     async def reddit(self, ctx, sub):
-        """Get a random post from any subreddit
+        """Get a random post from the front page of any subreddit
         Format like this: `<prefix> reddit <subreddit>`
         Notes: Capitalization doesn't matter when typing the name of the sub
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 2, True, "a post from this sub", sub)
+        return await get_reddit(ctx, 2, 25, False, True, "a post from this sub", sub)
 
     @commands.command()
     async def reverse(self, ctx, *, stuff: str=None):
@@ -695,7 +695,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
                                "puts"])
-    async def say(self, ctx, *, stuff: str=None):
+    async def say(self, ctx, *, stuff: commands.clean_content()=None):
         """Make me say something!"""
 
         if stuff is None:
@@ -703,9 +703,6 @@ class Fun(commands.Cog):
             return await delete_message(ctx, 5)
 
         else:
-            stuff = stuff.replace("@everyone", "@\u200beveryone")
-            stuff = stuff.replace("@here", "@\u200bhere")
-
             await ctx.send(stuff)
 
     @commands.command(aliases=["showerthoughts"])
@@ -713,14 +710,14 @@ class Fun(commands.Cog):
         """Posts a random showerthought"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a showerthought", "showerthoughts")
+        return await get_reddit(ctx, 1, 50, False, False, "a showerthought", "showerthoughts")
 
     @commands.command()
     async def thanos(self, ctx):
         """Thanos did nothing wrong"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a thanos meme", "thanosdidnothingwrong")
+        return await get_reddit(ctx, 1, 50, True, False, "a thanos meme", "thanosdidnothingwrong")
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to "
                       "include some text for me to thiccify")

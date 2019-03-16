@@ -68,7 +68,7 @@ class NSFW(commands.Cog):
         """Posts some artsy porn"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post",
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
                                 "SexyButNotPorn", "LaBeauteFeminine", "BacklitBeauty", "nsfw_bw")
 
     @commands.command()
@@ -76,9 +76,9 @@ class NSFW(commands.Cog):
         """Posts pics of hot asians"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post", "AsianHotties",
-                                "Sexy_Asians", "asianbabes", "bustyasians", "juicyasians",
-                                "AsiansGoneWild")
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
+                                "AsianHotties", "Sexy_Asians", "asianbabes", "bustyasians",
+                                "juicyasians", "AsiansGoneWild")
 
     @commands.command(aliases=["butt", "butts", "booty"])
     async def ass(self, ctx):
@@ -88,7 +88,7 @@ class NSFW(commands.Cog):
             with ctx.channel.typing():
                 async with aiohttp.ClientSession() as session:
                     async with session.get(
-                        "http://api.obutts.ru/butts/get/{random.randint(7, 5999)}") as w:
+                        f"http://api.obutts.ru/butts/get/{random.randint(7, 5999)}") as w:
                         resp = await w.json()
 
                 try:
@@ -116,7 +116,7 @@ class NSFW(commands.Cog):
         """Posts some bdsm or bondage porn"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post", "bdsm", "bondage")
+        return await get_reddit(ctx, 1, 100, True, False, "a post", "bdsm", "bondage")
 
     @commands.command(aliases=["tits"])
     async def boobs(self, ctx):
@@ -153,31 +153,31 @@ class NSFW(commands.Cog):
         """Posts some cute nude girls"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post",
-                                 "adorableporn", "TooCuteForPorn", "legalteens", "18_19")
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
+                                "adorableporn", "TooCuteForPorn", "legalteens", "18_19")
 
     @commands.command()
     async def cosplay(self, ctx):
         """Posts some sexy cosplay"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post",
-                                "nsfwcosplay", "cosplayonoff", "FictionalBabes", "cosplayboobs")
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
+                                "cosplaygirls", "cosplayonoff", "FictionalBabes", "NSFWCostumes")
 
     @commands.command(aliases=["dickpic", "penis", "cock"])
     async def dick(self, ctx):
         """Posts a dick pic"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post", "PenisPics", "penis",
-                                "ratemycock", "MassiveCock", "Cock")
+        return await get_reddit(ctx, 1, 200, True, False, "a post",
+                                "PenisPics", "penis", "ratemycock", "MassiveCock", "Cock")
 
     @commands.command()
     async def ecchi(self, ctx):
         """Posts some ecchi (basically softcore hentai)"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post", "ecchi")
+        return await get_reddit(ctx, 1, 100, True, False, "a post", "ecchi")
 
     @commands.command(name="4k", aliases=["fourk", "hdporn"])
     async def fourk(self, ctx):
@@ -185,7 +185,7 @@ class NSFW(commands.Cog):
 
         await ctx.channel.trigger_typing()
         return await get_reddit(
-            ctx, 1, False, "a post", "NSFW_Wallpapers", "HighResNSFW", "UHDnsfw")
+            ctx, 1, 100, True, False, "a post", "NSFW_Wallpapers", "HighResNSFW", "UHDnsfw")
 
     @commands.command()
     async def gonewild(self, ctx):
@@ -193,8 +193,8 @@ class NSFW(commands.Cog):
 
         await ctx.channel.trigger_typing()
         return await get_reddit(
-            ctx, 2, True, "a post", "gonewild", "gonewildcurvy",
-            "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
+            ctx, 2, 200, True, True, "a post",
+            "gonewild", "gonewildcurvy", "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
     async def hentai(self, ctx, arg: str=None):
@@ -202,7 +202,7 @@ class NSFW(commands.Cog):
 
         await ctx.channel.trigger_typing()
         if arg is None:
-            return await get_reddit(ctx, 1, False, "a post", "hentai")
+            return await get_reddit(ctx, 1, 100, True, False, "a post", "hentai")
         elif arg == "-gif":
             await ctx.channel.trigger_typing()
             async with aiohttp.ClientSession() as session:
@@ -210,7 +210,7 @@ class NSFW(commands.Cog):
                     resp = await w.json()
             return await self.send_nekobot_image(ctx, resp)
         elif arg == "-irl":
-            return await get_reddit(ctx, 1, False, "a post", "hentai_irl")
+            return await get_reddit(ctx, 1, 75, True, False, "a post", "hentai_irl")
         else:
             await ctx.send("Invalid formatting. You can only add `-gif` after the command for a "
                            "hentai gif OR `-irl` for a hentai_irl post", delete_after=7.0)
@@ -221,7 +221,7 @@ class NSFW(commands.Cog):
         """Posts pics of hot girls in lingerie"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post",
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
                                 "lingerie", "stockings", "pantyfetish", "panties")
 
     @commands.command(aliases=["nekos"])
@@ -264,8 +264,8 @@ class NSFW(commands.Cog):
         """Posts some pussy"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "a post", "pussy", "rearpussy",
-                                "simps", "spreading", "landingstrip")
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
+                                "pussy", "rearpussy", "simps", "spreading", "landingstrip")
 
     @commands.command()
     async def thighs(self, ctx):

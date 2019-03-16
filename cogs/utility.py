@@ -221,13 +221,6 @@ class Utility(commands.Cog):
                             "d6746866850efe2a800a3e57052e1a2411.png")
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=["lifeprotip", "lifehack"])
-    async def lpt(self, ctx):
-        """Posts an LPT, or Life Pro Tip (i.e., a life hack that's actually useful)"""
-
-        await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, False, "an LPT", "LifeProTips")
-
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
                       "look like this: `<prefix> pfp (OPTIONAL)<@mention user or user's name/id>`"
                       "\n\nNote: If you used `-d`, then you must provide a user for it to work")
