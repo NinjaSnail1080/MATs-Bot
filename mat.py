@@ -69,7 +69,7 @@ class MAT(commands.Bot):
         super().__init__(command_prefix=get_prefix,
                          description="MAT's Bot",
                          case_insensitive=True,
-                         pm_help=None,
+                         help_command=None,
                          shard_count=1,
                          shard_id=0,
                          status=discord.Status.dnd,

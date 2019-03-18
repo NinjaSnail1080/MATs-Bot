@@ -642,7 +642,7 @@ class Fun(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a meme", "dankmemes")
 
     @commands.command(aliases=["weirdspeak"])
-    async def mock(self, ctx, *, stuff: str=None):
+    async def mock(self, ctx, *, stuff: commands.clean_content()=None):
         """Say something and I'll mock you"""
 
         if stuff is None:
@@ -671,15 +671,15 @@ class Fun(commands.Cog):
     @commands.command(brief="You're supposed to include a subreddit for me to get a random post "
                       "from after the command. Like this: `<prefix> reddit <subreddit>`")
     async def reddit(self, ctx, sub):
-        """Get a random post from the front page of any subreddit
+        """Get a random post from any subreddit
         Format like this: `<prefix> reddit <subreddit>`
         Notes: Capitalization doesn't matter when typing the name of the sub
         """
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 2, 25, False, True, "a post from this sub", sub)
+        return await get_reddit(ctx, 2, 50, False, True, "a post from this sub", sub)
 
     @commands.command()
-    async def reverse(self, ctx, *, stuff: str=None):
+    async def reverse(self, ctx, *, stuff: commands.clean_content()=None):
         """Reverse the text you give me!"""
 
         if stuff is None:
@@ -688,9 +688,6 @@ class Fun(commands.Cog):
 
         else:
             stuff = stuff[::-1]
-            stuff = stuff.replace("@everyone", "@\u200beveryone")
-            stuff = stuff.replace("@here", "@\u200bhere")
-
             await ctx.send(stuff)
 
     @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",

@@ -40,8 +40,6 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
     def __init__(self, bot):
         self.bot = bot
 
-        self.bot.remove_command("help")
-
         self.back = "\U00002b05"
         self.next = "\U000027a1"
 

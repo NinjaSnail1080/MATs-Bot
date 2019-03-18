@@ -37,7 +37,7 @@ class NSFW(commands.Cog):
     async def cog_check(self, ctx):
         if ctx.guild is None:
             raise commands.NoPrivateMessage
-        elif not ctx.channel.is_nsfw():
+        elif not ctx.channel.is_nsfw() and ctx.command.name != "neko": #* See "neko" command
             raise ChannelNotNSFW
         return True
 
