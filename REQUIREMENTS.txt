@@ -1,6 +1,6 @@
 git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
 aiodns
-# akinator.py (This library, created by me, isn't public yet)
+akinator.py
 ascii
 beautifulsoup4
 cchardet
