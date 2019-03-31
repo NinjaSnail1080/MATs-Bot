@@ -20,7 +20,6 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
 import aiohttp
-import psutil
 import rapidjson as json
 
 import datetime
