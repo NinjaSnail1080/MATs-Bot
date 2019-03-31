@@ -25,7 +25,7 @@ import collections
 import asyncio
 import datetime
 
-list_prefixes = "**Prefix**: `!mat` or @mention"
+list_prefixes = "**Prefixes**: `!mat` or @mention"
 
 
 def chunks(L, s):
@@ -94,6 +94,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
     async def help(self, ctx, cat=None):
         """MAT's Bot | Help command"""
 
+        await ctx.channel.trigger_typing()
         try:
             disabled = get_data("server")[str(ctx.guild.id)]["disabled"]
         except:
