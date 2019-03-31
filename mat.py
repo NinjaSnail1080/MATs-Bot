@@ -84,7 +84,7 @@ class MAT(commands.Bot):
         self.messages_read = collections.Counter(get_data("bot")["messages_read"])
 
         def check_disabled(ctx):
-            if ctx.channel.guild is not None:
+            if ctx.guild is not None:
                 if "disabled" in get_data("server")[str(ctx.guild.id)]:
                     if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
                         raise CommandDisabled
