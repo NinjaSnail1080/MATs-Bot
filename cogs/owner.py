@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import restart_bot, delete_message
+from utils import delete_message
 
 from discord.ext import commands
 import discord
@@ -95,43 +95,16 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
         try:
             if cog is None:
                 for extension in self.bot.extensions.keys():
-                    self.bot.unload_extension(extension)
-                    self.bot.load_extension(extension)
+                    self.bot.reload_extension(extension)
                 await ctx.send(f"Reloaded all cogs", delete_after=5.0)
                 return await delete_message(ctx, 5.0)
             else:
-                self.bot.unload_extension("cogs." + cog.lower())
-                self.bot.load_extension("cogs." + cog.lower())
+                self.bot.reload_extension("cogs." + cog.lower())
                 await ctx.send(f"Reloaded `{cog.capitalize()}`", delete_after=5.0)
                 return await delete_message(ctx, 5.0)
         except:
             await ctx.send("Invalid cog name", delete_after=5.0)
             return await delete_message(ctx, 5)
-
-    @commands.command()
-    async def restart(self, ctx, *, arg: str=None):
-        """Restart the bot's program"""
-
-        await self.bot.change_presence(
-            activity=discord.Game("Restarting..."), status=discord.Status.dnd)
-
-        if arg is None:
-            pass
-        elif arg == "-r":
-            os.remove("bot.data.json")
-            os.remove("server.data.json")
-            os.remove("user.data.json")
-        else:
-            raise TypeError("\"arg\" param must be either \"-r\" or None")
-
-        await ctx.send("*Restarting*...")
-        await self.bot.wait_until_ready()
-        self.bot.clear()
-
-        with open("restart", "w") as f:
-            f.write(str(ctx.channel.id))
-
-        restart_bot()
 
 
 def setup(bot):
