@@ -132,17 +132,6 @@ def dump_data(to_dump, file):
                         "\"reminders\", or \"giveaways\"")
 
 
-def restart_bot():
-    """Restarts the current program after cleaning up file objects and descriptors"""
-
-    p = psutil.Process(os.getpid())
-    for handler in p.get_open_files() + p.connections():
-        os.close(handler.fd)
-
-    python = sys.executable
-    os.execl(python, python, *sys.argv)
-
-
 async def delete_message(ctx, time: float):
     """Deletes a command's message if the command was formatted incorectly"""
 

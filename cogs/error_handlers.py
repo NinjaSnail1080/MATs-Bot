@@ -55,9 +55,8 @@ class Error_Handlers(commands.Cog):
 
 
         elif isinstance(exception, commands.NotOwner):
-            app = await self.bot.application_info()
             await ctx.send(
-                f"Only my owner, **{app.owner}**, can use that command", delete_after=6.0)
+                f"Only my owner, **{self.bot.owner}**, can use that command", delete_after=6.0)
             return await delete_message(ctx, 6)
 
 
@@ -94,8 +93,8 @@ class Error_Handlers(commands.Cog):
                       isinstance(exception, commands.BadUnionArgument)):
             #* I'm using command.brief as a custom error message for each command,
             #* not as some brief help text like it's intended to be used as.
-            await ctx.send(ctx.command.brief, delete_after=15.0)
-            return await delete_message(ctx, 15)
+            await ctx.send(ctx.command.brief.replace("<prefix> ", ctx.prefix), delete_after=30.0)
+            return await delete_message(ctx, 30)
 
 
         elif isinstance(exception, commands.NoPrivateMessage):
@@ -113,12 +112,12 @@ class Error_Handlers(commands.Cog):
 
         else:
             exc = exception
-            app = await self.bot.application_info()
             return await ctx.send(
                 f"```Command: {ctx.command.name}\n{type(exc)}: {exc}```An unknown error occured "
                 "and I wasn't able to complete that command. Sorry!\n\nPlease get in touch with "
-                "my owner, NinjaSnail1080, and tell him what happened so he can try and fix this "
-                "issue. You can reach him at my support server: https://discord.gg/P4Fp3jA")
+                f"my owner, {self.bot.owner.name}, and tell him what happened so he can try and "
+                "fix this issue. You can reach him at my support server: "
+                "https://discord.gg/P4Fp3jA")
 
 
 def setup(bot):
