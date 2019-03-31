@@ -44,7 +44,7 @@ class Triggers(commands.Cog):
             return
 
         if message.guild is not None:
-            if "triggers_disabled" in get_data("server")[str(message.guild.id)]):
+            if "triggers_disabled" in get_data("server")[str(message.guild.id)]:
                 if str(message.channel.id) in get_data("server")[str(message.guild.id)]["triggers_disabled"]:
                     return
 
