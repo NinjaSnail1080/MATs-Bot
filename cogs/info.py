@@ -56,15 +56,12 @@ class Info(commands.Cog):
 
     @commands.command(aliases=["allbans"])
     @commands.guild_only()
+    @commands.bot_has_permissions(ban_members=True)
     async def allbanned(self, ctx):
         """Sends a list of all the banned users from the server"""
 
         await ctx.channel.trigger_typing()
-        try:
-            banned = await ctx.guild.bans()
-        except discord.Forbidden:
-            return await ctx.send("I'm sorry, but I don't have the proper perms to view the "
-                                  "banned members. For that I need the Ban Members permission")
+        banned = await ctx.guild.bans()
         if len(banned) == 0:
             return await ctx.send("This server hasn't banned any users yet")
 
@@ -101,7 +98,7 @@ class Info(commands.Cog):
         if vchannels:
             embed.add_field(
                 name=f"Voice Channels ({len(vchannels)})",
-                value=", ".join(c.mention for c in vchannels), inline=False)
+                value=", ".join(f"\U0001f509{c.name}" for c in vchannels), inline=False)
         else:
             embed.add_field(
                 name=f"Voice Channels ({len(vchannels)})", value="None", inline=False)
@@ -144,11 +141,11 @@ class Info(commands.Cog):
                 embed.add_field(name="Channel", value=c.mention)
                 embed.add_field(name="ID", value=c.id)
                 embed.add_field(name="Category", value=str(c.category))
+                embed.add_field(name="Position", value=c.position + 1)
                 if await c.pins():
                     embed.add_field(name="Messages Pinned", value=len(await c.pins()))
                 else:
                     embed.add_field(name="Messages Pinned", value="None")
-                embed.add_field(name="Position", value=c.position + 1)
                 if c.is_nsfw():
                     embed.add_field(name="NSFW?", value="Yes")
                 else:
@@ -159,6 +156,21 @@ class Info(commands.Cog):
                     embed.add_field(name="Overwrites", value=len(c.overwrites))
                 else:
                     embed.add_field(name="Overwrites", value="None")
+                if c.is_news():
+                    embed.add_field(name="News Channel?", value="Yes")
+                else:
+                    embed.add_field(name="News Channel?", value="No")
+                try:
+                    if await c.webhooks():
+                        embed.add_field(name="Webhooks", value=len(await c.webhooks()))
+                    else:
+                        embed.add_field(name="Webhooks", value="None")
+                except discord.Forbidden:
+                    embed.add_field(name="Webhooks", value="Unknown")
+                if c.slowmode_delay == 0:
+                    embed.add_field(name="Slowmode Delay", value="Disabled")
+                else:
+                    embed.add_field(name="Slowmode Delay", value=f"{c.slowmode_delay} seconds")
                 embed.add_field(name="Created", value=c.created_at.strftime("%b %-d, %Y"))
                 if c.topic is None or c.topic == "":
                     embed.add_field(name="Channel topic", value="```No topic```", inline=False)
@@ -176,11 +188,11 @@ class Info(commands.Cog):
                 embed.add_field(name="Channel", value=f"\U0001f509{c.name}")
                 embed.add_field(name="ID", value=c.id)
                 embed.add_field(name="Category", value=str(c.category))
+                embed.add_field(name="Position", value=c.position + 1)
                 if c.user_limit == 0:
                     embed.add_field(name="User Limit", value="No limit")
                 else:
                     embed.add_field(name="User Limit", value=c.user_limit)
-                embed.add_field(name="Position", value=c.position + 1)
                 embed.add_field(name="Bitrate", value=f"{c.bitrate // 1000} kbps")
                 if c.members:
                     embed.add_field(name="Members Inside", value=len(c.members))
@@ -235,6 +247,91 @@ class Info(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["perms", "memberperms"], brief="Invalid formatting. The command "
+                      "is supposed to look like this: `<prefix> permissions (OPTIONAL)<@mention "
+                      "member> (OPTIONAL)<#mention channel>`\nIf you don't put a member, I'll "
+                      "use you. If you don't put a channel, I'll use the channel the command "
+                      "was performed in")
+    @commands.guild_only()
+    async def permissions(self, ctx, member: typing.Optional[discord.Member]=None, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
+        """Get a member's permissions in a channel
+        Format like this: `<prefix> permissions (OPTIONAL)<@mention member> (OPTIONAL)<text OR voice channel>`
+        If you don't put a member, I'll use you. If you don't put a channel, I'll use the channel the command was performed in
+        """
+        await ctx.channel.trigger_typing()
+        if member is None:
+            member = ctx.author
+        if channel is None:
+            channel = ctx.channel
+
+        perms = dict(iter(member.permissions_in(channel)))
+
+        if isinstance(channel, discord.TextChannel):
+            embed = discord.Embed(
+                description=f"**Permissions for {member.mention} in {channel.mention}**",
+                color=find_color(ctx))
+            for i in [_p for _p, _v in dict(iter(discord.Permissions.voice())).items() if _v]:
+                perms.pop(i, None)
+        elif isinstance(channel, discord.VoiceChannel):
+            embed = discord.Embed(
+                description=f"**Permissions for {member.mention} in \U0001f509{channel.name}**",
+                color=find_color(ctx))
+            for i in [_p for _p, _v in dict(iter(discord.Permissions.text())).items() if _v]:
+                perms.pop(i, None)
+
+        for p, v in perms.items():
+            if v:
+                embed.add_field(name=p.replace("_", " ").replace("guild", "server").replace(
+                    "activation", "activity").title().replace("Tts", "TTS"), value="\U00002705")
+            else:
+                embed.add_field(name=p.replace("_", " ").replace("guild", "server").replace(
+                    "activation", "activity").title().replace("Tts", "TTS"), value="\U0000274c")
+
+        await ctx.send(embed=embed)
+
+    @commands.command(brief="Role not found. Try again")
+    @commands.guild_only()
+    async def roleinfo(self, ctx, *, role: discord.Role=None):
+        """Info about a role on this server.
+        Format like this: `<prefix> roleinfo <role name>`
+        Note: Role name is case-sensitive
+        """
+        await ctx.channel.trigger_typing()
+        if role is None:
+            await ctx.send(
+                "You need to include the name of a role after the command so I can get info on "
+                f"it, like this:\n`{ctx.prefix}roleinfo <role name>`\nNote: Role name is "
+                "case-sensitive", delete_after=9.0)
+            return await delete_message(ctx, 9)
+
+        embed = discord.Embed(color=find_color(ctx))
+        embed.add_field(name="Role", value=role.mention)
+        embed.add_field(name="ID", value=role.id)
+        embed.add_field(name="Color", value=role.color)
+        if role.managed:
+            embed.add_field(name="Managed by Integration?", value="Yes")
+        else:
+            embed.add_field(name="Managed by Integration?", value="No")
+        if role.hoist:
+            embed.add_field(name="Displays Separately?", value="Yes")
+        else:
+            embed.add_field(name="Displays Separately?", value="No")
+        if role.mentionable:
+            embed.add_field(name="Mentionable?", value="Yes")
+        else:
+            embed.add_field(name="Mentionable?", value="No")
+        embed.add_field(name="Position", value=role.position)
+        embed.add_field(name="Members With Role",
+                        value=f"{len(role.members)} out of {ctx.guild.member_count}")
+        embed.add_field(name="Created", value=role.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(
+            name="Permissions",
+            value="`" +"`, `".join([p.replace("_", " ").replace("guild", "server").replace(
+                "activation", "activity").capitalize().replace("Tts", "TTS") for p, v in dict(
+                    iter(role.permissions)).items() if v]) + "`", inline=False)
+
+        await ctx.send(embed=embed)
+
     @commands.command(aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
@@ -243,20 +340,9 @@ class Info(commands.Cog):
         await ctx.channel.trigger_typing()
         s = ctx.guild
 
-        on_members = []
-        for m in s.members:
-            if m.status != discord.Status.offline:
-                on_members.append(m)
-
-        bots = []
-        for m in s.members:
-            if m.bot:
-                bots.append(m)
-
-        anim_emojis = []
-        for e in s.emojis:
-            if e.animated:
-                anim_emojis.append(e)
+        on_members = [m for m in s.members if m.status is not discord.Status.offline]
+        bots = [m for m in s.members if m.bot]
+        anim_emojis = [e for e in s.emojis if e.animated]
 
         embed = discord.Embed(
             title=s.name, description=f"Server ID: {s.id}", color=find_color(ctx))
@@ -274,13 +360,20 @@ class Info(commands.Cog):
         else:
             embed.add_field(name="Custom Emojis", value=len(s.emojis))
         embed.add_field(name="Bots", value=len(bots))
-        embed.add_field(name="Webhooks", value=len(await s.webhooks()))
+        try:
+            if await s.webhooks():
+                embed.add_field(name="Webhooks", value=len(await s.webhooks()))
+            else:
+                embed.add_field(name="Webhooks", value="None")
+        except discord.Forbidden:
+            embed.add_field(name="Webhooks", value="Unknown")
         if s.system_channel is not None:
             embed.add_field(name="System Channel", value=s.system_channel.mention)
         else:
             embed.add_field(name="System Channel", value="No System Channel")
-        embed.add_field(name="Region", value=str(
-            s.region).replace("-", " ").title().replace("Us", "U.S.").replace("Eu", "EU"))
+        embed.add_field(name="Region", value=str(s.region).replace(
+            "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
+                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "VIP"))
         if s.mfa_level:
             embed.add_field(name="Requires 2FA?", value="Yes")
         else:
@@ -296,7 +389,7 @@ class Info(commands.Cog):
             else:
                 minute_s = " minutes"
             embed.add_field(
-                name="AFK Channel", value=s.afk_channel.mention + " after " + str(
+                name="AFK Channel", value="\U0001f509" + s.afk_channel.name + " after " + str(
                     s.afk_timeout // 60) + minute_s)
         else:
             embed.add_field(name="AFK Channel", value="No AFK channel")
@@ -335,22 +428,17 @@ class Info(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="User not found. Try again")
+    @commands.command(aliases=["memberinfo"], brief="User not found. Try again")
     @commands.guild_only()
     async def userinfo(self, ctx, user: discord.Member=None):
         """Info about a user. By default I'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user>`
         """
-        #TODO: Add more things to this
         await ctx.channel.trigger_typing()
         if user is None:
             user = ctx.author
 
-        roles = []
-        for r in user.roles:
-            if r.name != "@everyone":
-                roles.append(f"`{r.name}`")
-        roles = roles[::-1]
+        roles = [f"`{r.name}`" for r in user.roles if r.name != "@everyone"][::-1]
 
         if user.activity is not None:
             if user.activity.type is discord.ActivityType.listening:
@@ -384,10 +472,34 @@ class Info(commands.Cog):
         embed.set_thumbnail(url=user.avatar_url)
 
         embed.add_field(name="Display Name", value=user.display_name)
-        embed.add_field(name="Status", value=str(user.status).title())
-        embed.add_field(name="Color", value=str(user.color))
+        embed.add_field(
+            name="Status", value=str(user.status).replace("dnd", "do not disturb").title())
+        if user.mobile_status is not discord.Status.offline or user.is_on_mobile():
+            embed.add_field(name="Platform", value="Mobile")
+        elif user.desktop_status is not discord.Status.offline:
+            embed.add_field(name="Platform", value="Desktop")
+        elif user.web_status is not discord.Status.offline:
+            embed.add_field(name="Platform", value="Web")
+        else:
+            embed.add_field(name="Platform", value="None")
         embed.add_field(name=_type, value=activity)
-        embed.add_field(name="Top Role", value=user.top_role)
+        embed.add_field(name="Color", value=str(user.color))
+        if user.voice is not None:
+            embed.add_field(name="Voice Channel", value="\U0001f509" + user.voice.channel.name)
+            if user.voice.mute or user.voice.self_mute:
+                embed.add_field(name="Muted?", value="Yes")
+            else:
+                embed.add_field(name="Muted?", value="No")
+            if user.voice.deaf or user.voice.self_deaf:
+                embed.add_field(name="Deafened?", value="Yes")
+            else:
+                embed.add_field(name="Deafened?", value="No")
+        else:
+            embed.add_field(name="Voice Channel", value="None")
+        if user.top_role is ctx.guild.default_role:
+            embed.add_field(name="Top Role", value=user.top_role.name)
+        else:
+            embed.add_field(name="Top Role", value=user.top_role.mention)
         embed.add_field(name="Joined Server", value=user.joined_at.strftime("%b %-d, %Y"))
         if user.bot:
             embed.add_field(name="Bot?", value="Yes")
