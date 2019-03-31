@@ -43,19 +43,19 @@ class Triggers(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        if (message.guild is not None and
-                "triggers_disabled" in get_data("server")[str(message.guild.id)]):
-            if str(message.channel.id) in get_data(
-                "server")[str(message.guild.id)]["triggers_disabled"]:
-                return
+        if message.guild is not None:
+            if "triggers_disabled" in get_data("server")[str(message.guild.id)]):
+                if str(message.channel.id) in get_data("server")[str(message.guild.id)]["triggers_disabled"]:
+                    return
 
         if message.author.id == 281807963147075584:
             #* This is the user ID of SigmaBot, who is the love interest for MAT
             return await message.channel.send(random.choice(sigma_responses))
 
-        if random.random() < (10 / message.guild.member_count) / 100:
-            return await message.channel.send(file=discord.File(
-                os.path.join("assets", f"{random.choice(['autism.jpg', 'crater.png'])}")))
+        if message.guild is not None:
+            if random.random() < (10 / message.guild.member_count) / 100:
+                return await message.channel.send(file=discord.File(
+                    os.path.join("assets", f"{random.choice(['autism.jpg', 'crater.png'])}")))
 
         if re.search("pinged", message.content, re.IGNORECASE):
             embed = discord.Embed(color=find_color(message))
