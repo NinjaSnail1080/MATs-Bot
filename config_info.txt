@@ -6,4 +6,5 @@ Here are all of the variables stored in the "config" module:
 - BITLY: Assigned to a string containing my bitly.com access token for the API. It's needed for the "bitly" command to work.
 - R_USER_AGENT: Assigned to a dictionary that contains a Reddit user agent for the commands that use the Reddit API, such as "meme", "joke", and "reddit". It looks like this: {"User-Agent": <user agent here>}
 - TESSERACT_PATH: Assigned to a string that contains the path to the tesseract library (so you need to install "tesseract-ocr" for this). It's needed for the "gettext" command.
-- WORDS_API: Assigned to a dictionary that contains the Words API access token. It's needed for the "define", "thesaurus", and "translate" commands. It looks like this: {"X-Mashape-Key": <access token here>, "Accept": "application/json"}
+- WORDS_API: Assigned to a dictionary that contains the Words API access token. It's needed for the "define", "thesaurus", and "rhymes" commands. It looks like this: {"X-Mashape-Key": <access token here>, "Accept": "application/json"}
+- DANK_MEMER_AUTH: Assigned to a dictionary that contains the Dank Memer Imgen authorization token. It's needed for the commands that use the Dank Memer Imgen API, like "deepfry", "brazzers", etc. It looks like this: {"Authorization": <token goes here>"}
