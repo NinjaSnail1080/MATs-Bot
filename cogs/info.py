@@ -50,7 +50,7 @@ class Info(commands.Cog):
         embed.add_field(name="License", value="GPL v3.0")
         embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot",
                         inline=False)
-        embed.set_footer(text="Dedicated to WooMAT1417#1142")
+        embed.set_footer(text=f"Dedicated to {self.bot.get_user(422131370010214402)}")
 
         await ctx.send(embed=embed)
 
