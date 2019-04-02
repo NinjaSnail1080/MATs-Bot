@@ -149,7 +149,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
 
-            cmds = list(chunks(cmds, 7))
+            cmds = list(chunks(cmds, 8))
 
             embeds = []
             for i in cmds:
@@ -181,7 +181,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
 
-            cmds = list(chunks(cmds, 7))
+            cmds = list(chunks(cmds, 8))
 
             embeds = []
             for i in cmds:
