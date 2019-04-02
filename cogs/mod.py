@@ -822,9 +822,12 @@ class Moderation(commands.Cog):
             embed.add_field(name=a, value=f"{m} messages")
 
         if len(purged) < 10:
-            if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
-                embed.set_footer(text="The number of messages purged was less than 10, so a log "
-                                 "wasn't sent to the logs channel")
+            try:
+                if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
+                    embed.set_footer(text="The number of messages purged was less than 10, so a "
+                                     "log wasn't sent to the logs channel")
+            except:
+                pass
         try:
             await ctx.send(embed=embed)
         except:
