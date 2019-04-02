@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message
+from utils import find_color, delete_message, send_nekobot_image, send_dank_memer_img
 
 from discord.ext import commands
 from PIL import Image as IMG
@@ -27,12 +27,14 @@ import validators
 import pytesseract
 import ascii
 import urllib3
+import rapidjson as json
 
 import typing
 import functools
 import io
 import os
 import re
+import uuid
 
 import config
 
@@ -40,6 +42,8 @@ pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
 
 #* MAT's Bot uses the NekoBot API for most of these commands.
 #* More info at https://docs.nekobot.xyz/
+
+#TODO: Fix problem with `triggered` command
 
 
 class Image(commands.Cog):
@@ -77,17 +81,33 @@ class Image(commands.Cog):
             img = ctx.message.attachments[0].url
         return img
 
-    async def send_nekobot_image(self, ctx, resp):
-        if not resp["success"]:
-            await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                           "again later", delete_after=5.0)
-            return await delete_message(ctx, 5)
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> affect (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def affect(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """How does it affect your baby?"""
 
-        embed = discord.Embed(color=find_color(ctx))
-        embed.set_image(url=resp["message"])
-        embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/affect?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
-        await ctx.send(embed=embed)
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> america (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def america(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Overlay the American flag over an image"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/america?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
@@ -95,6 +115,7 @@ class Image(commands.Cog):
     async def ascii(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Converts an image or a member's avatar into ascii art. Will work for most images
         __Note__: For some images, you might want to zoom out to see the full ascii art (Ctrl – OR ⌘ –)
+        ~~Rip mobile users~~
         """
 
         def make_ascii(url: str, columns: int, color: bool):
@@ -126,7 +147,7 @@ class Image(commands.Cog):
                 async with session.get(
                     f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
                     resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                    await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
@@ -140,7 +161,35 @@ class Image(commands.Cog):
                 async with session.get(
                     f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
                     resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                    await send_nekobot_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> brazzers (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def brazzers(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Add the Brazzers logo to an image"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/brazzers?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> cancer (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def cancer(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """What is cancer?"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/cancer?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
     @commands.command(aliases=["caption"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> caption (OPTIONAL)<@mention user OR "
@@ -172,6 +221,39 @@ class Image(commands.Cog):
                 return await delete_message(ctx, 5)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> america (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def communism(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Overlay the Communist flag over an image"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/communism?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> corporate <picture 1> <picture 2>`\n\nFor the pictures, "
+                      "use image urls or @mention members instead of attaching pictures")
+    async def corporate(self, ctx, member_url_1: typing.Union[discord.Member, str], member_url_2: typing.Union[discord.Member, str]):
+        """Corporate needs you to find the differences between this picture and this picture
+        Format like this: `<prefix> corporate <picture 1> <picture 2>`
+        __Note__: For this command, use image urls or @mention members instead of attaching pictures
+        """
+        with ctx.channel.typing():
+            img1 = await self.get_image(ctx, member_url_1)
+            img2 = await self.get_image(ctx, member_url_2)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://dankmemer.services/api/corporate?avatar1={img1}&avatar2={img2}",
+                    headers=config.DANK_MEMER_AUTH) as w:
+
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> deepfry (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
     async def deepfry(self, ctx, member_url: typing.Union[discord.Member, str]=None):
@@ -180,10 +262,94 @@ class Image(commands.Cog):
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=deepfry&image={img}") as w:
-                    resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                async with session.get(f"https://dankmemer.services/api/deepfry?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> delete (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def delete(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Delete this garbage"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/delete?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> disability (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def disability(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Not all disabilities look like this: :wheelchair:"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/disability?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> door (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def door(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """\\*Enters\\* \\*Immediately leaves\\*"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/door?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> failure (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def failure(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Today's class is about failures..."""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/failure?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> fakenews (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def fakenews(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """TURN OFF THE FAKE NEWS"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/fakenews?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> gay (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def gay(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Overlay the gay pride flag over an image"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/gay?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext (OPTIONAL)<@mention user OR attach an image OR "
@@ -202,9 +368,10 @@ class Image(commands.Cog):
             enhancer = ImageEnhance.Contrast(img)
             img = enhancer.enhance(2)
             img = img.convert("1")
-            img.save("image.png")
-            text = pytesseract.image_to_string(IMG.open("image.png"))
-            os.remove("image.png")
+            filename = f"image-{uuid.uuid4()}.png"
+            img.save(filename)
+            text = pytesseract.image_to_string(IMG.open(filename))
+            os.remove(filename)
 
             return text
 
@@ -236,6 +403,34 @@ class Image(commands.Cog):
             return await delete_message(ctx, 6)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> hitler (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`", aliases=["wth"])
+    async def hitler(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Worse than Hitler!"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/hitler?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> invert (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def invert(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Invert the colors of an image or a member's avatar"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/invert?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> iphonex (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
     async def iphonex(self, ctx, member_url: typing.Union[discord.Member, str]=None):
@@ -247,7 +442,21 @@ class Image(commands.Cog):
                 async with session.get(
                     f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
                     resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                    await send_nekobot_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> jail (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def jail(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Put someone or something in jail"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/jail?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
     @commands.command(aliases=["magikify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
@@ -261,7 +470,49 @@ class Image(commands.Cog):
                 async with session.get(
                     f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
                     resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                    await send_nekobot_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> radialblur (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def radialblur(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Radially blur an image or a member's avatar"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/radialblur?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> sickban (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def sickban(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """BAN THIS SICK FILTH"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/sickban?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> tablet (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`", aliases=["airpods"])
+    async def tablet(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Drawing an image on a tablet"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/airpods?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
@@ -275,7 +526,76 @@ class Image(commands.Cog):
                 async with session.get(
                     f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
                     resp = await w.json()
-                    await self.send_nekobot_image(ctx, resp)
+                    await send_nekobot_image(ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> trash (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def trash(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Turn someone or something into trash"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/trash?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> triggered (OPTIONAL)<@mention user>`")
+    async def triggered(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """TRIGGERED"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/trigger?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp, True)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> ugly (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def ugly(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """It's even uglier up close"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/ugly?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> wanted (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def wanted(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """WANTED: Dead or Alive"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/wanted?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> warp (OPTIONAL)<@mention user OR attach an image OR "
+                      "image url>`")
+    async def warp(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+        """Heavily warp an image or a member's avatar"""
+
+        with ctx.channel.typing():
+            img = await self.get_image(ctx, member_url)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"https://dankmemer.services/api/warp?avatar1={img}",
+                                       headers=config.DANK_MEMER_AUTH) as w:
+                    resp = await w.read()
+                    await send_dank_memer_img(self.bot.loop, ctx, resp)
 
 
 def setup(bot):
