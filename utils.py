@@ -20,14 +20,18 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 import discord
 import aiohttp
+from PIL import Image
 import rapidjson as json
 
 import datetime
 import asyncio
 import random
+import functools
 import os
+import io
 import re
 import sys
+import uuid
 
 import config
 
@@ -274,3 +278,53 @@ def find_color(ctx):
     except AttributeError:  #* If it's a DM channel
         color = discord.Color.blurple()
     return color
+
+
+async def send_nekobot_image(ctx, resp):
+    """Send an image for a command that called the NekoBot API"""
+
+    if not resp["success"]:
+        await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                       "again later", delete_after=5.0)
+        return await delete_message(ctx, 5)
+
+    embed = discord.Embed(color=find_color(ctx))
+    embed.set_image(url=resp["message"])
+    embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
+
+    await ctx.send(embed=embed)
+
+
+async def send_dank_memer_img(loop, ctx, resp, is_gif: bool=False):
+    """Send an image for a command that called the Dank Memer Imgen API"""
+
+    def save_image(resp):
+        if is_gif:
+            filename = f"{ctx.command.name}-{uuid.uuid4()}.gif"
+            with open(filename, "wb") as f:
+                f.write(resp)
+        else:
+            img = Image.open(io.BytesIO(resp))
+            filename = f"{ctx.command.name}-{uuid.uuid4()}.png"
+            img.save(filename)
+        return filename
+
+    try:
+        filename = await loop.run_in_executor(None, functools.partial(save_image, resp))
+
+        f = discord.File(filename, filename=filename)
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_image(url=f"attachment://{filename}")
+        embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
+
+        await ctx.send(file=f, embed=embed)
+    except:
+        await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
+                       "again later", delete_after=5.0)
+        await delete_message(ctx, 5)
+    finally:
+        try:
+            if os.path.isfile(filename):
+                os.remove(filename)
+        except:
+            pass
