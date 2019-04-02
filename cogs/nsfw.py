@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, get_reddit, ChannelNotNSFW
+from utils import find_color, delete_message, get_reddit, send_nekobot_image, ChannelNotNSFW
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -41,18 +41,6 @@ class NSFW(commands.Cog):
             raise ChannelNotNSFW
         return True
 
-    async def send_nekobot_image(self, ctx, resp):
-        if not resp["success"]:
-            await ctx.send("Huh, something went wrong. I wasn't able to get the image. Try "
-                           "again later", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        embed = discord.Embed(color=find_color(ctx))
-        embed.set_image(url=resp["message"])
-        embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
-
-        await ctx.send(embed=embed)
-
     @commands.command()
     async def anal(self, ctx):
         """Sends gifs of anal sex"""
@@ -61,7 +49,7 @@ class NSFW(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://nekobot.xyz/api/image?type=anal") as w:
                 resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+                await send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def artsy(self, ctx):
@@ -208,7 +196,7 @@ class NSFW(commands.Cog):
             async with aiohttp.ClientSession() as session:
                 async with session.get("https://nekobot.xyz/api/image?type=hentai_anal") as w:
                     resp = await w.json()
-            return await self.send_nekobot_image(ctx, resp)
+            return await send_nekobot_image(ctx, resp)
         elif arg == "-irl":
             return await get_reddit(ctx, 1, 75, True, False, "a post", "hentai_irl")
         else:
@@ -257,7 +245,7 @@ class NSFW(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://nekobot.xyz/api/image?type=pgif") as w:
                 resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["vagina"])
     async def pussy(self, ctx):
@@ -275,7 +263,7 @@ class NSFW(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://nekobot.xyz/api/image?type=thigh") as w:
                 resp = await w.json()
-                await self.send_nekobot_image(ctx, resp)
+                await send_nekobot_image(ctx, resp)
 
 
 def setup(bot):
