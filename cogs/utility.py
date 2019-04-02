@@ -33,6 +33,7 @@ import datetime
 import asyncio
 import functools
 import os
+import uuid
 
 import config
 
@@ -249,18 +250,20 @@ class Utility(commands.Cog):
             return await delete_message(ctx, 7)
         else:
             def encode():
-                qrcode.make(content).save("qr.png")
+                filname = f"qr-{uuid.uuid4()}.png"
+                qrcode.make(content).save(filename)
+                return filename
 
             await ctx.channel.trigger_typing()
-            await self.bot.loop.run_in_executor(None, encode)
+            filename = await self.bot.loop.run_in_executor(None, encode)
             try:
                 await ctx.send(
-                    content=f"```{content}``` as a QR code:", file=discord.File("qr.png"))
+                    content=f"```{content}``` as a QR code:", file=discord.File(filename))
             except discord.HTTPException:
                 await ctx.send(
-                    content=f"The above content as a QR code:", file=discord.File("qr.png"))
-        if os.path.isfile("qr.png"):
-            os.remove("qr.png")
+                    content=f"The above content as a QR code:", file=discord.File(filename))
+        if os.path.isfile(filename):
+            os.remove(filename)
 
     @commands.command(brief="Invalid formatting. You're supposed to format the command like this:"
                       " `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`\n"
@@ -317,7 +320,7 @@ class Utility(commands.Cog):
     @commands.command(brief="Invalid formatting. The command is supposed to be formatted like "
                       "this: `<prefix> <time till I remind you> <text to remind you of>`\nThe "
                       "time should look something like these: `3w`, `5d`, `3h30m`, `6d12h45m`, "
-                      "etc. (NO SPACES)")
+                      "etc. (NO SPACES)", aliases=["remind"])
     async def remindme(self, ctx, time: str, *, remind_of: str=None):
         """Need to be reminded of something in the future? Don't worry, just use this command!
         Format like this: `<prefix> <time till I remind you> <text to remind you of>`
