@@ -133,10 +133,11 @@ class MAT(commands.Bot):
                     await c.send(
                         embed=discord.Embed(description=message, color=discord.Color.blurple()))
                     sent = True
+                    channel = c
                     break
             if not sent:
-                c = random.choice(guild.text_channels)
-                await c.send(
+                channel = random.choice(guild.text_channels)
+                await channel.send(
                     content="~~Damn, you guys must have a really strange system for naming your "
                     "channels~~", embed=discord.Embed(description=message,
                     color=discord.Color.blurple()))
@@ -150,10 +151,15 @@ class MAT(commands.Bot):
         joins = self.get_channel(465393762512797696)
 
         bots = [m for m in guild.members if m.bot]
+        try:
+            invite_url = (await channel.create_invite()).url
+            invite = f"\n[Invite]({invite_url})"
+        except discord.Forbidden:
+            invite = ""
 
         embed = discord.Embed(
-            title="Joined " + guild.name, description="**ID**: " + str(guild.id) +
-            "\n**Joined**: " + guild.me.joined_at.strftime("%b %-d, %Y at %X UTC"),
+            title=f"Joined {guild.name}", description=f"**ID**: {guild.id}\n**Joined**: "
+            f"{guild.me.joined_at.strftime('%b %-d, %Y at %X UTC')}{invite}",
             color=joins.guild.me.color)
         embed.set_thumbnail(url=guild.icon_url)
         embed.add_field(name="Members", value=guild.member_count)
@@ -201,6 +207,17 @@ class MAT(commands.Bot):
         serverdata = get_data("server")
         serverdata.pop(str(guild.id), None)
         dump_data(serverdata, "server")
+
+        leaves = self.get_channel(465393762512797696)
+        embed = discord.Embed(
+            title=f"Left {guild.name}", description=f"**ID**: {guild.id}\n**Left**: "
+            f"{datetime.datetime.utcnow().strftime('%b %-d, %Y at %X UTC')}",
+            color=leaves.guild.me.color)
+        embed.set_thumbnail(url=guild.icon_url)
+
+        await leaves.send(
+            content=f"I am now part of {len(self.guilds)} servers and have "
+            f"{len(set(self.get_all_members()))} unique users", embed=embed)
 
     async def on_guild_update(self, before, after):
         serverdata = get_data("server")
