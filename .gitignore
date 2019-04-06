@@ -123,17 +123,27 @@ mat_experimental.py
 /cchardet
 /certifi
 /cffi
+/chardet
+cycler.py
+/dateutil
 decorator.py
 /discord
+/googletrans
 /idna
 idna_ssl.py
 /lxml
+/matplotlib
+/mpl_toolkits
 /multidict
 /nacl
+numpy
 /PIL
+/pkg_resources
 /psutil
 /pycares
 /pycparser
+pylab.py
+pyparsing.py
 /pyshorteners
 /pytesseract
 /pytimeparse
@@ -146,6 +156,7 @@ typing.py
 /urllib3
 /validators
 /websockets
+/wordcloud
 /yarl
 /zalgo_text
 
