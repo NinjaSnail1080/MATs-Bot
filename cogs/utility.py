@@ -25,6 +25,7 @@ import pyshorteners
 import validators
 import aiohttp
 import pytimeparse
+import googletrans
 
 import random
 import string
@@ -481,20 +482,46 @@ class Utility(commands.Cog):
                     f"persists, get in touch with my owner, {self.bot.owner}. You can reach him "
                     "at my support server: https://discord.gg/P4Fp3jA")
 
-    @commands.command(brief="(finish this later)", hidden=True)
-    async def translate(self, ctx, lang, *, phrase):
-        """Translate words from English to another language
-        Format like this: `<prefix> translate <language code> <words to translate>`
-        Click [here](https://developers.google.com/admin-sdk/directory/v1/languages) to see all the language codes
+    @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> translate <lang to translate into> <text to translate>`\n"
+                      "\nThe text you put can be in any language. Google Translate will attempt "
+                      "to automatically detect which laungage the text is in.\nFor the language "
+                      "to translate into, put something like `english`, `spanish`, `korean`, "
+                      "etc. Or if that doesn't work, try using a language code. You can find a "
+                      "list of them here: https://ctrlq.org/code/19899-google-translate-languages"
+                      "#languages")
+    async def translate(self, ctx, lang: str, *, text: str):
+        """Use Google Translate to translate text from one language to another
+        Format like this: `<prefix> translate <lang to translate into> <text to translate>`
+        The text you put can be in any language. Google Translate will attempt to automatically detect which laungage the text is in.
+        For the language to translate into, put something like `english`, `spanish`, `korean`, etc. Or if that doesn't work, put a language code. [See here](https://ctrlq.org/code/19899-google-translate-languages#languages) for a list of language codes that Google Translate supports
         """
-        return await ctx.send("This command isn't working right now")
-        try:
-            await ctx.channel.trigger_typing()
-            translation = PyDictionary(phrase).translateTo(lang)
+        def translate_text():
+            translator = googletrans.Translator()
+            translation = translator.translate(text, dest=lang)
+            return translation
 
-            await ctx.send(f"WIP```{translation[0]}```")
-        except:
-            pass
+        await ctx.channel.trigger_typing()
+        try:
+            translated = await self.bot.loop.run_in_executor(None, translate_text)
+        except ValueError:
+            await ctx.send(
+                "Invalid language. Try again. If putting in the name of a language didn't work, "
+                "try using the langauge code. You can find a list of them here: "
+                "https://ctrlq.org/code/19899-google-translate-languages#languages",
+                delete_after=15.0)
+            return await delete_message(ctx, 15)
+
+        embed = discord.Embed(
+            title="MAT's Language Translator",
+            description="Powered by [Google Translate](https://translate.google.com/)",
+            color=find_color(ctx))
+        embed.add_field(name="FROM: " + googletrans.LANGUAGES.get(translated.src).title(),
+                        value=f"```{text}```", inline=False)
+        embed.add_field(name="TO: " + googletrans.LANGUAGES.get(translated.dest).title(),
+                        value=f"```{translated.text}```", inline=False)
+
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
