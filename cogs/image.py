@@ -38,12 +38,8 @@ import uuid
 
 import config
 
-pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
-
 #* MAT's Bot uses the NekoBot API for most of these commands.
 #* More info at https://docs.nekobot.xyz/
-
-#TODO: Fix problem with `triggered` command
 
 
 class Image(commands.Cog):
@@ -51,6 +47,8 @@ class Image(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+
+        pytesseract.pytesseract.tesseract_cmd = config.TESSERACT_PATH
 
         #* Disables warnings that show up when the "ascii" command is used
         urllib3.disable_warnings()
