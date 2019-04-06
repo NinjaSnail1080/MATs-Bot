@@ -257,6 +257,7 @@ class Info(commands.Cog):
         """Get a member's permissions in a channel
         Format like this: `<prefix> permissions (OPTIONAL)<@mention member> (OPTIONAL)<text OR voice channel>`
         If you don't put a member, I'll use you. If you don't put a channel, I'll use the channel the command was performed in
+        ~~RIP mobile users~~
         """
         await ctx.channel.trigger_typing()
         if member is None:
@@ -289,7 +290,14 @@ class Info(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(brief="Role not found. Try again")
+    @commands.command(aliases=["latency"])
+    async def ping(self, ctx):
+        """Get the bot's ping/latency in milliseconds"""
+
+        await ctx.send(":ping_pong: My Discord WebSocket protocol latency/ping is about "
+                       f"`{round(self.bot.latency * 1000, 2)}ms`")
+
+    @commands.command(brief="Role not found. Try again (Role name is case-sensitive)")
     @commands.guild_only()
     async def roleinfo(self, ctx, *, role: discord.Role=None):
         """Info about a role on this server.
@@ -324,11 +332,15 @@ class Info(commands.Cog):
         embed.add_field(name="Members With Role",
                         value=f"{len(role.members)} out of {ctx.guild.member_count}")
         embed.add_field(name="Created", value=role.created_at.strftime("%b %-d, %Y"))
-        embed.add_field(
-            name="Permissions",
-            value="`" +"`, `".join([p.replace("_", " ").replace("guild", "server").replace(
-                "activation", "activity").capitalize().replace("Tts", "TTS") for p, v in dict(
-                    iter(role.permissions)).items() if v]) + "`", inline=False)
+
+        perms = "`, `".join([p.replace("_", " ").replace("guild", "server").replace(
+            "activation", "activity").capitalize().replace("Tts", "TTS") for p, v in dict(iter(
+                role.permissions)).items() if v])
+        if perms == "":
+            embed.add_field(name="Permissions", value="`None`", inline=False)
+        else:
+            embed.add_field(
+                name="Permissions", value=f"`{perms}`", inline=False)
 
         await ctx.send(embed=embed)
 
