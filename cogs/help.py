@@ -377,7 +377,8 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             for cmd in self.bot.commands:
                 if cat.lower() == cmd.name:
                     embed = discord.Embed(
-                        title=f"Help | {cmd.name} Command", description=cmd.help,
+                        title=f"Help | {cmd.name} Command",
+                        description=cmd.help.replace("<prefix> ", ctx.prefix),
                         color=find_color(ctx))
                     embed.set_author(name="MAT's Bot")
 

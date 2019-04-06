@@ -93,8 +93,8 @@ class Error_Handlers(commands.Cog):
                       isinstance(exception, commands.BadUnionArgument)):
             #* I'm using command.brief as a custom error message for each command,
             #* not as some brief help text like it's intended to be used as.
-            await ctx.send(ctx.command.brief.replace("<prefix> ", ctx.prefix), delete_after=30.0)
-            return await delete_message(ctx, 30)
+            await ctx.send(ctx.command.brief.replace("<prefix> ", ctx.prefix), delete_after=60.0)
+            return await delete_message(ctx, 60)
 
 
         elif isinstance(exception, commands.NoPrivateMessage):

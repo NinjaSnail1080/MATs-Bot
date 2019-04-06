@@ -1039,8 +1039,7 @@ class Moderation(commands.Cog):
                           "messages containing attachments were deleted")
 
     @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
-                   "format the command like this: `<prefix> purge member <@memtion user(s) or "
-                   "username(s)>`")
+                   "format the command like this: `<prefix> purge member <@mention user(s)>`")
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
     async def member(self, ctx, *users: discord.Member):
@@ -1064,14 +1063,16 @@ class Moderation(commands.Cog):
             return await delete_message(ctx, 5)
 
         temp = await ctx.send("Please wait... This could take some time...")
+        unpinned = []
         with ctx.channel.typing():
             for m in all_pins:
-                await m.unpin()
                 if len(await ctx.channel.pins()) == leave:
                     break
+                await m.unpin()
+                unpinned.append(m)
 
         embed = discord.Embed(
-            description=f"{len(all_pins)} messages were unpinned in {ctx.channel.mention}",
+            description=f"{len(unpinned)} messages were unpinned in {ctx.channel.mention}",
             color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " ran a purge command",
                          icon_url=ctx.author.avatar_url)
@@ -1079,7 +1080,8 @@ class Moderation(commands.Cog):
         await ctx.message.delete()
         await temp.delete()
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        if len(unpinned) > 0:
+            await send_log(ctx.guild, embed)
 
     @purge.command()
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
@@ -1306,9 +1308,12 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
-    async def toggle(self, ctx):
+    async def toggle(self, ctx, *, arg: str=None):
         """**Must have the "Manage Messages" permission**
-        Toggles my trigger words on/off for the channel the command was performed in
+        Toggles my trigger words on/off for a channel
+        Format like this: `<prefix> toggle (OPTIONAL)<"all off" OR "all on">`
+        By default, I'll toggle triggers in the channel the command was performed in.
+        If you put `all off`, I'll turn triggers off for all channels. If you put `all on`, I'll turn them on for all channels
         """
         serverdata = get_data("server")
         try:
@@ -1316,13 +1321,39 @@ class Moderation(commands.Cog):
         except:
             no_triggers = serverdata[str(ctx.guild.id)]["triggers_disabled"] = []
 
-        if str(ctx.channel.id) not in no_triggers:
-            no_triggers.append(str(ctx.channel.id))
-            await ctx.send("Ok, I'll stop reacting to triggers in this channel")
+        if arg == "all off":
+            if ctx.author.guild_permissions.manage_messages:
+                for c in ctx.guild.text_channels:
+                    no_triggers.append(str(c.id))
+                await ctx.send(
+                    "Ok, triggers have been turned off for all channels in this server")
+            else:
+                await ctx.send("You only have the **Manage Messages** permission for this "
+                               "channel. In order to turn off triggers for all channels, you "
+                               "need the server-wide **Manage Messages** perm",
+                               delete_after=8.0)
+                return await delete_message(ctx, 8)
 
-        elif str(ctx.channel.id) in no_triggers:
-            no_triggers.remove(str(ctx.channel.id))
-            await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
+        elif arg == "all on":
+            if ctx.author.guild_permissions.manage_messages:
+                no_triggers = []
+                await ctx.send("Ok, triggers have been turned on for all channels in this server")
+            else:
+                await ctx.send("You only have the **Manage Messages** permission for this "
+                               "channel. In order to turn triggers on for all channels, you "
+                               "need the server-wide **Manage Messages** perm",
+                               delete_after=8.0)
+                return await delete_message(ctx, 8)
+
+        else:
+            channel = ctx.channel
+            if str(channel.id) not in no_triggers:
+                no_triggers.append(str(ctx.channel.id))
+                await ctx.send("Ok, I'll stop reacting to triggers in this channel")
+
+            elif str(channel.id) in no_triggers:
+                no_triggers.remove(str(ctx.channel.id))
+                await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
 
         serverdata[str(ctx.guild.id)]["triggers_disabled"] = no_triggers
         dump_data(serverdata, "server")
