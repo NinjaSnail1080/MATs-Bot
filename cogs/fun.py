@@ -24,6 +24,7 @@ from PIL import Image
 from zalgo_text.zalgo import zalgo
 from akinator.async_aki import Akinator
 import akinator as akinator_lib
+import wordcloud as wc
 import discord
 import aiohttp
 import validators
@@ -140,7 +141,7 @@ class Fun(commands.Cog):
         if os.path.isfile(filename):
             os.remove(filename)
 
-    @commands.command()
+    @commands.command(aliases=["aki"])
     async def akinator(self, ctx):
         """Start a game with the legendary Akinator!"""
 
@@ -1362,6 +1363,80 @@ class Fun(commands.Cog):
                                    f"&user1={img1}&user2={img2}") as w:
                 resp = await w.json()
                 await send_nekobot_image(ctx, resp)
+
+    @commands.command(aliases=["wc", "tagcloud"])
+    @commands.bot_has_permissions(read_message_history=True)
+    async def wordcloud(self, ctx, user: typing.Optional[discord.Member]=None, limit: typing.Optional[int]=2000, channel: typing.Optional[discord.TextChannel]=None):
+        """Generate a word cloud, which is an image that shows the frequencies of various words from messages sent in a channel
+        Format like this: `<prefix> wordcloud (OPTIONAL)<@mention user> (OPTIONAL)<# of msgs to process> (OPTIONAL)<channel>`
+        If you mention a user, I'll only process their messages. If you don't, I'll process all messages.
+        If you leave out the # of msgs to process, I'll default to 2000.
+        If you don't mention a channel, I'll use the one the command was performed in
+        """
+        def create_wc(text):
+            WC = wc.WordCloud(width=800, height=500)
+            WC.generate(text)
+            filepath = f"wc-{uuid.uuid4()}.png"
+            WC.to_file(filepath)
+            return filepath
+
+        if limit > 10000:
+            await ctx.send("The number of messages to process must be **no more than 10000**",
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
+
+        if channel is None:
+            channel = ctx.channel
+
+        temp = await ctx.send("Processing... Please wait...")
+        try:
+            with ctx.channel.typing():
+                if user is None:
+                    messages = [m.clean_content for m in await channel.history(
+                        limit=limit).flatten()]
+                    content = ("A word cloud showing the frequencies of various words from "
+                               f"messages sent in {channel.mention}. Bigger words are more "
+                               "frequent, smaller words are less")
+                else:
+                    messages = [m.clean_content for m in await channel.history(
+                        limit=limit).flatten() if m.author == user]
+                    content = ("A word cloud showing the frequencies of various words from "
+                               f"messages sent in {channel.mention} by {user.mention}. Bigger "
+                               "words are more frequent, smaller words are less")
+
+            if len(messages) == 0:
+                await temp.delete()
+                await ctx.send("I was unable to process enough messages in that channel to make "
+                               "a word cloud", delete_after=7.0)
+                return await delete_message(ctx, 7)
+
+            with ctx.channel.typing():
+                filepath = await self.bot.loop.run_in_executor(
+                    None, functools.partial(create_wc, "\n\n".join(messages)))
+
+                f = discord.File(filepath, filename="wc.png")
+                embed = discord.Embed(color=find_color(ctx))
+                embed.set_image(url="attachment://wc.png")
+                embed.set_footer(text=f"Messages processed: {len(messages)}")
+
+            await temp.delete()
+            await ctx.send(content, file=f, embed=embed)
+        except discord.Forbidden:
+            await temp.delete()
+            await ctx.send(
+                f"I don't have permission to view the message history of {channel.mention}",
+                delete_after=5.0)
+            await delete_message(ctx, 5)
+        except Exception as e:
+            await ctx.send(f"```{e}```Hmm, something went wrong. Try again later, and if the "
+                           f"error persists, please notify my creator, {self.bot.owner.name}. "
+                           "You can reach him at my support server: https://discord.gg/P4Fp3jA")
+        finally:
+            try:
+                if os.path.isfile(filepath):
+                    os.remove(filepath)
+            except:
+                return
 
     @commands.command()
     async def xkcd(self, ctx):
