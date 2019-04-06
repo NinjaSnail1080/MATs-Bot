@@ -300,19 +300,20 @@ async def send_dank_memer_img(loop, ctx, resp, is_gif: bool=False):
 
     def save_image(resp):
         if is_gif:
-            filename = f"{ctx.command.name}-{uuid.uuid4()}.gif"
-            with open(filename, "wb") as f:
+            filepath = f"{ctx.command.name}-{uuid.uuid4()}.gif"
+            with open(filepath, "wb") as f:
                 f.write(resp)
         else:
             img = Image.open(io.BytesIO(resp))
-            filename = f"{ctx.command.name}-{uuid.uuid4()}.png"
-            img.save(filename)
-        return filename
+            filepath = f"{ctx.command.name}-{uuid.uuid4()}.png"
+            img.save(filepath)
+        return filepath
 
     try:
-        filename = await loop.run_in_executor(None, functools.partial(save_image, resp))
+        filepath = await loop.run_in_executor(None, functools.partial(save_image, resp))
+        filename = ctx.command.name + filepath[-4:]
 
-        f = discord.File(filename, filename=filename)
+        f = discord.File(filepath, filename=filename)
         embed = discord.Embed(color=find_color(ctx))
         embed.set_image(url=f"attachment://{filename}")
         embed.set_footer(text=f"{ctx.command.name} | {ctx.author.display_name}")
@@ -324,7 +325,7 @@ async def send_dank_memer_img(loop, ctx, resp, is_gif: bool=False):
         await delete_message(ctx, 5)
     finally:
         try:
-            if os.path.isfile(filename):
-                os.remove(filename)
+            if os.path.isfile(filepath):
+                os.remove(filepath)
         except:
             pass
