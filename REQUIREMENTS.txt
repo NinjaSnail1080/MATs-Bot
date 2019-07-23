@@ -1,11 +1,15 @@
-git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
 aiodns
-akinator.py
+akinator.py[fast_async]
 ascii
+asyncpg
 beautifulsoup4
 cchardet
 certifi
+chardet==1.24
+dbl
 decorator
+discord.py[voice]
+google_images_download
 googletrans
 lxml
 matplotlib
@@ -19,6 +23,7 @@ python-rapidjson
 pytimeparse
 qrcode
 requests
+speedtest-cli
 urllib3
 validators
 wordcloud
