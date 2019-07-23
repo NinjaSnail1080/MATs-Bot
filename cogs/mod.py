@@ -16,12 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, get_data, dump_data, delete_message
+from utils import find_color, delete_message, send_log
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 import discord
 import pytimeparse
-import aiohttp
 import rapidjson as json
 
 import re
@@ -34,36 +33,18 @@ import time
 import string
 
 
-async def send_log(guild, send_embed):
-    """Creates a #logs channel if it doesn't already exist so people can keep track of what the
-    mods are doing. Then send the embed from a moderation command
-    """
-    serverdata = get_data("server")
-    if "logs" not in serverdata[str(guild.id)]:
-        logs = await guild.create_text_channel(
-            "logs", overwrites={guild.default_role: discord.PermissionOverwrite(
-                send_messages=False)})
-        await logs.send("I created this channel just now to keep a log of all my moderation "
-                        "commands that have been used. Feel free to edit this channel "
-                        "however you'd like, but make sure I always have access to it!"
-                        "\n\nP.S. I don't have to use this channel if you don't want me to. You "
-                        "can use the `setlogs` command to set a different logs channel or "
-                        "the `nologs` command to disable logging moderation commands entirely.")
-        serverdata[str(guild.id)]["logs"] = str(logs.id)
-        dump_data(serverdata, "server")
-    elif serverdata[str(guild.id)]["logs"] == "false":
-        return
-    else:
-        logs = guild.get_channel(int(serverdata[str(guild.id)]["logs"]))
-
-    await logs.send(embed=send_embed)
-
-
 class Moderation(commands.Cog):
     """Moderation tools"""
 
     def __init__(self, bot):
         self.bot = bot
+
+        self.star_emojis = ["\U00002b50", "\U0001f31f", "\U0001f320", "\U00002734"]
+
+        self.check_giveaways.start()
+
+    def cog_unload(self):
+        self.check_giveaways.cancel()
 
     async def cog_check(self, ctx):
         if ctx.guild is None:
@@ -71,26 +52,23 @@ class Moderation(commands.Cog):
         return True
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        self.bot.loop.create_task(self.check_giveaways())
-
-    @commands.Cog.listener()
     async def on_message(self, message):
-        #TODO: Eventually this will contain the antispam and antiraid features
+        #TODO: Eventually this will contain the antispam features
         pass
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         #* This function checks if a giveaway is cancelled by its creator
         if reaction.emoji == "\U0001f6d1":
-            giveaways = get_data("giveaways")
-            if (not any(int(g.get("msg", None)) == reaction.message.id for g in giveaways) or
-                    not any(int(g.get("author", None)) == user.id for g in giveaways)):
-                return
-            for g in giveaways.copy():
-                if g["msg"] == str(reaction.message.id):
-                    giveaways.remove(g)
-                    dump_data(giveaways, "giveaways")
+            for g in self.bot.botdata["giveaways"].copy():
+                if g["msg"] == reaction.message.id and g["author"] == user.id:
+                    self.bot.botdata["giveaways"].remove(g)
+                    async with self.bot.pool.acquire() as conn:
+                        await conn.execute("""
+                            UPDATE botdata
+                            SET giveaways = $1::JSON[]
+                        ;""", self.bot.botdata["giveaways"])
+
                     embed = discord.Embed(
                         description=f"{user.mention}'s giveaway for the prize, **{g['prize']}** "
                         "has been cancelled", color=reaction.message.guild.me.color)
@@ -98,105 +76,186 @@ class Moderation(commands.Cog):
                     return await reaction.message.edit(embed=embed)
 
     @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if (self.bot.guilddata[payload.guild_id]["starboard"] is None or
+                payload.emoji.name not in self.star_emojis or
+                    payload.guild_id is None):
+            return
+        if payload.channel_id == self.bot.guilddata[payload.guild_id]["starboard"]["channel"]:
+            return
+        if payload.message_id in self.bot.guilddata[payload.guild_id]["starboard"]["messages"]:
+            return
+
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        starboard = self.bot.get_channel(
+            self.bot.guilddata[payload.guild_id]["starboard"]["channel"])
+        num_reactions = self.bot.guilddata[payload.guild_id]["starboard"]["num_reactions"]
+
+        star_reactions = sum(
+            [r.count for r in message.reactions if r.emoji in self.star_emojis])
+
+        if star_reactions >= num_reactions:
+            msg_content = message.clean_content
+
+            #* The following code is to better format custom emojis that appear in the content
+            custom_emoji = re.compile(r"<:(\w+):(\d+)>")
+            for m in custom_emoji.finditer(msg_content):
+                msg_content = msg_content.replace(m.group(), m.group()[1:-19])
+
+            embed = discord.Embed(description=msg_content, timestamp=message.created_at,
+                                  color=find_color(message))
+            embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+            embed.add_field(name="Original", value=f"[Message]({message.jump_url})")
+            embed.add_field(name="Channel", value=channel.mention)
+            embed.add_field(name="Message ID", value=message.id)
+            if message.attachments:
+                embed.set_image(url=message.attachments[0].url)
+
+            await starboard.send(embed=embed)
+            self.bot.guilddata[payload.guild_id]["starboard"]["messages"].append(message.id)
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET starboard = $1::JSON
+                    WHERE id = {}
+                ;""".format(payload.guild_id),
+                self.bot.guilddata[payload.guild_id]["starboard"])
+
+    async def db_set_null(self, guild_id, to_set):
+        self.bot.guilddata[guild_id][to_set] = None
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET {} = NULL
+                WHERE id = {}
+            ;""".format(to_set, guild_id))
+
+    @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            serverdata = get_data("server")
-            if "triggers_disabled" in serverdata[str(channel.guild.id)]:
-                if str(channel.id) in serverdata[str(channel.guild.id)]["triggers_disabled"]:
-                    serverdata[str(channel.guild.id)]["triggers_disabled"].remove(str(channel.id))
-                    dump_data(serverdata, "server")
+
+        #* Checks to see if the channel deleted was a guild's log, welcome, goodbye, or
+        #* starboard channel
+        if channel.id == self.bot.guilddata[channel.guild.id]["logs"]:
+            await self.db_set_null(channel.guild.id, "logs")
+
+        if self.bot.guilddata[channel.guild.id]["welcome"] is not None:
+            if channel.id == self.bot.guilddata[channel.guild.id]["welcome"]["channel"]:
+                await self.db_set_null(channel.guild.id, "welcome")
+
+        if self.bot.guilddata[channel.guild.id]["goodbye"] is not None:
+            if channel.id == self.bot.guilddata[channel.guild.id]["goodbye"]["channel"]:
+                await self.db_set_null(channel.guild.id, "goodbye")
+
+        if self.bot.guilddata[channel.guild.id]["starboard"] is not None:
+            if channel.id == self.bot.guilddata[channel.guild.id]["starboard"]["channel"]:
+                await self.db_set_null(channel.guild.id, "starboard")
+
+    @commands.Cog.listener()
+    async def on_guild_role_delete(self, role):
+        if role.id == self.bot.guilddata[role.guild.id]["mute_role"]:
+            self.bot.guilddata[role.guild.id]["mute_role"] = None
+            await self.db_set_null(channel.guild.id, "mute_role")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        serverdata = get_data("server")
-        if "welcome" in serverdata[str(member.guild.id)]:
-            channel = self.get_channel(int(
-                serverdata[str(member.guild.id)]["welcome"]["channel"]))
-            await channel.send(
-                serverdata[str(member.guild.id)]["welcome"]["message"].format(member.mention))
+        #TODO: Eventually this will also contain the antiraid features
+        welcome = self.bot.guilddata[member.guild.id]["welcome"]
+        if welcome is not None:
+            channel = self.bot.get_channel(welcome["channel"])
+            await channel.send(welcome["message"].format(member.mention))
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        serverdata = get_data("server")
-        if "goodbye" in serverdata[str(member.guild.id)]:
-            channel = self.get_channel(int(
-                serverdata[str(member.guild.id)]["goodbye"]["channel"]))
-            await channel.send(
-                serverdata[str(member.guild.id)]["goodbye"]["message"].format(member.mention))
+        goodbye = self.bot.guilddata[member.guild.id]["goodbye"]
+        if goodbye is not None:
+            channel = self.bot.get_channel(goodbye["channel"])
+            await channel.send(goodbye["message"].format(member.mention))
 
+    @tasks.loop(seconds=1)
     async def check_giveaways(self):
-        while True:
-            giveaways = get_data("giveaways")
-            for g in giveaways.copy():
-                if datetime.datetime.utcnow() >= datetime.datetime.fromtimestamp(
-                    float(g["end_time"])):
 
-                    try:
-                        channel = self.bot.get_channel(int(g["channel"]))
-                        msg = await channel.fetch_message(int(g["msg"]))
-                        author = channel.guild.get_member(int(g["author"]))
-                        blacklist = g["blacklist"]
-                        num_winners = int(g["winners"])
-                        prize = g["prize"]
-                    except:
-                        giveaways.remove(g)
-                        dump_data(giveaways, "giveaways")
-                        continue
+        async def remove_giveaway(giveaway):
+            self.bot.botdata["giveaways"].remove(giveaway)
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE botdata
+                    SET giveaways = $1::JSON[]
+                ;""", self.bot.botdata["giveaways"])
 
-                    for r in msg.reactions:
-                        if r.emoji == "\U0001f3ab":
-                            pool = await r.users().flatten()
-                    for m in pool.copy():
-                        if m.bot or str(m.id) in blacklist:
-                            pool.remove(m)
+        for g in self.bot.botdata["giveaways"].copy():
+            if datetime.datetime.utcnow() >= datetime.datetime.fromtimestamp(g["end_time"]):
+                try:
+                    channel = self.bot.get_channel(g["channel"])
+                    msg = await channel.fetch_message(g["msg"])
+                    author = channel.guild.get_member(g["author"])
+                    blacklist = g["blacklist"]
+                    num_winners = g["winners"]
+                    prize = g["prize"]
+                except:
+                    #* If something went wrong (for example, the giveaway msg was deleted),
+                    #* just get rid of it and move on
+                    await remove_giveaway(g)
+                    continue
 
-                    try:
-                        winners = random.sample(pool, num_winners)
-                    except ValueError:
-                        await channel.send(f"{author.mention}'s giveaway is over and not enough "
-                                           f"people entered. This means nobody won **{prize}**")
-                        embed = discord.Embed(
-                            description=f"Nobody won **{prize}** in this giveaway",
-                            timestamp=datetime.datetime.utcnow(),
-                            color=channel.guild.me.color)
-                        embed.set_author(name=f"{author.name}'s giveaway is over!",
-                                         icon_url=author.avatar_url)
-                        embed.set_footer(text="This giveaway ended:")
-                        await msg.clear_reactions()
-                        await msg.edit(embed=embed)
-                        giveaways.remove(g)
-                        dump_data(giveaways, "giveaways")
-                        continue
+                for r in msg.reactions:
+                    if r.emoji == "\U0001f3ab":
+                        pool = await r.users().flatten()
+                        break
+                for m in pool.copy():
+                    if m.bot or m.id in blacklist:
+                        pool.remove(m)
 
-                    for w in winners:
-                        await w.send(f"\U0001f3c6 You just won **{prize}** in {author.mention}'s "
-                                     f"giveaway in the server, __{msg.guild.name}__! \U0001f3c6")
-
-                    if len(winners) == 1:
-                        embed = discord.Embed(
-                            description="\U0001f31f \U00002b50 Congratulations to "
-                            f"{winners[0].mention}, who won **{prize}**! \U00002b50 \U0001f31f",
-                            timestamp=datetime.datetime.utcnow(), color=channel.guild.me.color)
-                    else:
-                        embed = discord.Embed(
-                            description=f"\U0001f31f \U00002b50 Congratulations to the "
-                            f"{num_winners} winners of **{prize}**! \U00002b50 \U0001f31f",
-                            timestamp=datetime.datetime.utcnow(),
-                            color=channel.guild.me.color)
-                        embed.add_field(
-                            name="Winners", value="\n".join(w.mention for w in winners))
+                try:
+                    winners = random.sample(pool, num_winners)
+                except ValueError:
+                    await channel.send(f"{author.mention}'s giveaway is over and not enough "
+                                       f"people entered. This means nobody won **{prize}**")
+                    embed = discord.Embed(
+                        description=f"Nobody won **{prize}** in this giveaway",
+                        timestamp=datetime.datetime.utcnow(),
+                        color=channel.guild.me.color)
                     embed.set_author(name=f"{author.name}'s giveaway is over!",
                                      icon_url=author.avatar_url)
                     embed.set_footer(text="This giveaway ended:")
-
                     await msg.clear_reactions()
                     await msg.edit(embed=embed)
-                    await channel.send(
-                        f"Congratulations to {','.join(w.mention for w in winners)} for winning "
-                        f"**{prize}** in {author.mention}'s giveaway! \U0001f3c6")
-                    giveaways.remove(g)
-                    dump_data(giveaways, "giveaways")
-            await asyncio.sleep(1)
+                    await remove_giveaway(g)
+                    continue
+
+                for w in winners:
+                    await w.send(f"\U0001f3c6 You just won **{prize}** in {author.mention}'s "
+                                 f"giveaway in the server, __{msg.guild.name}__! \U0001f3c6")
+
+                if len(winners) == 1:
+                    embed = discord.Embed(
+                        description="\U0001f31f \U00002b50 Congratulations to "
+                        f"{winners[0].mention}, who won **{prize}**! \U00002b50 \U0001f31f",
+                        timestamp=datetime.datetime.utcnow(), color=channel.guild.me.color)
+                else:
+                    embed = discord.Embed(
+                        description=f"\U0001f31f \U00002b50 Congratulations to the "
+                        f"{num_winners} winners of **{prize}**! \U00002b50 \U0001f31f",
+                        timestamp=datetime.datetime.utcnow(),
+                        color=channel.guild.me.color)
+                    embed.add_field(
+                        name="Winners", value="\n".join(w.mention for w in winners))
+
+                embed.set_author(name=f"{author.name}'s giveaway is over!",
+                                 icon_url=author.avatar_url)
+                embed.set_footer(text="This giveaway ended:")
+
+                await msg.clear_reactions()
+                await msg.edit(embed=embed)
+                await channel.send(
+                    f"Congratulations to {','.join(w.mention for w in winners)} for winning "
+                    f"**{prize}** in {author.mention}'s giveaway! \U0001f3c6")
+                await remove_giveaway(g)
+
+    @check_giveaways.before_loop
+    async def before_check_giveaways(self):
+        await self.bot.wait_until_ready()
+        await asyncio.sleep(10) #* To ensure that the database is fully set up before it starts
 
     def check_reaction(self, message, author):
         """For the `purge` and `prune` commands"""
@@ -254,7 +313,7 @@ class Moderation(commands.Cog):
                              icon_url=ctx.author.avatar_url)
             embed.set_thumbnail(url="https://i.imgur.com/0A6naoR.png")
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         elif banned:
             embed = discord.Embed(
@@ -264,7 +323,7 @@ class Moderation(commands.Cog):
                              icon_url=ctx.author.avatar_url)
             embed.set_thumbnail(url="https://i.imgur.com/0A6naoR.png")
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         if len(cant_ban) == 1:
             embed = discord.Embed(
@@ -327,48 +386,50 @@ class Moderation(commands.Cog):
                             "\n===================\n\n" + "\n".join(members_failed))
 
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post("https://hastebin.com/documents",
-                                            data=content.encode("utf-8")) as w:
-                        #* For whatever reason, "await w.json()" doesn't work, so I'm using this:
-                        post = json.loads(await w.read())
-                        # post = await w.json()
-                        link = f"https://hastebin.com/raw/{post['key']}"
+                async with self.bot.session.post("https://hastebin.com/documents",
+                                                 data=content.encode("utf-8")) as w:
+                    #* For whatever reason, "await w.json()" doesn't work, so I'm using this:
+                    post = json.loads(await w.read())
+                    # post = await w.json()
+                    link = f"https://hastebin.com/raw/{post['key']}"
             except:
                 #* On the rare occasion that it fails to post to hastebin
                 link = None
 
-            seconds = round(time.time() - start_time, 1)
-            if seconds.is_integer():
-                seconds = int(seconds)
-            if link is not None:
-                embed = discord.Embed(
-                    description=f"**{len(members_dehoisted)}** members dehoisted in "
-                    f"__{seconds}__ seconds\n**{len(members_failed)}** members failed to dehoist"
-                    f"\n[Detailed list]({link})",
-                    color=find_color(ctx))
-            else:
-                embed = discord.Embed(
-                    description=f"**{len(members_dehoisted)}** members dehoisted in "
-                    f"__{seconds}__ seconds\n**{len(members_failed)}** members failed to dehoist",
-                    color=find_color(ctx))
-            embed.set_author(name=f"{ctx.author.name} performed a dehoist",
-                             icon_url=ctx.author.avatar_url)
+        duration = round(time.time() - start_time, 1)
+        if duration.is_integer():
+            duration = int(duration)
+        if link is not None:
+            embed = discord.Embed(
+                description=f"**{len(members_dehoisted)}** members dehoisted in "
+                f"__{duration}__ seconds\n**{len(members_failed)}** members failed to dehoist"
+                f"\n[Detailed list]({link})",
+                color=find_color(ctx))
+        else:
+            embed = discord.Embed(
+                description=f"**{len(members_dehoisted)}** members dehoisted in "
+                f"__{duration}__ seconds\n**{len(members_failed)}** members failed to dehoist",
+                color=find_color(ctx))
+        embed.set_author(name=f"{ctx.author.name} performed a dehoist",
+                            icon_url=ctx.author.avatar_url)
 
-            await msg.delete()
-            await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+        await msg.delete()
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> disable <command OR category>`\n\nYou can put a command and "
                       "I'll disable it for this server or you could put in a category (Fun, "
-                      "Image, NSFW, etc.) and I'll disable all commands in that category")
+                      "Image, NSFW, etc.) and I'll disable all commands in that category. Note: "
+                      "The category is case-sensitive")
     @commands.has_permissions(administrator=True)
     async def disable(self, ctx, cmd):
         """**Must have the Administrater permission**
         Disable a command or group of commands for this server
         Format like this: `<prefix> disable <command OR category>`
+        Note: The category is case-sensitive
         """
+        await ctx.channel.trigger_typing()
         if cmd.lower() == "help":
             await ctx.send("Yeah, great idea. Disable the freaking help command :rolling_eyes:",
                            delete_after=6.0)
@@ -379,18 +440,18 @@ class Moderation(commands.Cog):
                            "disable that command", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        if "disabled" in get_data("server")[str(ctx.guild.id)]:
-            if cmd.lower() in get_data("server")[str(ctx.guild.id)]["disabled"]:
-                await ctx.send("This command is already disabled", delete_after=5.0)
-                return await delete_message(ctx, 5)
+        if cmd.lower() in self.bot.guilddata[ctx.guild.id]["disabled"]:
+            await ctx.send("This command is already disabled", delete_after=5.0)
+            return await delete_message(ctx, 5)
 
-        serverdata = get_data("server")
         if cmd.lower() in set(c.name for c in self.bot.commands):
-            try:
-                serverdata[str(ctx.guild.id)]["disabled"].append(cmd.lower())
-            except:
-                serverdata[str(ctx.guild.id)]["disabled"] = [cmd.lower()]
-            dump_data(serverdata, "server")
+            self.bot.guilddata[ctx.guild.id]["disabled"].append(cmd.lower())
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET disabled = $1::TEXT[]
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["disabled"])
 
             embed = discord.Embed(
                 description=f"The `{cmd.lower()}` command is now disabled on this server",
@@ -399,27 +460,29 @@ class Moderation(commands.Cog):
                              icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         elif cmd in ["Fun", "Image", "Info", "Moderation", "NSFW", "Utility"]:
-            for c in self.bot.get_cog_commands(cmd):
-                if c.name == "enable":  #* So it doesn't disable the "enable" command
-                    continue
-                try:
-                    serverdata[str(ctx.guild.id)]["disabled"].append(c.name)
-                except:
-                    serverdata[str(ctx.guild.id)]["disabled"] = [c.name]
-            dump_data(serverdata, "server")
+            for c in self.bot.get_cog(cmd).get_commands():
+                if c.name != "enable":  #* So it doesn't disable the "enable" command
+                    self.bot.guilddata[ctx.guild.id]["disabled"].append(c.name)
+
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET disabled = $1::TEXT[]
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["disabled"])
 
             embed = discord.Embed(
                 description=f"All commands in the {cmd} category are now disabled on this server."
-                f"\n\n`{'`, `'.join(c.name for c in self.bot.commands if c.cog_name == cmd)}`",
+                f"\n\n`{'`, `'.join(c.name for c in self.bot.get_cog(cmd).get_commands())}`",
                 color=find_color(ctx))
             embed.set_author(name=ctx.author.name + " disabled a group of commands",
                              icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         else:
             raise commands.BadArgument
@@ -427,22 +490,28 @@ class Moderation(commands.Cog):
     @commands.command(brief="Invalid Formatting. The command is supposed to look like this: "
                       "`<prefix> enable <command OR \"all\">`\n\nYou can put a command and "
                       "I'll enable it for this server or you could put in `all` and I'll enable "
-                      "all previously disabled commands")
+                      "all the disabled commands")
     @commands.has_permissions(administrator=True)
     async def enable(self, ctx, cmd):
         """**Must have the Administrater permission**
         Enable a previously disabled command(s) for this server
         Format like this: `<prefix> enable <command OR "all">`
+        If you put `all`, I'll enable all the disabled commands
         """
-        if not "disabled" in get_data("server")[str(ctx.guild.id)]:
+        await ctx.channel.trigger_typing()
+        if not self.bot.guilddata[ctx.guild.id]["disabled"]:
             await ctx.send("This server doesn't have any disabled commands to begin with",
                            delete_after=6.0)
             return await delete_message(ctx, 6)
 
-        serverdata = get_data("server")
-        if cmd.lower() in serverdata[str(ctx.guild.id)]["disabled"]:
-            serverdata[str(ctx.guild.id)]["disabled"].remove(cmd.lower())
-            dump_data(serverdata, "server")
+        if cmd.lower() in self.bot.guilddata[ctx.guild.id]["disabled"]:
+            self.bot.guilddata[ctx.guild.id]["disabled"].remove(cmd.lower())
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET disabled = $1::TEXT[]
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["disabled"])
 
             embed = discord.Embed(
                 description=f"The `{cmd.lower()}` command is no longer disabled on this server",
@@ -451,12 +520,17 @@ class Moderation(commands.Cog):
                              icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         elif cmd.lower() == "all":
-            disabled = serverdata[str(ctx.guild.id)]["disabled"]
-            serverdata[str(ctx.guild.id)].pop("disabled", None)
-            dump_data(serverdata, "server")
+            disabled = self.bot.guilddata[ctx.guild.id]["disabled"]
+            self.bot.guilddata[ctx.guild.id]["disabled"].clear()
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET disabled = $1::TEXT[]
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["disabled"])
 
             embed = discord.Embed(
                 description="There are no more disabled commands on this server\n\n**Commands "
@@ -465,30 +539,34 @@ class Moderation(commands.Cog):
                              icon_url=ctx.author.avatar_url)
 
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
-        elif (cmd.lower() not in serverdata[str(ctx.guild.id)]["disabled"] and
+        elif (cmd.lower() not in self.bot.guilddata[ctx.guild.id]["disabled"] and
                   cmd.lower() in set(c.name for c in self.bot.commands)):
             await ctx.send(f"This command is already enabled. Do `{ctx.prefix}help` to see a "
                            "list of all disabled commands", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        elif (cmd.lower() not in serverdata[str(ctx.guild.id)]["disabled"] and
+        elif (cmd.lower() not in self.bot.guilddata[ctx.guild.id]["disabled"] and
                   cmd.lower() not in set(c.name for c in self.bot.commands)):
             raise commands.BadArgument
 
     @commands.command(aliases=["raffle"], brief="Invalid formatting. The command should look "
-                      "like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> "
+                      "like this:\n`<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> "
                       "(OPTIONAL)<number of winners (defaults to 1)> <duration> <prize name>`"
-                      "\n\nDo `<prefix> help giveaway` for more info")
+                      "\n\nFor the blacklist, mention any users who aren't allowed to compete in "
+                      "this giveaway\n\nIf you don't mention a channel, I'll just use the "
+                      "channel the command was performed in\n\nThe duration should look "
+                      "something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES). The only "
+                      "characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`")
     @commands.has_permissions(manage_guild=True)
-    async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, num_winners: typing.Optional[int]=1, duration: str=None, *, prize: str=None):
+    async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, num_winners: typing.Optional[int]=1, duration: str="", *, prize: str=None):
         """**Must have the "Manage Server" permission**
         Start a giveaway/raffle!
         Format like this: `<prefix> giveaway (OPTIONAL)<blacklist> (OPTIONAL)<channel> (OPTIONAL)<number of winners (defaults to 1)> <duration> <prize name>`
         For the blacklist, mention any users who aren't allowed to compete in this giveaway
         If you don't mention a channel, I'll just use the channel the command was performed in
-        Note: The duration should look something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES)
+        Note: The duration should look something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES). The only characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`
         """
         parsed_duration = pytimeparse.parse(duration)
         if prize is None or parsed_duration is None:
@@ -527,17 +605,20 @@ class Moderation(commands.Cog):
         await msg.add_reaction("\U0001f6d1")
 
         new_giveaway = {
-            "msg": str(msg.id),
-            "channel": str(channel.id),
-            "author": str(ctx.author.id),
-            "end_time": str(end_time),
-            "blacklist": [str(m.id) for m in blacklist],
-            "winners": str(num_winners),
+            "msg": msg.id,
+            "channel": channel.id,
+            "author": ctx.author.id,
+            "end_time": end_time,
+            "blacklist": [m.id for m in blacklist],
+            "winners": num_winners,
             "prize": prize
         }
-        giveaways = get_data("giveaways")
-        giveaways.append(new_giveaway)
-        dump_data(giveaways, "giveaways")
+        self.bot.botdata["giveaways"].append(new_giveaway)
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE botdata
+                SET giveaways = $1::JSON[]
+            ;""", self.bot.botdata["giveaways"])
 
     @commands.command(brief="Member not found. Try again")
     @commands.bot_has_permissions(kick_members=True)
@@ -581,7 +662,7 @@ class Moderation(commands.Cog):
             embed.set_author(name=f"{ctx.author.name} kicked {kicked[0]} from the server",
                              icon_url=ctx.author.avatar_url)
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         elif kicked:
             embed = discord.Embed(
@@ -590,7 +671,7 @@ class Moderation(commands.Cog):
             embed.set_author(name=f"{len(kicked)} members were kicked by {ctx.author.name}",
                              icon_url=ctx.author.avatar_url)
             await ctx.send(embed=embed)
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         if len(cant_kick) == 1:
             embed = discord.Embed(
@@ -610,15 +691,187 @@ class Moderation(commands.Cog):
                             value=f"{', '.join(m.mention for m in cant_kick)}")
             await ctx.send(embed=embed)
 
+    @commands.command(brief="Member or channel not found. Try again")
+    @commands.bot_has_permissions(manage_roles=True)
+    async def mute(self, ctx, members: commands.Greedy[discord.Member], channel: typing.Optional[typing.Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel]]=None, duration: str="", *, reason: str=None):
+        """**Must have the "Manage Roles" (serverwide) or "Manage Permissions" (channel-specific) permission**
+        Mutes a user(s) from sending messages in this server. This is done by assigning them a role with perms that prevents them from sending messages
+        Format like this: `<prefix> mute <user(s)> (OPTIONAL)<channel> <duration> (OPTIONAL)<reason>`
+        If you include a text, voice, OR category channel, they'll only be muted in that channel. If you don't specify one, they'll be muted for the entire server
+        The duration is how long they'll be muted and should look something like this: `1w` OR `2h30m` OR `1d30m` (NO SPACES). The only characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`
+        """
+        if channel is not None:
+            if not ctx.author.permissions_in(channel).manage_roles:
+                await ctx.send("You don't have the **Manage Permissions** perm in "
+                               f"{channel.mention}, so you can't mute anyone in that channel",
+                               delete_after=7.0)
+                return await delete_message(ctx, 7)
+        else:
+            if not ctx.author.guild_permissions.manage_roles:
+                raise commands.MissingPermissions(["manage_roles"])
+        if not members:
+            await ctx.send("You didn't format the command correctly, it's supposed to look like "
+                           f"this: `{ctx.prefix}mute <@mention member(s)> (OPTIONAL)<#mention "
+                           "channel> <duration> (OPTIONAL)<reason>`\n\nFor the duration, put "
+                           "something like `1w`, `12h`, `2h30m`, `45m`, `3d12h5m30s`, etc. and "
+                           "that's how long they will be muted", delete_after=15.0)
+            return await delete_message(ctx, 15)
+        if ctx.guild.me in members:
+            return await ctx.send(":rolling_eyes:")
+
+        parsed_duration = pytimeparse.parse(duration)
+        if parsed_duration is None:
+            await ctx.send("You didn't format the duration correctly. It should look something "
+                           "like this: `1w` OR `2h30m` OR `1d30m` (NO SPACES)\n\nThe only "
+                           "characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`",
+                           delete_after=15.0)
+            return await delete_message(ctx, 15)
+        elif parsed_duration > 604800 or parsed_duration < 60:
+            await ctx.send("The duration must be at least a minute __and__ no longer than a week",
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
+
+        if reason is None:
+            reason = "No reason given"
+        if len(reason) + len(ctx.author.name) + 23 > 512:
+            max_length = 512 - (len(ctx.author.name) + 23)
+            await ctx.send(f"Reason is too long. It must be under {max_length} characters",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        muted, cant_mute = [], []
+        temp = await ctx.send("Muting...")
+        with ctx.channel.typing():
+            if channel is None:
+                if self.bot.guilddata[ctx.guild.id]["mute_role"] is None:
+                    mute_role = await ctx.guild.create_role(name="Muted",
+                                                            color=discord.Color(0x23272A))
+                    self.bot.guilddata[ctx.guild.id]["mute_role"] = mute_role.id
+                    async with self.bot.pool.acquire() as conn:
+                        await conn.execute("""
+                            UPDATE guilddata
+                            SET mute_role = {}
+                            WHERE id = {}
+                        ;""".format(mute_role.id, ctx.guild.id))
+                else:
+                    mute_role = ctx.guild.get_role(self.bot.guilddata[ctx.guild.id]["mute_role"])
+
+                for c in ctx.guild.channels:
+                    await c.set_permissions(
+                        mute_role, send_messages=False, connect=False, add_reactions=False)
+
+                for member in members:
+                    if not member.guild_permissions.administrator:
+                        await member.add_roles(
+                            mute_role, reason=f"{reason} | Action performed by {ctx.author.name}")
+                        muted.append(member)
+                    else:
+                        cant_mute.append(member)
+            else:
+                for member in members:
+                    if not member.guild_permissions.administrator:
+                        await channel.set_permissions(
+                            member, reason=f"{reason} | Action performed by {ctx.author.name}",
+                            send_messages=False, connect=False, add_reactions=False)
+                        muted.append(member)
+                    else:
+                        cant_mute.append(member)
+
+        await temp.delete()
+
+        if channel is None:
+            to_send = (f"You have been muted from speaking in the server __{ctx.guild.name}__ "
+                       f"for **{duration}** by {ctx.author.mention}")
+        else:
+            to_send = (f"You have been muted from speaking in the channel {channel.mention} in "
+                       f"the server __{ctx.guild.name}__ for **{duration}** by "
+                       f"{ctx.author.mention}")
+        if reason != "No reason given":
+            to_send += f" for this reason:```{reason}```"
+        for m in muted:
+            await m.send(to_send)
+
+        if len(muted) == 1:
+            if channel is None:
+                embed = discord.Embed(
+                    description=f"__Duration__: {duration}\n__Reason__: {reason}",
+                    color=find_color(ctx))
+                embed.set_author(name=f"{ctx.author.name} muted {muted[0]} from the server",
+                                 icon_url=ctx.author.avatar_url)
+            else:
+                embed = discord.Embed(
+                    description=f"__Channel__: {channel.mention}\n__Duration__: {duration}\n"
+                                f"__Reason__: {reason}",
+                    color=find_color(ctx))
+                embed.set_author(name=f"{ctx.author.name} muted {muted[0]} from a channel",
+                                 icon_url=ctx.author.avatar_url)
+            await ctx.send(embed=embed)
+            await send_log(ctx, embed)
+
+        elif muted:
+            if channel is None:
+                embed = discord.Embed(
+                    description=f"**Muted**: {', '.join(m.mention for m in muted)}\n\n"
+                                f"__Duration__: {duration}\n__Reason__: {reason}",
+                    color=find_color(ctx))
+            else:
+                embed = discord.Embed(
+                    description=f"**Muted**: {', '.join(m.mention for m in muted)}\n\n"
+                                f"__Channel__: {channel.mention}\n__Duration__: {duration}"
+                                f"\n__Reason__: {reason}",
+                    color=find_color(ctx))
+            embed.set_author(name=f"{len(muted)} members were muted by {ctx.author.name}",
+                             icon_url=ctx.author.avatar_url)
+            await ctx.send(embed=embed)
+            await send_log(ctx, embed)
+
+        if len(cant_mute) == 1:
+            embed = discord.Embed(
+                title=f"I couldn't mute {cant_mute[0].name}",
+                description=f"{cant_mute[0].mention} is an Administrator of this server, so I "
+                "couldn't mute them",
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
+
+        elif cant_mute:
+            embed = discord.Embed(
+                title="I couldn't mute all the members you listed",
+                description="Some of the members you listed are Administrators of this server, "
+                "so I couldn't mute them",
+                color=find_color(ctx))
+            embed.add_field(name="Here are the members I couldn't mute:",
+                            value=f"{', '.join(m.mention for m in cant_mute)}")
+            await ctx.send(embed=embed)
+
+        await asyncio.sleep(parsed_duration)
+        for m in muted:
+            try:
+                if channel is None:
+                    await m.remove_roles(mute_role, reason="The temporary mute assigned by "
+                                         f"{ctx.author.name} is over")
+                    await m.send(f"You are no longer muted in the server, __{ctx.guild.name}__")
+                else:
+                    await channel.set_permissions(
+                        m, reason=f"The temporary mute assigned by {ctx.author.name} is over",
+                        send_messages=None, connect=None, add_reactions=None)
+                    await m.send(f"You are no longer muted in the channel, {channel.mention} in "
+                                 f"the server, __{ctx.guild.name}__")
+            except: #* If something went wrong (e.g. the member left), just ignore it and move on
+                continue
+
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def nologs(self, ctx):
         """**Must have the Administrator permission**
         Disables the logs channel
         """
-        serverdata = get_data("server")
-        serverdata[str(ctx.guild.id)]["logs"] = "false"
-        dump_data(serverdata, "server")
+        self.bot.guilddata[ctx.guild.id]["logs"] = 0
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET logs = 0
+                WHERE id = {}
+            ;""".format(ctx.guild.id))
 
         await ctx.send(
             "Logging moderation commands has been turned off for this server "
@@ -695,72 +948,68 @@ class Moderation(commands.Cog):
                          icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
-    @commands.group(aliases=["remove"])
+    @commands.group(aliases=["remove"], invoke_without_command=True)
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**
         Mass-deletes messages from a certain channel.
         There are several different ways to use this command. Type just `<prefix> purge` for help
         """
-        if ctx.invoked_subcommand is None:
-            embed = discord.Embed(
-                title="MAT's Purge Command | Help", description="An easy way to mass-delete "
-                "messages from a channel!\n\nAdd **one** of these to the command to purge "
-                f"messages that fit a certain criteria\n\n__Example usage__: `{ctx.prefix}purge "
-                "contains will smith`", color=find_color(ctx))
+        embed = discord.Embed(
+            title="MAT's Purge Command | Help", description="An easy way to mass-delete "
+            "messages from a channel!\n\nAdd **one** of these to the command to purge "
+            f"messages that fit a certain criteria\n\n__Example usage__: `{ctx.prefix}purge "
+            "contains banana`", color=find_color(ctx))
 
-            embed.add_field(name="all (OPTIONAL)<number>", value="Deletes all "
-                            "messages in the channel. If you also put in a number, it'll only "
-                            "delete that many messages. I default to 1000, and I can't go over "
-                            "2000", inline=False)
-            embed.add_field(name="clear", value="Completely clears a channel by deleting and "
-                            "replacing it with an identical one. I need the **Manage Channels** "
-                            "permission in order to do this", inline=False)
-            embed.add_field(name="member <mention user(s)>", value="Deletes all messages by a "
-                            "certain member or members of the server", inline=False)
-            embed.add_field(name="contains <substring>", value="Deletes all messages that "
-                            "contain a substring, which must be specified (not case-sensitive)",
-                            inline=False)
-            embed.add_field(name="files", value="Deletes all messages with files attached",
-                            inline=False)
-            embed.add_field(name="embeds", value="Deletes all messages with embeds (The messages "
-                            "with a colored line off to the side, like this one. This means a "
-                            "lot of bot messages will be deleted, along with any links and/or "
-                            "videos that were posted)", inline=False)
-            embed.add_field(name="bot (OPTIONAL)<bot prefix>", value="Deletes all messages by "
-                            "bots. If you add in a bot's prefix I'll also delete all messages "
-                            "that contain that prefix", inline=False)
-            embed.add_field(name="emoji", value="Deletes all messages that contain a custom "
-                            "emoji", inline=False)
-            embed.add_field(name="before <message ID OR date> (OPTIONAL)<number>", value="Deletes"
-                            " a certain number of messages that come before the one with the "
-                            "given ID __OR__ date. See [here](https://support.discordapp.com/hc/e"
-                            "n-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-)"
-                            " if you don't know how to get a message's ID. If you put a date "
-                            "instead, it must be formatted like this: `mm-dd-yyyy`. If you don't "
-                            "put a number, I'll default to 100. I can go up to 2000",
-                            inline=False)
-            embed.add_field(name="after <message ID OR date>", value="Deletes all messages that "
-                            "come after the one with the given message ID __OR__ date. See [here]"
-                            "(https://support.discordapp.com/hc/en-us/articles/206346498-Where-ca"
-                            "n-I-find-my-User-Server-Message-ID-) if you don't know how to get a "
-                            "message's ID. If you put a date instead, it must be formatted like "
-                            "this: `mm-dd-yyyy`", inline=False)
-            embed.add_field(name="around <message ID OR date> (OPTIONAL)<number>", value="Deletes"
-                            " a certain number of messages sent around the one with given ID "
-                            "__OR__ date. See [here](https://support.discordapp.com/hc/en-us/arti"
-                            "cles/206346498-Where-can-I-find-my-User-Server-Message-ID-) if you "
-                            "don't know how to get a message's ID. If you put a date instead, it "
-                            "must be formatted like this: `mm-dd-yyyy`. If you don't put a "
-                            "number, I'll default to 101. I can go up to 2001", inline=False)
-            embed.add_field(name="reactions", value="Removes all reactions from messages that "
-                            "have them", inline=False)
-            embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Unpins all "
-                            "pinned messages in this channel. You can also specify a certain "
-                            "number of messages to leave pinned", inline=False)
+        embed.add_field(name="all (OPTIONAL)<number>", value="Deletes all "
+                        "messages in the channel. If you also put in a number, it'll only "
+                        "delete that many messages. I default to 1000, and I can't go over "
+                        "2000", inline=False)
+        embed.add_field(name="clear", value="Completely clears a channel by deleting and "
+                        "replacing it with an identical one. I need the **Manage Channels** "
+                        "permission in order to do this", inline=False)
+        embed.add_field(name="member <mention user(s)>", value="Deletes all messages by a "
+                        "certain member or members of the server", inline=False)
+        embed.add_field(name="contains <substring>", value="Deletes all messages that "
+                        "contain a substring, which must be specified (not case-sensitive)",
+                        inline=False)
+        embed.add_field(name="files", value="Deletes all messages with files attached",
+                        inline=False)
+        embed.add_field(name="embeds", value="Deletes all messages with embeds (The messages "
+                        "with a colored line off to the side, like this one. This means a "
+                        "lot of bot messages will be deleted, along with any links and/or "
+                        "videos that were posted)", inline=False)
+        embed.add_field(name="bot (OPTIONAL)<bot prefix>", value="Deletes all messages by "
+                        "bots. If you add in a bot's prefix I'll also delete all messages "
+                        "that contain that prefix", inline=False)
+        embed.add_field(name="emoji", value="Deletes all messages that contain a custom "
+                        "emoji", inline=False)
+        embed.add_field(name="before <message link OR date> (OPTIONAL)<number>", value="Deletes "
+                        "a certain number of messages that come **before** the one with the "
+                        "given link __OR__ date. To get the message link, click the 3 dots next "
+                        "to the msg and press `Copy Link`. If you put a date instead, it must be "
+                        "formatted like this: `mm-dd-yyyy`. If you don't put a number, I'll "
+                        "default to 100. I can go up to 2000", inline=False)
+        embed.add_field(name="after <message link OR date> (OPTIONAL)<number>", value="Deletes "
+                        "all messages that come **after** the one with the given link __OR__ "
+                        "date. To get the message link, click the 3 dots next to the msg and "
+                        "press `Copy Link`. If you put a date instead, it must be formatted like "
+                        "this: `mm-dd-yyyy`. If you don't put a number, I'll default to 100. I "
+                        "can go up to 2000", inline=False)
+        embed.add_field(name="around <message link OR date> (OPTIONAL)<number>", value="Deletes "
+                        "a certain number of messages sent **around** the one with given link "
+                        "__OR__ date. To get the message link, click the 3 dots next to the msg "
+                        "and press `Copy Link`. If you put a date instead, it must be formatted "
+                        "like this: `mm-dd-yyyy`. If you don't put a number, I'll default to "
+                        "101. I can go up to 2000", inline=False)
+        embed.add_field(name="reactions", value="Removes all reactions from messages that "
+                        "have them", inline=False)
+        embed.add_field(name="pins (OPTIONAL)<number to leave pinned>", value="Unpins all "
+                        "pinned messages in this channel. You can also specify a certain "
+                        "number of messages to leave pinned", inline=False)
 
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     async def remove(self, ctx, limit, check, description: str, before=None, after=None, around=None):
         if limit > 2000:
@@ -770,7 +1019,7 @@ class Moderation(commands.Cog):
             return await delete_message(ctx, 6)
 
         if limit >= 25:
-            if ctx.command.name in ["all", "before", "around"]:
+            if ctx.command.name in ["all", "before", "around", "after"]:
                 confirm = await ctx.send("React with \U00002705 to confirm that you want to "
                                          "purge 25+ messages in this channel. React with "
                                          "\U0000274c to cancel")
@@ -814,55 +1063,53 @@ class Moderation(commands.Cog):
         embed.set_author(name=ctx.author.name + " ran a purge command",
                          icon_url=ctx.author.avatar_url)
         if len(purged) >= 10:
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
         for m in purged:
             messages[m.author.display_name] += 1
+        added_fields = {}
         for a, m in messages.items():
-            embed.add_field(name=a, value=f"{m} messages")
+            embed.add_field(name=a, value=f"{m} message{'' if m == 1 else 's'}")
+            added_fields.update({a:m})
+            if len(added_fields) == 24 and len(messages) > 25:
+                authors_left = {a:m for a, m in messages.items() if a not in added_fields}
+                embed.add_field(
+                    name=f"...and {len(authors_left)} more",
+                    value=f"{len(sum(authors_left.values()))} message{'' if m == 1 else 's'}")
+                break
 
         if len(purged) < 10:
-            try:
-                if get_data("server")[str(ctx.guild.id)]["logs"] != "false":
-                    embed.set_footer(text="The number of messages purged was less than 10, so a "
-                                     "log wasn't sent to the logs channel")
-            except:
-                pass
-        try:
-            await ctx.send(embed=embed)
-        except:
-            embed = discord.Embed(
-                description=f"{len(purged)} {description} in {ctx.channel.mention}",
-                color=find_color(ctx))
-            embed.set_author(name=ctx.author.name + " ran a purge command",
-                             icon_url=ctx.author.avatar_url)
-            await ctx.send(embed=embed)
+            if self.bot.guilddata[ctx.guild.id]["logs"] != 0:
+                embed.set_footer(text="The number of messages purged was less than 10, so a log "
+                                 "wasn't sent to the logs channel")
 
-    @purge.command(brief="Invalid formatting. You must format the command like this: "
-                   "`<prefix> purge after <message ID OR date>`\n\nIf you don't know how to get "
-                   "a message's ID, see here:\nhttps://support.discordapp.com/hc/en-us/articles/"
-                   "206346498-Where-can-I-find-my-User-Server-Message-ID-\n\nIf you put a date "
-                   "instead, it must be formatted like this: `mm-dd-yyyy`. Anything else will "
-                   "cause an error.\n__Example__: `04-03-2019`")
+        await ctx.send(embed=embed)
+
+    @purge.command(brief="Invalid formatting. You must format the command like this: `<prefix> "
+                   "purge after <message link OR date> (OPTIONAL)<number of msgs to delete>`\n\n"
+                   "If you don't put a number, I'll defualt to 100. I can go up to 2000\n\nTo "
+                   "get the message link, click the 3 dots next to the msg (on mobile, press and "
+                   "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
+                   "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
+                   "\n__Example__: `04-03-2019`")
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
-    async def after(self, ctx, msg_date: typing.Union[int, str]):
+    async def after(self, ctx, del_after: typing.Union[discord.Message, str], limit: int=100):
 
         try:
-            if isinstance(msg_date, int):
-                del_after = await ctx.channel.fetch_message(msg_date)
-            else:
-                del_after = datetime.datetime.strptime(msg_date, "%m-%d-%Y")
+            #* If it's a date instead of a Message object
+            if isinstance(del_after, str):
+                del_after = datetime.datetime.strptime(del_after, "%m-%d-%Y")
         except:
             raise commands.BadArgument
 
         if isinstance(del_after, discord.Message):
             await self.remove(
-                ctx, 1000, None, f"messages after [this one]({del_after.jump_url}) were deleted",
+                ctx, limit, None, f"messages after [this one]({del_after.jump_url}) were deleted",
                 after=del_after)
         else:
             await self.remove(
-                ctx, 1000, None, f"messages sent after **{del_after.strftime('%b %-d, %Y')}** "
+                ctx, limit, None, f"messages sent after **{del_after.strftime('%b %-d, %Y')}** "
                 "were deleted", after=del_after)
 
     @purge.command(name="all", brief="Invalid formatting. You must format the command like this: "
@@ -873,22 +1120,21 @@ class Moderation(commands.Cog):
 
         await self.remove(ctx, limit, None, "messages were deleted")
 
-    @purge.command(brief="Invalid formatting. You must format the command like this: "
-                   "`<prefix> purge around <message ID OR date> (OPTIONAL)<number of msgs to "
-                   "delete>`\n\nIf you don't put a number, I'll defualt to 101.\n\nIf you don't "
-                   "know how to get a message's ID, see here:\nhttps://support.discordapp.com/hc/"
-                   "en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-\n\nIf "
-                   "you put a date instead, it must be formatted like this: `mm-dd-yyyy`. "
-                   "Anything else will cause an error.\n__Example__: `04-03-2019`")
+    @purge.command(brief="Invalid formatting. You must format the command like this: `<prefix> "
+                   "purge around <message link OR date> (OPTIONAL)<number of msgs to delete>`\n\n"
+                   "If you don't put a number, I'll defualt to 101. I can go up to 2000\n\nTo "
+                   "get the message link, click the 3 dots next to the msg (on mobile, press and "
+                   "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
+                   "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
+                   "\n__Example__: `04-03-2019`")
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
-    async def around(self, ctx, msg_date: typing.Union[int, str], limit: int=101):
+    async def around(self, ctx, del_around: typing.Union[discord.Message, str], limit: int=101):
 
         try:
-            if isinstance(msg_date, int):
-                del_around = await ctx.channel.fetch_message(msg_date)
-            else:
-                del_around = datetime.datetime.strptime(msg_date, "%m-%d-%Y")
+            #* If it's a date instead of a Message object
+            if isinstance(del_around, str):
+                del_around = datetime.datetime.strptime(del_around, "%m-%d-%Y")
         except:
             raise commands.BadArgument
 
@@ -902,22 +1148,21 @@ class Moderation(commands.Cog):
                 ctx, limit, None, f"messages sent around **{del_around.strftime('%b %-d, %Y')}** "
                 "were deleted", around=del_around)
 
-    @purge.command(brief="Invalid formatting. You must format the command like this: "
-                   "`<prefix> purge before <message ID> (OPTIONAL)<number of msgs to "
-                   "delete>`\n\nIf you don't put a number, I'll defualt to 100.\n\nIf you don't "
-                   "know how to get a message's ID, see here:\nhttps://support.discordapp.com/hc/"
-                   "en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-\n\nIf "
-                   "you put a date instead, it must be formatted like this: `mm-dd-yyyy`. "
-                   "Anything else will cause an error.\n__Example__: `04-03-2019`")
+    @purge.command(brief="Invalid formatting. You must format the command like this: `<prefix> "
+                   "purge before <message link OR date> (OPTIONAL)<number of msgs to delete>`\n\n"
+                   "If you don't put a number, I'll defualt to 100. I can go up to 2000\n\nTo "
+                   "get the message link, click the 3 dots next to the msg (on mobile, press and "
+                   "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
+                   "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
+                   "\n__Example__: `04-03-2019`")
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
-    async def before(self, ctx, msg_date: typing.Union[int, str], limit: int=100):
+    async def before(self, ctx, del_before: typing.Union[discord.Message, str], limit: int=100):
 
         try:
-            if isinstance(msg_date, int):
-                del_before = await ctx.channel.fetch_message(msg_date)
-            else:
-                del_before = datetime.datetime.strptime(msg_date, "%m-%d-%Y")
+            #* If it's a date instead of a Message object
+            if isinstance(del_before, str):
+                del_before = datetime.datetime.strptime(del_before, "%m-%d-%Y")
         except:
             raise commands.BadArgument
 
@@ -931,40 +1176,11 @@ class Moderation(commands.Cog):
                f"messages sent before **{del_before.strftime('%b %-d, %Y')}** were deleted",
                 before=del_before)
 
-    @purge.command(name="bot", aliases=["bots"])
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
-    @commands.has_permissions(manage_messages=True)
-    async def bot_(self, ctx, *, prefix=None):
-
-        def check(m):
-            return m.webhook_id is None and m.author.bot or (
-                prefix and m.content.startswith(prefix))
-
-        if prefix is None:
-            await self.remove(ctx, 1000, check, "messages by bots were deleted")
-        else:
-            await self.remove(ctx, 1000, check, "messages by bots and messages containing the "
-                              f"prefix `{prefix}` were deleted")
-
     @purge.command()
     @commands.bot_has_permissions(
         manage_messages=True, read_message_history=True, manage_channels=True)
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
-
-        name = ctx.channel.name
-        perms = dict(ctx.channel.overwrites)
-        cat = ctx.channel.category
-        topic = ctx.channel.topic
-        pos = ctx.channel.position
-        nsfw = ctx.channel.is_nsfw()
-
-        no_triggers = False
-        serverdata = get_data("server")
-        if "triggers_disabled" in serverdata[str(ctx.guild.id)]:
-            if str(ctx.channel.id) in serverdata[str(ctx.guild.id)]["triggers_disabled"]:
-                serverdata[str(ctx.guild.id)]["triggers_disabled"].remove(str(ctx.channel.id))
-                no_triggers = True
 
         confirm = await ctx.send("React with \U00002705 to confirm that you want to "
                                  "clear this channel. React with \U0000274c to cancel")
@@ -988,11 +1204,21 @@ class Moderation(commands.Cog):
         await confirm.delete()
 
         await ctx.channel.delete(reason=ctx.author.name + " cleared the channel")
-        cleared = await ctx.guild.create_text_channel(name=name, overwrites=perms, category=cat)
-        await cleared.edit(topic=topic, position=pos, nsfw=nsfw)
-        if no_triggers:
-            serverdata[str(ctx.guild.id)]["triggers_disabled"].append(str(cleared.id))
-            dump_data(serverdata, "server")
+        cleared = await ctx.channel.clone(reason=ctx.author.name + " cleared the channel")
+        try:
+            await cleared.edit(position=ctx.channel.position)
+        except: #* If it's already in place
+            pass
+
+        if ctx.channel.id in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
+            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].remove(ctx.channel.id)
+            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(cleared.id)
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET triggers_disabled = $1::BIGINT[]
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
 
         embed = discord.Embed(description=cleared.mention + " was completely cleared",
                               color=find_color(ctx))
@@ -1000,7 +1226,7 @@ class Moderation(commands.Cog):
                          icon_url=ctx.author.avatar_url)
 
         await cleared.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
     @purge.command(brief="Invalid formatting. You must include a substring for me to look "
                    "for, like this: `<prefix> purge contains <substring>`")
@@ -1037,6 +1263,21 @@ class Moderation(commands.Cog):
 
         await self.remove(ctx, 1000, lambda m: len(m.attachments),
                           "messages containing attachments were deleted")
+
+    @purge.command(name="bot", aliases=["bots"])
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
+    @commands.has_permissions(manage_messages=True)
+    async def from_bot(self, ctx, *, prefix=None):
+
+        def check(m):
+            return m.webhook_id is None and m.author.bot or (
+                prefix and m.content.startswith(prefix))
+
+        if prefix is None:
+            await self.remove(ctx, 1000, check, "messages by bots were deleted")
+        else:
+            await self.remove(ctx, 1000, check, "messages by bots and messages containing the "
+                              f"prefix `{prefix}` were deleted")
 
     @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
                    "format the command like this: `<prefix> purge member <@mention user(s)>`")
@@ -1081,7 +1322,7 @@ class Moderation(commands.Cog):
         await temp.delete()
         await ctx.send(embed=embed)
         if len(unpinned) > 0:
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
     @purge.command()
     @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
@@ -1108,7 +1349,7 @@ class Moderation(commands.Cog):
         await temp.delete()
         await ctx.send(embed=embed)
         if total_reactions > 0:
-            await send_log(ctx.guild, embed)
+            await send_log(ctx, embed)
 
     @commands.command(brief="Incorrect formatting. You're supposed to provide a list of "
                       "@mentions or member names that I'll randomly choose from. Or don't put "
@@ -1149,7 +1390,7 @@ class Moderation(commands.Cog):
         embed = discord.Embed(description=str(member) + " was kicked", color=find_color(ctx))
         embed.set_author(name="A randomkick was performed by " + ctx.author.name,
                          icon_url=ctx.author.avatar_url)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
     @commands.command(aliases=["snipe"])
     @commands.has_permissions(manage_messages=True)
@@ -1158,9 +1399,8 @@ class Moderation(commands.Cog):
         Restores the last deleted message by a non-bot member
         Note: Because of how Discord works, I can't restore attachments to messages, just the text of the message
         """
-        try:
-            last_delete = get_data("server")[str(ctx.guild.id)]["last_delete"]
-        except:
+        last_delete = self.bot.guilddata[ctx.guild.id]["last_delete"]
+        if last_delete is None:
             await ctx.send(
                 "Unable to find the last deleted message. Sorry!", delete_after=5.0)
             return await delete_message(ctx, 5)
@@ -1180,25 +1420,28 @@ class Moderation(commands.Cog):
             embed.add_field(name="Sent by", value=last_delete['author'])
             embed.add_field(name="Channel", value=last_delete["channel"])
             embed.add_field(name="Sent on", value=last_delete["creation"][13:])
-        embed.set_footer(text="Restored by " + ctx.author.name)
+        embed.set_footer(text="Restored by " + ctx.author.name, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def rmgoodbye(self, ctx):
         """**Must have Administrator permissions**
-        Removes a previously set custom welcome message
+        Removes a previously set custom goodbye message
         """
-        serverdata = get_data("server")
-        if "goodbye" not in serverdata[str(ctx.guild.id)]:
+        if self.bot.guilddata[ctx.guild.id]["goodbye"] is None:
             await ctx.send("This server doesn't have a custom goodbye message. Use "
                            "the `setgoodbye` command to make one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        msg = serverdata[str(ctx.guild.id)]["goodbye"]["message"]
-        serverdata[str(ctx.guild.id)].pop("goodbye", None)
-        dump_data(serverdata, "server")
+        self.bot.guilddata[ctx.guild.id]["goodbye"] = None
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET goodbye = NULL
+                WHERE id = {}
+            ;""".format(ctx.guild.id))
 
         embed = discord.Embed(description=f"**Message**: ```{msg.format('(member)')}```",
                               color=find_color(ctx))
@@ -1206,23 +1449,56 @@ class Moderation(commands.Cog):
                          icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
-    @commands.command(hidden=True)
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def rmstarboard(self, ctx):
+        """**Must have Administrator permissions**
+        Remove a previously set starboard channel
+        """
+        if self.bot.guilddata[ctx.guild.id]["starboard"] is None:
+            await ctx.send("This server doesn't have a starboard channel. Use "
+                           "the `setstarboard` command to set one", delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        starboard = self.bot.guilddata[ctx.guild.id]["starboard"]
+        self.bot.guilddata[ctx.guild.id]["starboard"] = None
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET starboard = NULL
+                WHERE id = {}
+            ;""".format(ctx.guild.id))
+
+        embed = discord.Embed(description="Now messages will no longer be sent to "
+                              f"{self.bot.get_channel(starboard['channel']).mention} when they "
+                              f"get at least {starboard['num_reactions']} \U00002b50 reactions",
+                              color=find_color(ctx))
+        embed.set_author(name=ctx.author.name + " REMOVED the starboard channel",
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
+
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def rmwelcome(self, ctx):
         """**Must have Administrator permissions**
-        Removes a previously set custom goodbye message
+        Removes a previously set custom welcome message
         """
-        serverdata = get_data("server")
-        if "welcome" not in serverdata[str(ctx.guild.id)]:
+        if self.bot.guilddata[ctx.guild.id]["welcome"] is None:
             await ctx.send("This server doesn't have a custom welcome message. Use "
                            "the `setwelcome` command to make one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        msg = serverdata[str(ctx.guild.id)]["welcome"]["message"]
-        serverdata[str(ctx.guild.id)].pop("welcome", None)
-        dump_data(serverdata, "server")
+        self.bot.guilddata[ctx.guild.id]["welcome"] = None
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET welcome = NULL
+                WHERE id = {}
+            ;""".format(ctx.guild.id))
 
         embed = discord.Embed(description=f"**Message**: ```{msg.format('(member)')}```",
                               color=find_color(ctx))
@@ -1230,7 +1506,7 @@ class Moderation(commands.Cog):
                          icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
     @commands.command(brief="Invalid formatting. Format like this: `<prefix> setlogs <mention "
                       "channel or channel name>`.\nTo turn off the logs channel, use "
@@ -1242,9 +1518,13 @@ class Moderation(commands.Cog):
         Format like this: `<prefix> setlogs <mention channel or channel name>`
         To turn off the logs channel, use the `nologs` command
         """
-        serverinfo = get_data("server")
-        serverinfo[str(ctx.guild.id)]["logs"] = str(channel.id)
-        dump_data(serverinfo, "server")
+        self.bot.guilddata[ctx.guild.id]["logs"] = channel.id
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET logs = {}
+                WHERE id = {}
+            ;""".format(channel.id, ctx.guild.id))
 
         await ctx.send(f"The logs channel is now set to {channel.mention}!")
         await channel.send(
@@ -1268,16 +1548,53 @@ class Moderation(commands.Cog):
         if len(re.findall("{}", msg)) != 1:
             raise commands.BadArgument
 
-        serverdata = get_data("server")
-        serverdata[str(ctx.guild.id)]["goodbye"] = {"message": msg, "channel": str(channel.id)}
-        dump_data(serverdata, "server")
+        self.bot.guilddata[ctx.guild.id]["goodbye"] = {"message": msg, "channel": channel.id}
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET goodbye = $1::JSON
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["goodbye"])
 
         embed = discord.Embed(description=f"**Channel**: {channel.mention}\n**Message**:"
                               f"```{msg.format('(member)')}```", color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " set a new custom goodbye message",
                          icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def setstarboard(self, ctx, channel: discord.TextChannel, num_reactions: int=4):
+        """**Must have Administrator permissions**
+        Set up a starboard system where people can "star" a funny or otherwise significant message to have it saved in a channel.
+        Format like this: `<prefix> setstarboard <#mention channel> <reaction threshold (defaults to 4)>`
+        Say the reaction threshold is 4; whenever a message gets at least 4 total "star reactions", a copy of the message will be sent to the starboard channel where it can be saved.
+        The "Star Reactions": \U00002b50, \U0001f31f, \U0001f320, and \U00002734
+        """
+        await ctx.channel.trigger_typing()
+        starboard = {
+            "channel": channel.id,
+            "num_reactions": num_reactions,
+            "messages": []
+        }
+        self.bot.guilddata[ctx.guild.id]["starboard"] = starboard
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET starboard = $1::JSON
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["starboard"])
+
+        embed = discord.Embed(
+            description=f"**Channel**: {channel.mention}\n**Reaction Threshold**: {num_reactions}"
+            f"\n\nNow, whenever a message gets at least {num_reactions} \U00002b50 reactions, a "
+            f"copy of the message will be sent to {channel.mention}", color=find_color(ctx))
+        embed.set_author(name=ctx.author.name + " set a starboard channel",
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> setwelcome <#mention channel> <welcome message>`\n\nWhen you're "
@@ -1295,68 +1612,160 @@ class Moderation(commands.Cog):
         if len(re.findall("{}", msg)) != 1:
             raise commands.BadArgument
 
-        serverdata = get_data("server")
-        serverdata[str(ctx.guild.id)]["welcome"] = {"message": msg, "channel": str(channel.id)}
-        dump_data(serverdata, "server")
+        self.bot.guilddata[ctx.guild.id]["welcome"] = {"message": msg, "channel": channel.id}
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET welcome = $1::JSON
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["welcome"])
 
         embed = discord.Embed(description=f"**Channel**: {channel.mention}\n**Message**:"
                               f"```{msg.format('(member)')}```", color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " set a new custom welcome message",
                          icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
-    @commands.command()
-    @commands.has_permissions(manage_messages=True)
-    async def toggle(self, ctx, *, arg: str=None):
-        """**Must have the "Manage Messages" permission**
-        Toggles my trigger words on/off for a channel
-        Format like this: `<prefix> toggle (OPTIONAL)<"all off" OR "all on">`
-        By default, I'll toggle triggers in the channel the command was performed in.
-        If you put `all off`, I'll turn triggers off for all channels. If you put `all on`, I'll turn them on for all channels
+    @commands.command(brief="Incorrect formatting. The command is supposed to look like this: "
+                      "`<prefix> softban <@mention user> (OPTINAL)<days of msgs to delete>`\nThe "
+                      "number of days worth of messages to delete must be at least 1 and no more "
+                      "than 7. If you don't include it, I'll default to one day")
+    @commands.bot_has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    async def softban(self, ctx, user: discord.User, days: int=1):
+        """**Must have the "Ban Members" permission**
+        Softban a user, that is, ban them and then immediately unban them to kick them from the server and delete their messages.
+        Format like this: `<prefix> softban <@mention user> (OPTINAL)<days of msgs to delete>`
+        If you don't include a number of days worth of messages to delete, I'll default to 1.
         """
-        serverdata = get_data("server")
+        if days < 1 or days > 7:
+            await ctx.send("The number of days worth of messages to delete must be **at least "
+                           "1** and **no more than 7**", delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        if user is self.bot.user:
+            return await ctx.send(":rolling_eyes:")
+
+        await ctx.channel.trigger_typing()
         try:
-            no_triggers = serverdata[str(ctx.guild.id)]["triggers_disabled"]
-        except:
-            no_triggers = serverdata[str(ctx.guild.id)]["triggers_disabled"] = []
+            await ctx.guild.ban(
+                user=user, reason=f"Softbanning {user} | Action performed by {ctx.author.name}",
+                delete_message_days=days)
+            await ctx.guild.unban(
+                user=user, reason=f"Softbanning {user} | Action performed by {ctx.author.name}")
+        except discord.Forbidden:
+            await ctx.send(f"{user.mention} has a role that's higher than mine in the server "
+                           "hierarchy, so I couldn't ban them", delete_after=7.0)
+            return await delete_message(ctx, 7)
 
-        if arg == "all off":
-            if ctx.author.guild_permissions.manage_messages:
-                for c in ctx.guild.text_channels:
-                    no_triggers.append(str(c.id))
-                await ctx.send(
-                    "Ok, triggers have been turned off for all channels in this server")
-            else:
-                await ctx.send("You only have the **Manage Messages** permission for this "
-                               "channel. In order to turn off triggers for all channels, you "
-                               "need the server-wide **Manage Messages** perm",
-                               delete_after=8.0)
-                return await delete_message(ctx, 8)
-
-        elif arg == "all on":
-            if ctx.author.guild_permissions.manage_messages:
-                no_triggers = []
-                await ctx.send("Ok, triggers have been turned on for all channels in this server")
-            else:
-                await ctx.send("You only have the **Manage Messages** permission for this "
-                               "channel. In order to turn triggers on for all channels, you "
-                               "need the server-wide **Manage Messages** perm",
-                               delete_after=8.0)
-                return await delete_message(ctx, 8)
-
+        if days == 1:
+            days_text = "day"
         else:
-            channel = ctx.channel
-            if str(channel.id) not in no_triggers:
-                no_triggers.append(str(ctx.channel.id))
-                await ctx.send("Ok, I'll stop reacting to triggers in this channel")
+            days_text = f"**{days}** days"
+        embed = discord.Embed(description=f"All messages sent by {user.mention} in the past "
+                              f"{days_text} have been deleted. They have also been kicked from "
+                              "this server", color=find_color(ctx))
+        embed.set_author(
+            name=f"{ctx.author.name} softbanned {user}", icon_url=ctx.author.avatar_url)
 
-            elif str(channel.id) in no_triggers:
-                no_triggers.remove(str(ctx.channel.id))
-                await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
 
-        serverdata[str(ctx.guild.id)]["triggers_disabled"] = no_triggers
-        dump_data(serverdata, "server")
+    @commands.group(invoke_without_command=True)
+    @commands.has_permissions(manage_messages=True)
+    async def triggers(self, ctx):
+        """**Must have the "Manage Messages" permission**
+        Toggles my trigger words on/off for a channel or for the whole server
+        To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers toggle`
+        To turn trigger words **off** for the entire server, do: `<prefix> triggers all off`
+        Finally, to turn trigger words **on** for the entire server, do: `<prefix> triggers all on`
+        """
+        await ctx.send(
+            "To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers "
+            "toggle`\n\nTo turn trigger words **off** for the entire server, do: `<prefix> "
+            "triggers all off`\n\nFinally, to turn trigger words **on** for the entire server, "
+            "do: `<prefix> triggers all on`")
+
+    @triggers.group(invoke_without_command=True)
+    @commands.has_permissions(manage_messages=True)
+    async def all(self, ctx):
+        #* Just send the same help message that "triggers" sends
+        await ctx.send(
+            "To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers "
+            "toggle`\n\nTo turn trigger words **off** for the entire server, do: `<prefix> "
+            "triggers all off`\n\nFinally, to turn trigger words **on** for the entire server, "
+            "do: `<prefix> triggers all on`")
+
+    @all.command()
+    @commands.has_permissions(manage_messages=True)
+    async def off(self, ctx):
+
+        if ctx.author.guild_permissions.manage_messages:
+            for c in ctx.guild.text_channels:
+                self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(c.id)
+            await ctx.send("Ok, triggers have been turned off for all channels in this server")
+        else:
+            await ctx.send("You only have the **Manage Messages** permission for this channel. "
+                           "In order to turn off triggers for all channels, you need the server-"
+                           "wide **Manage Messages** perm", delete_after=8.0)
+            return await delete_message(ctx, 8)
+
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET triggers_disabled = $1::BIGINT[]
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
+
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_author(name=f"{ctx.author.name} has DISABLED my triggers for ALL channels",
+                         icon_url=ctx.author.avatar_url)
+        await send_log(ctx, embed)
+
+    @all.command()
+    @commands.has_permissions(manage_messages=True)
+    async def on(self, ctx):
+
+        if ctx.author.guild_permissions.manage_messages:
+            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].clear()
+            await ctx.send("Ok, triggers have been turned on for all channels in this server")
+        else:
+            await ctx.send("You only have the **Manage Messages** permission for this channel. "
+                           "In order to turn triggers on for all channels, you need the server-"
+                           "wide **Manage Messages** perm", delete_after=8.0)
+            return await delete_message(ctx, 8)
+
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET triggers_disabled = $1::BIGINT[]
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
+
+        embed = discord.Embed(color=find_color(ctx))
+        embed.set_author(name=f"{ctx.author.name} has ENABLED my triggers for ALL channels",
+                         icon_url=ctx.author.avatar_url)
+        await send_log(ctx, embed)
+
+    @triggers.command()
+    @commands.has_permissions(manage_messages=True)
+    async def toggle(self, ctx):
+
+        if ctx.channel.id not in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
+            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(ctx.channel.id)
+            await ctx.send("Ok, I'll stop reacting to triggers in this channel")
+
+        elif ctx.channel.id in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
+            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].remove(ctx.channel.id)
+            await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
+
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET triggers_disabled = $1::BIGINT[]
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
 
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
                       "members, use the `allbanned` command.")
@@ -1409,7 +1818,7 @@ class Moderation(commands.Cog):
                 icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
-        await send_log(ctx.guild, embed)
+        await send_log(ctx, embed)
 
 
 def setup(bot):

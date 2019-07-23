@@ -17,7 +17,7 @@
 """
 
 from discord.ext import commands
-from utils import get_data, dump_data, CommandDisabled
+from utils import CommandDisabled
 import discord
 
 import collections
@@ -25,6 +25,7 @@ import datetime
 import logging
 import asyncio
 import random
+import aiohttp
 import os
 import re
 
@@ -34,11 +35,6 @@ import config
 #*
 #* It also contains a few more variables required to perform certain commands on the bot.
 #* See "config_info.txt" for information on all the variables stored in this module.
-
-games = ["\"!mat help\" for help", "\"!mat help\" for help", "\"!mat help\" for help",
-         "\"!mat help\" for help", "\"!mat help\" for help", "some epic game you don't have",
-         "with you", "dead", "with myself", "a prank on you", "with fire", "hard-to-get",
-         "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma"]
 
 #* Load cogs
 initial_extensions = []
@@ -56,8 +52,14 @@ handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 
-async def get_prefix(bot, message):
-    prefixes = ["!mat "]
+def get_prefix(bot, message):
+    if message.guild is not None:
+        guild_prefixes = bot.guilddata[message.guild.id]["prefixes"]
+    else:
+        guild_prefixes = []
+
+    prefixes = bot.default_prefixes + guild_prefixes
+
     return commands.when_mentioned_or(*prefixes)(bot, message)
 
 
@@ -73,21 +75,35 @@ class MAT(commands.Bot):
                          shard_id=0,
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
-                         fetch_offline_members=False)
+                         fetch_offline_members=True)
 
-        get_data()
+        self.ready_for_commands = False
+
+        self.postgres_dsn = config.POSTGRES_EXPERIMENTAL
+
+        async def create_session():
+            self.session = aiohttp.ClientSession(loop=self.loop)
+
+        self.loop.run_until_complete(create_session())
+
+        self.default_prefixes = ["!mat ", "mat/", "mat."]
+
+        self.games = ["\"!mat help\" for help", "\"!mat help\" for help",
+                      "\"!mat help\" for help", "\"!mat help\" for help",
+                      "\"!mat help\" for help", "some epic game you don't have", "with you",
+                      "dead", "with myself", "a prank on you", "with fire", "hard-to-get",
+                      "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma",
+                      f"on {len(self.guilds)} servers!"]
+
+        self.loop.create_task(self.switch_games())
 
         for extension in initial_extensions:
             self.load_extension(extension)
 
-        self.commands_used = collections.Counter(get_data("bot")["commands_used"])
-        self.messages_read = collections.Counter(get_data("bot")["messages_read"])
-
         def check_disabled(ctx):
             if ctx.guild is not None:
-                if "disabled" in get_data("server")[str(ctx.guild.id)]:
-                    if ctx.command.name in get_data("server")[str(ctx.guild.id)]["disabled"]:
-                        raise CommandDisabled
+                if ctx.command.name in self.guilddata[ctx.guild.id]["disabled"]:
+                    raise CommandDisabled
             return True
 
         self.add_check(check_disabled)
@@ -95,160 +111,55 @@ class MAT(commands.Bot):
     async def on_connect(self):
         self.owner = (await self.application_info()).owner
 
+        self.join_new_guild_message = (
+            "Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
+            f"{self.owner.mention}. I can do a bunch of stuff, but I'm still very much in "
+            "developement, so even more features are coming soon!\n\nIn addition to all my "
+            "commands, I also have a numerous trigger words that server to amuse/infuriate the "
+            "people of this server!\n\nDo `!mat help` to get started")
+
         print("\nConnected to Discord")
 
     async def on_ready(self):
-        serverdata = get_data("server")
-        for g in self.guilds:
-            if str(g.id) not in serverdata:
-                serverdata[str(g.id)] = {"name": g.name}
-        dump_data(serverdata, "server")
-
-        self.loop.create_task(self.switch_games())
-
         print("\nLogged in as:")
-        print(bot.user)
-        print(bot.user.id)
+        print(self.user)
+        print(self.user.id)
         print("-----------------")
         print(datetime.datetime.now().strftime("%m/%d/%Y %X"))
         print("-----------------")
         print("Shards: " + str(self.shard_count))
         print("Servers: " + str(len(self.guilds)))
-        print("Users: " + str(len(set(self.get_all_members()))))
+        print("Users: " + str(len(self.users)))
         print("-----------------\n")
-        await self.change_presence(
-            status=discord.Status.online, activity=discord.Game(random.choice(games)))
-
-    async def on_guild_join(self, guild):
-        message = ("Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
-                   f"**{self.owner}**. I can do a bunch of stuff, but I'm still very much in "
-                   "developement, so even more features are coming soon!\n\nIn addition to all "
-                   "my commands, I also have a numerous trigger words that server to "
-                   "amuse/infuriate the people of this server!\n\nDo `!mat help` to get started")
-        try:
-            sent = False
-            for c in guild.text_channels:
-                if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
-                    "general", c.name) or re.search("bot", c.name):
-                    await c.send(
-                        embed=discord.Embed(description=message, color=discord.Color.blurple()))
-                    sent = True
-                    channel = c
-                    break
-            if not sent:
-                channel = random.choice(guild.text_channels)
-                await channel.send(
-                    content="~~Damn, you guys must have a really strange system for naming your "
-                    "channels~~", embed=discord.Embed(description=message,
-                    color=discord.Color.blurple()))
-        except:
-            pass
-
-        serverdata = get_data("server")
-        serverdata[str(guild.id)] = {"name": guild.name}
-        dump_data(serverdata, "server")
-
-        joins = self.get_channel(465393762512797696)
-
-        bots = [m for m in guild.members if m.bot]
-        try:
-            invite_url = (await channel.create_invite()).url
-            invite = f"\n[Invite]({invite_url})"
-        except discord.Forbidden:
-            invite = ""
-
-        embed = discord.Embed(
-            title=f"Joined {guild.name}", description=f"**ID**: {guild.id}\n**Joined**: "
-            f"{guild.me.joined_at.strftime('%b %-d, %Y at %X UTC')}{invite}",
-            color=joins.guild.me.color)
-        embed.set_thumbnail(url=guild.icon_url)
-        embed.add_field(name="Members", value=guild.member_count)
-        embed.add_field(name="Roles", value=len(guild.roles))
-        embed.add_field(name="Text Channels", value=len(guild.text_channels))
-        embed.add_field(name="Voice Channels", value=len(guild.voice_channels))
-        embed.add_field(name="Categories", value=len(guild.categories))
-        embed.add_field(name="Custom Emojis", value=len(guild.emojis))
-        embed.add_field(name="Bots", value=len(bots))
-        try:
-            if await guild.webhooks():
-                embed.add_field(name="Webhooks", value=len(await guild.webhooks()))
-            else:
-                embed.add_field(name="Webhooks", value="None")
-        except discord.Forbidden:
-            embed.add_field(name="Webhooks", value="Unknown")
-        if guild.mfa_level:
-            embed.add_field(name="Requires 2FA?", value="Yes")
-        else:
-            embed.add_field(name="Requires 2FA?", value="No")
-        embed.add_field(name="Region", value=str(guild.region).replace(
-            "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
-                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "VIP"))
-        embed.add_field(name="Default Notification Level",
-                        value=str(guild.default_notifications)[18:].replace("_", " ").title())
-        embed.add_field(
-            name="Verification Level", value=str(guild.verification_level).capitalize())
-        embed.add_field(name="Explicit Content Filter",
-                        value=str(guild.explicit_content_filter).replace("_", " ").title())
-        embed.add_field(
-            name="Server Created", value=guild.created_at.strftime("%b %-d, %Y"))
-        if guild.features:
-            embed.add_field(
-                name="Server Features", value="`" + "`, `".join(guild.features) + "`",
-                inline=False)
-        embed.add_field(
-            name="Server Owner", value=guild.owner.mention + f" (User ID: {(guild.owner_id)})",
-            inline=False)
-
-        await joins.send(
-            content=f"I am now part of {len(self.guilds)} servers and have "
-            f"{len(set(self.get_all_members()))} unique users!", embed=embed)
-
-    async def on_guild_remove(self, guild):
-        serverdata = get_data("server")
-        serverdata.pop(str(guild.id), None)
-        dump_data(serverdata, "server")
-
-        leaves = self.get_channel(465393762512797696)
-        embed = discord.Embed(
-            title=f"Left {guild.name}", description=f"**ID**: {guild.id}\n**Left**: "
-            f"{datetime.datetime.utcnow().strftime('%b %-d, %Y at %X UTC')}",
-            color=leaves.guild.me.color)
-        embed.set_thumbnail(url=guild.icon_url)
-
-        await leaves.send(
-            content=f"I am now part of {len(self.guilds)} servers and have "
-            f"{len(set(self.get_all_members()))} unique users", embed=embed)
-
-    async def on_guild_update(self, before, after):
-        serverdata = get_data("server")
-        serverdata[str(before.id)]["name"] = after.name
-        dump_data(serverdata, "server")
+        self.started_at = datetime.datetime.utcnow()
 
     async def on_command_completion(self, ctx):
         if not ctx.command.hidden:
             self.commands_used["TOTAL"] += 1
-            self.commands_used[ctx.command.name] += 1
+            self.commands_used[ctx.command.qualified_name] += 1
+            self.botdata["commands_used"] = dict(self.commands_used)
 
-            botdata = get_data("bot")
-            botdata["commands_used"] = dict(self.commands_used)
-            dump_data(botdata, "bot")
+            if ctx.guild is not None:
+                guild_commands_used = collections.Counter(
+                    self.guilddata[ctx.guild.id]["commands_used"])
+                guild_commands_used["TOTAL"] += 1
+                guild_commands_used[ctx.command.qualified_name] += 1
+                self.guilddata[ctx.guild.id]["commands_used"] = dict(guild_commands_used)
 
     async def on_message(self, message):
-        if message.author == bot.user:
+        if not self.ready_for_commands:
             return
 
         self.messages_read["TOTAL"] += 1
         if message.guild is not None:
-            self.messages_read[str(message.guild.id)] += 1
+            self.messages_read[str(message.guild.id)] += 1 #* Keys in json must be strings
 
-        botdata = get_data("bot")
-        botdata["messages_read"] = dict(self.messages_read)
-        dump_data(botdata, "bot")
+        self.botdata["messages_read"] = dict(self.messages_read)
 
-        await bot.process_commands(message)
+        await self.process_commands(message)
 
     async def on_message_delete(self, message):
-        if not isinstance(message.channel, discord.DMChannel):
+        if message.guild is not None:
             if not message.author.bot:
                 content = message.clean_content
 
@@ -263,14 +174,18 @@ class MAT(commands.Bot):
                                "creation": message.created_at.strftime(
                                    "**Sent on:** %A, %B %-d, %Y at %X UTC")}
 
-                serverdata = get_data("server")
-                serverdata[str(message.guild.id)]["last_delete"] = last_delete
-                dump_data(serverdata, "server")
+                self.guilddata[message.guild.id]["last_delete"] = last_delete
+                async with self.pool.acquire() as conn:
+                    await conn.execute("""
+                        UPDATE guilddata
+                        SET last_delete = $1::JSON
+                        WHERE id = {}
+                    ;""".format(message.guild.id), self.guilddata[message.guild.id]["last_delete"])
 
     async def switch_games(self):
         await self.wait_until_ready()
         while True:
-            await self.change_presence(activity=discord.Game(random.choice(games)))
+            await self.change_presence(activity=discord.Game(random.choice(self.games)))
             await asyncio.sleep(random.randint(5, 10))
 
     def run(self, token):
@@ -278,12 +193,20 @@ class MAT(commands.Bot):
             self.loop.run_until_complete(self.start(token))
         except KeyboardInterrupt:
             print("\n\nClosing...\n")
-            for task in asyncio.Task.all_tasks(self.loop):
+
+            for extention in self.extensions.copy():
+                self.unload_extension(extention)
+                print("Unloaded extension: " + extention)
+            print("\n")
+            for task in asyncio.all_tasks(self.loop):
                 task.cancel()
                 print("Cancelled task: " + str(task._coro))
+
             print("\nLogging out...")
             self.loop.run_until_complete(self.logout())
         finally:
+            self.loop.run_until_complete(self.pool.close())
+            self.loop.run_until_complete(self.session.close())
             self.loop.close()
             print("\nClosed\n")
 

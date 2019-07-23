@@ -20,9 +20,12 @@ from utils import find_color, delete_message, __version__
 
 from discord.ext import commands
 import discord
+import speedtest
 
 import datetime
 import typing
+import sys
+import asyncio
 
 
 class Info(commands.Cog):
@@ -45,9 +48,13 @@ class Info(commands.Cog):
         embed.add_field(name="Version", value=__version__)
         embed.add_field(name="Author", value=app.owner.mention)
         embed.add_field(name="Server Count", value=len(self.bot.guilds))
-        embed.add_field(name="Language", value="Python 3.6.4")
-        embed.add_field(name="Library", value="discord.py (rewrite)")
-        embed.add_field(name="License", value="GPL v3.0")
+        embed.add_field(
+            name="Language",
+            value=f"Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}")
+        embed.add_field(
+            name="Library", value="[discord.py](https://github.com/Rapptz/discord.py)")
+        embed.add_field(
+            name="License", value="[GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)")
         embed.add_field(name="Github Repo", value="https://github.com/NinjaSnail1080/MATs-Bot",
                         inline=False)
         embed.set_footer(text=f"Dedicated to {self.bot.get_user(422131370010214402)}")
@@ -167,7 +174,7 @@ class Info(commands.Cog):
                         embed.add_field(name="Webhooks", value="None")
                 except discord.Forbidden:
                     embed.add_field(name="Webhooks", value="Unknown")
-                if c.slowmode_delay == 0:
+                if not c.slowmode_delay:
                     embed.add_field(name="Slowmode Delay", value="Disabled")
                 else:
                     embed.add_field(name="Slowmode Delay", value=f"{c.slowmode_delay} seconds")
@@ -223,8 +230,11 @@ class Info(commands.Cog):
                            "only works with custom emojis.", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        embed = discord.Embed(
-            title=f"Info on the {emoji} emoji", color=find_color(ctx))
+        await ctx.channel.trigger_typing()
+        emoji = await ctx.guild.fetch_emoji(emoji.id)
+        #* To gain access to the "user" attribute
+
+        embed = discord.Embed(title=f"Info On The {emoji} Emoji", color=find_color(ctx))
 
         embed.set_thumbnail(url=emoji.url)
         embed.add_field(name="Name", value=emoji.name)
@@ -242,8 +252,10 @@ class Info(commands.Cog):
         else:
             embed.add_field(name="Managed By Integration?", value="No")
         embed.add_field(
-            name="Created", value=emoji.created_at.strftime("%b %-d, %Y"))
-        embed.add_field(name="URL", value=emoji.url, inline=False)
+            name="Created On", value=emoji.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(
+            name="Created By", value=f"{emoji.user.mention} (User ID: {emoji.user.id})",
+            inline=False)
 
         await ctx.send(embed=embed)
 
@@ -358,8 +370,9 @@ class Info(commands.Cog):
 
         embed = discord.Embed(
             title=s.name, description=f"Server ID: {s.id}", color=find_color(ctx))
-
         embed.set_thumbnail(url=s.icon_url)
+        embed.set_image(url=s.banner_url)
+
         embed.add_field(
             name="Members", value=f"{s.member_count} (Online: {len(on_members)})")
         embed.add_field(name="Roles", value=len(s.roles))
@@ -368,9 +381,10 @@ class Info(commands.Cog):
         embed.add_field(name="Categories", value=len(s.categories))
         if anim_emojis:
             embed.add_field(
-                name="Custom Emojis", value=f"{len(s.emojis)} (Animated: {len(anim_emojis)})")
+                name="Custom Emojis",
+                value=f"{len(s.emojis)} out of {s.emoji_limit} (Animated: {len(anim_emojis)})")
         else:
-            embed.add_field(name="Custom Emojis", value=len(s.emojis))
+            embed.add_field(name="Custom Emojis", value=f"{len(s.emojis)} out of {s.emoji_limit}")
         embed.add_field(name="Bots", value=len(bots))
         try:
             if await s.webhooks():
@@ -379,13 +393,23 @@ class Info(commands.Cog):
                 embed.add_field(name="Webhooks", value="None")
         except discord.Forbidden:
             embed.add_field(name="Webhooks", value="Unknown")
+        embed.add_field(name="File Size Upload Limit", value=f"{s.filesize_limit // 1000000} MB")
+        embed.add_field(name="Bitrate Limit", value=f"{int(s.bitrate_limit // 1000)} kbps")
+        if s.premium_tier:
+            embed.add_field(name="Nitro Server Boost Status", value=f"Level {s.premium_tier}")
+        else:
+            embed.add_field(name="Nitro Server Boost Status", value="No Levels Achieved")
+        if s.premium_subscription_count:
+            embed.add_field(name="Nitro Server Boosts", value=s.premium_subscription_count)
+        else:
+            embed.add_field(name="Nitro Server Boosts", value="None")
         if s.system_channel is not None:
             embed.add_field(name="System Channel", value=s.system_channel.mention)
         else:
             embed.add_field(name="System Channel", value="No System Channel")
         embed.add_field(name="Region", value=str(s.region).replace(
             "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
-                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "VIP"))
+                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "V.I.P."))
         if s.mfa_level:
             embed.add_field(name="Requires 2FA?", value="Yes")
         else:
@@ -409,7 +433,9 @@ class Info(commands.Cog):
             name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
         if s.features:
             embed.add_field(
-                name="Server Features", value="`" + "`, `".join(s.features) + "`", inline=False)
+                name="Server Features",
+                value="`" + "`, `".join([f.replace("_", " ") for f in s.features]) + "`",
+                inline=False)
         embed.add_field(
             name="Server Owner", value=s.owner.mention + " (User ID: " + str(s.owner_id) + ")",
             inline=False)
@@ -439,6 +465,71 @@ class Info(commands.Cog):
         embed.set_footer(text=s.name + " has been around for roughly " + "".join(footer))
 
         await ctx.send(embed=embed)
+
+    @commands.command(name="speedtest")
+    async def speedtest_(self, ctx):
+        """Test the current ping, download, and upload speeds of MY Wi-Fi network"""
+
+        tester = speedtest.Speedtest()
+
+        temp = await ctx.send("Retrieving speedtest.net server list...")
+        with ctx.channel.typing():
+            await self.bot.loop.run_in_executor(None, tester.get_servers)
+            await asyncio.sleep(1)
+            await temp.edit(content="Retrieving speedtest.net server list... "
+                                    "Selecting best server based on ping...")
+            await self.bot.loop.run_in_executor(None, tester.get_best_server)
+            await asyncio.sleep(1)
+            await temp.edit(content="Testing download speed... Please wait...")
+            await self.bot.loop.run_in_executor(None, tester.download)
+            await temp.edit(content="Testing upload speed... Please wait...")
+            await self.bot.loop.run_in_executor(None, tester.upload)
+            await self.bot.loop.run_in_executor(None, tester.results.share)
+            await temp.delete()
+
+        embed = discord.Embed(title="Speedtest Results of MAT's Wi-Fi Network",
+                              color=find_color(ctx))
+        embed.set_image(url=tester.results.dict()["share"])
+        embed.set_footer(
+            text=f"Test performed by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
+    @commands.command(name="uptime")
+    async def uptime_(self, ctx):
+        """Get my uptime, or how long I've been running since the last time I was started up"""
+
+        uptime = datetime.datetime.utcnow() - self.bot.started_at
+
+        y = int(uptime.total_seconds()) // 31557600  #* Number of seconds in 356.25 days
+        mo = int(uptime.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
+        d = int(uptime.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
+        h = int(uptime.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
+        mi = int(uptime.total_seconds()) // 60 % 60  #* etc.
+        se = int(uptime.total_seconds()) % 60
+
+        frmtd_uptime = []
+        if y != 0:
+            frmtd_uptime.append(f"**{y}** {'**year**' if y == 1 else '**years**'}, ")
+        if mo != 0:
+            frmtd_uptime.append(f"**{mo}** {'**month**' if mo == 1 else '**months**'}, ")
+        if d != 0:
+            frmtd_uptime.append(f"**{d}** {'**day**' if d == 1 else '**days**'}, ")
+        if h != 0:
+            frmtd_uptime.append(f"**{h}** {'**hour**' if h == 1 else '**hours**'}, ")
+        if mi != 0:
+            if len(frmtd_uptime) == 0:
+                frmtd_uptime.append(f"**{mi}** {'**minute**' if mi == 1 else '**minutes**'} ")
+            else:
+                frmtd_uptime.append(f"**{mi}** {'**minute**' if mi == 1 else '**minutes**'}, ")
+        if len(frmtd_uptime) == 0:
+            frmtd_uptime.append(f"**{se}** {'**second**' if se == 1 else '**seconds**'}")
+        else:
+            frmtd_uptime.append(f"and **{se}** {'**second**' if se == 1 else '**seconds**'}")
+
+        frmtd_started_at = self.bot.started_at.strftime("%B %-d, %Y at %-I:%M %p UTC")
+
+        await ctx.send(f"I've been online for about {''.join(frmtd_uptime)} since I was last "
+                       f"started up on __{frmtd_started_at}__")
 
     @commands.command(aliases=["memberinfo"], brief="User not found. Try again")
     @commands.guild_only()
@@ -549,7 +640,11 @@ class Info(commands.Cog):
         embed.set_footer(
             text=user.name + " has been on Discord for roughly " + "".join(footer))
 
-        await ctx.send(embed=embed)
+        if user.premium_since is not None:
+            await ctx.send(content="\U00002666 This member is a Nitro server booster since "
+                           f"{user.premium_since.strftime('%b %-d, %Y')}!", embed=embed)
+        else:
+            await ctx.send(embed=embed)
 
 
 def setup(bot):

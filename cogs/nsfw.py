@@ -19,13 +19,12 @@
 from utils import find_color, delete_message, get_reddit, send_nekobot_image, ChannelNotNSFW
 
 from discord.ext import commands
-from bs4 import BeautifulSoup
 import discord
-import aiohttp
 
 import random
 
-import config
+#* MAT's Bot uses the NekoBot API for many of these commands.
+#* More info at https://docs.nekobot.xyz/
 
 
 class NSFW(commands.Cog):
@@ -35,10 +34,9 @@ class NSFW(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        if ctx.guild is None:
-            raise commands.NoPrivateMessage
-        elif not ctx.channel.is_nsfw() and ctx.command.name != "neko": #* See "neko" command
-            raise ChannelNotNSFW
+        if ctx.guild is not None:
+            if not ctx.channel.is_nsfw() and ctx.command.name != "neko": #* See "neko" command
+                raise ChannelNotNSFW
         return True
 
     @commands.command()
@@ -46,10 +44,9 @@ class NSFW(commands.Cog):
         """Sends gifs of anal sex"""
 
         await ctx.channel.trigger_typing()
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://nekobot.xyz/api/image?type=anal") as w:
-                resp = await w.json()
-                await send_nekobot_image(ctx, resp)
+        async with self.bot.session.get("https://nekobot.xyz/api/image?type=anal") as w:
+            resp = await w.json()
+            await send_nekobot_image(ctx, resp)
 
     @commands.command()
     async def artsy(self, ctx):
@@ -66,7 +63,7 @@ class NSFW(commands.Cog):
         await ctx.channel.trigger_typing()
         return await get_reddit(ctx, 1, 100, True, False, "a post",
                                 "AsianHotties", "Sexy_Asians", "asianbabes", "bustyasians",
-                                "juicyasians", "AsiansGoneWild")
+                                "juicyasians", "AsianNSFW")
 
     @commands.command(aliases=["butt", "butts", "booty"])
     async def ass(self, ctx):
@@ -74,11 +71,10 @@ class NSFW(commands.Cog):
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        f"http://api.obutts.ru/butts/get/{random.randint(7, 5999)}") as w:
-                        resp = await w.json()
+                async with self.bot.session.get(
+                    f"http://api.obutts.ru/butts/get/{random.randint(7, 5999)}") as w:
 
+                    resp = await w.json()
                 try:
                     resp = resp[0]
                 except: pass
@@ -112,10 +108,10 @@ class NSFW(commands.Cog):
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(
-                        f"http://api.oboobs.ru/boobs/get/{random.randint(8, 13013)}") as w:
-                        resp = await w.json()
+                async with self.bot.session.get(
+                    f"http://api.oboobs.ru/boobs/get/{random.randint(8, 13013)}") as w:
+
+                    resp = await w.json()
                 try:
                     resp = resp[0]
                 except: pass
@@ -186,23 +182,27 @@ class NSFW(commands.Cog):
 
     @commands.command()
     async def hentai(self, ctx, arg: str=None):
-        """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post"""
+        """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post. Add nothing extra for a regular hentai pic"""
 
         await ctx.channel.trigger_typing()
         if arg is None:
             return await get_reddit(ctx, 1, 100, True, False, "a post", "hentai")
+
         elif arg == "-gif":
-            await ctx.channel.trigger_typing()
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://nekobot.xyz/api/image?type=hentai_anal") as w:
-                    resp = await w.json()
+            async with self.bot.session.get(
+                "https://nekobot.xyz/api/image?type=hentai_anal") as w:
+
+                resp = await w.json()
             return await send_nekobot_image(ctx, resp)
+
         elif arg == "-irl":
             return await get_reddit(ctx, 1, 75, True, False, "a post", "hentai_irl")
+
         else:
             await ctx.send("Invalid formatting. You can only add `-gif` after the command for a "
-                           "hentai gif OR `-irl` for a hentai_irl post", delete_after=7.0)
-            return await delete_message(ctx, 7)
+                           "hentai gif OR `-irl` for a hentai_irl post. You can add nothing "
+                           "extra for regular hentai", delete_after=10.0)
+            return await delete_message(ctx, 10)
 
     @commands.command(aliases=["stockings", "panties"])
     async def lingerie(self, ctx):
@@ -223,9 +223,8 @@ class NSFW(commands.Cog):
             url = "https://nekos.life/api/neko"
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as w:
-                    resp = await w.json()
+            async with self.bot.session.get(url) as w:
+                resp = await w.json()
 
             embed = discord.Embed(color=find_color(ctx))
             embed.set_image(url=resp["neko"])
@@ -242,10 +241,9 @@ class NSFW(commands.Cog):
         """Posts a porn gif"""
 
         await ctx.channel.trigger_typing()
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://nekobot.xyz/api/image?type=pgif") as w:
-                resp = await w.json()
-                await send_nekobot_image(ctx, resp)
+        async with self.bot.session.get("https://nekobot.xyz/api/image?type=pgif") as w:
+            resp = await w.json()
+            await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["vagina"])
     async def pussy(self, ctx):
@@ -260,10 +258,9 @@ class NSFW(commands.Cog):
         """Sends some thiccccccccc thighs"""
 
         await ctx.channel.trigger_typing()
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://nekobot.xyz/api/image?type=thigh") as w:
-                resp = await w.json()
-                await send_nekobot_image(ctx, resp)
+        async with self.bot.session.get("https://nekobot.xyz/api/image?type=thigh") as w:
+            resp = await w.json()
+            await send_nekobot_image(ctx, resp)
 
 
 def setup(bot):

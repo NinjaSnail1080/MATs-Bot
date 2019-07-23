@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, get_data, delete_message
+from utils import find_color, delete_message, chunks, send_basic_paginator
 
 from discord.ext import commands
 import discord
@@ -24,14 +24,7 @@ import discord
 import collections
 import asyncio
 import datetime
-
-list_prefixes = "**Prefixes**: `!mat` or @mention"
-
-
-def chunks(L, s):
-    """Yield s-sized chunks from L"""
-    for i in range(0, len(L), s):
-        yield L[i:i + s]
+import random
 
 
 class Help(commands.Cog, command_attrs={"hidden": True}):
@@ -40,93 +33,80 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
     def __init__(self, bot):
         self.bot = bot
 
-        self.back = "\U00002b05"
-        self.next = "\U000027a1"
+    def show_info(self, ctx, show_detail=False):
+        all_prefixes = self.bot.default_prefixes
 
-    def check_reaction(self, message):
-        def check(reaction, user):
-            if reaction.message.id != message.id or user == self.bot.user:
-                return False
-            elif reaction.emoji == self.back:
-                return True
-            elif reaction.emoji == self.next:
-                return True
-            return False
-        return check
+        default_prefixes = []
+        for p in self.bot.default_prefixes:
+            if p.endswith(" ") and show_detail:
+                default_prefixes.append(f"*`{p}`")
+            else:
+                default_prefixes.append(f"`{p}`")
 
-    async def send_help_embeds(self, ctx, msg, embeds):
-        duration = datetime.timedelta(minutes=10) + datetime.timedelta(seconds=-9.6)
-        #* A second timedelta is being added because for some reason I don't understand, there's
-        #* always an offset of about 9.6 seconds (time_passed is always about -9.6 seconds on the
-        #* first loop through, which makes no sense because it should pretty much 0)
-        await msg.add_reaction(self.back)
-        await msg.add_reaction(self.next)
-        index = 0
+        custom_prefixes = []
+        if ctx.guild is not None:
+            all_prefixes += self.bot.guilddata[ctx.guild.id]["prefixes"]
+            for p in self.bot.guilddata[ctx.guild.id]["prefixes"]:
+                if p.endswith(" ") and show_detail:
+                    custom_prefixes.append(f"*`{p}`")
+                else:
+                    custom_prefixes.append(f"`{p}`")
 
-        while True:
-            time_passed = datetime.datetime.utcnow() - msg.created_at
-            time_left = duration - time_passed
+        msg = f"**Prefixes**: {', '.join(default_prefixes)} __or__ {self.bot.user.mention}"
+        if custom_prefixes:
+            msg += f"\n**Server-Specific Prefix(es)**: {', '.join(custom_prefixes)}"
 
-            if index > len(embeds) - 1 or index < -len(embeds) + 1:
-                index = 0
-            if index >= 0:
-                page = index + 1
-            elif index < 0:
-                page = len(embeds) + index + 1
-            await msg.edit(content=f"**Page {page}/{len(embeds)}**", embed=embeds[index])
-            try:
-                #* The below operation is also acting as the timer before deleting this msg,
-                #* hence the "timeout=time_left.total_seconds()"
-                react, user = await self.bot.wait_for(
-                    "reaction_add", timeout=time_left.total_seconds(),
-                    check=self.check_reaction(msg))
-            except asyncio.TimeoutError:
-                break
-            if react.emoji == self.back:
-                index -= 1
-            elif react.emoji == self.next:
-                index += 1
-            await msg.remove_reaction(react, user)
-        await msg.delete()
-        return await ctx.message.delete()
+        if show_detail:
+            msg += ("\n\nYou must use one of the prefixes before each command in your message."
+                    f"\n__Example__: `{random.choice(all_prefixes)}"
+                    f"{random.choice([c.name for c in self.bot.commands])} <any other required "
+                    "specs>`\n\n*An asterisk* (*) *next to a prefix listed above means there "
+                    "must be a space in between the prefix and the command*")
 
-    @commands.command(pass_context=True)
+        msg += ("\n\nIf you're having problems, you can get help on my [support server](https://"
+                "discord.gg/P4Fp3jA).\nInvite me to other servers [here](https://discordapp.com/o"
+                "auth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591).")
+
+        return msg
+
+    @commands.command()
     async def help(self, ctx, cat=None):
         """MAT's Bot | Help command"""
 
         await ctx.channel.trigger_typing()
-        try:
-            disabled = get_data("server")[str(ctx.guild.id)]["disabled"]
-        except:
+        if ctx.guild is not None:
+            disabled = self.bot.guilddata[ctx.guild.id]["disabled"]
+        else:
             disabled = []
 
-        cmds = collections.Counter()
+        cog_cmds = collections.Counter()
         for c in self.bot.commands:
             if not c.hidden and c.name not in disabled:
-                cmds[c.cog_name] += 1
+                cog_cmds[c.cog_name] += 1
 
         if cat is None:
             embed = discord.Embed(
-                title="MAT's Bot | Help command", description=list_prefixes + "\n**Categories**:",
+                title="MAT's Bot | Help command",
+                description=self.show_info(ctx, True) + "\n\n__**Categories**__:",
                 color=find_color(ctx))
 
             embed.add_field(
-                name="<:confetti:464831811558572035> Fun", value=f"{cmds['Fun']} "
+                name="<:confetti:464831811558572035> Fun", value=f"{cog_cmds['Fun']} "
                 "commands\n`<prefix> help fun` for more info")
             embed.add_field(
-                name="<:paint:464836778000515072> Image Manipulation", value=f"{cmds['Image']} "
-                "commands\n`<prefix> help image` for more info")
+                name="<:paint:464836778000515072> Image Manipulation",
+                value=f"{cog_cmds['Image']} commands\n`<prefix> help image` for more info")
             embed.add_field(
-                name="<:info:540301057264189453> Info", value=f"{cmds['Info']} commands"
+                name="<:info:540301057264189453> Info", value=f"{cog_cmds['Info']} commands"
                 "\n`<prefix> help info` for more info")
             embed.add_field(
                 name="<:raisedfist:470319397291163678> Moderation",
-                value=f"{cmds['Moderation']} commands\n`<prefix> help mod` for more info")
+                value=f"{cog_cmds['Moderation']} commands\n`<prefix> help mod` for more info")
             embed.add_field(
-                name=":wink: NSFW", value=f"{cmds['NSFW']} commands\n`<prefix> help nsfw` "
+                name=":wink: NSFW", value=f"{cog_cmds['NSFW']} commands\n`<prefix> help nsfw` "
                 "for more info")
             embed.add_field(
-                name=":tools: Utility", value=f"{cmds['Utility']} commands\n`<prefix> "
+                name=":tools: Utility", value=f"{cog_cmds['Utility']} commands\n`<prefix> "
                 "help nsfw` for more info")
             if disabled:
                 embed.add_field(name=":no_entry_sign: Disabled Commands",
@@ -137,14 +117,17 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 content="I'm still in beta, so many more commands are coming in the near future!",
                 embed=embed)
 
+        elif cat.lower() == "economy":
+            await ctx.send("No commands yet ¯\_(ツ)_/¯")
+
         elif cat.lower() == "fun":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Fun" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
-            if len(cmds) == 0:
+            if not cmds:
                 embed = discord.Embed(
-                    title="Help | Fun Commands", description=list_prefixes + "\n\n**All commands"
-                    " in this category have been disabled for this server by one of its "
+                    title="Help | Fun Commands", description=self.show_info(ctx) + "\n\n**All "
+                    "commands in this category have been disabled for this server by one of its "
                     "Administrators**", color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
@@ -154,29 +137,31 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             embeds = []
             for i in cmds:
                 embed = discord.Embed(
-                    title="Help | Fun Commands", description=list_prefixes, color=find_color(ctx))
+                    title="Help | Fun Commands",
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['Fun']} commands)\n\n" + self.show_info(ctx),
+                    color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
 
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
+            return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "image":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Image" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
-            if len(cmds) == 0:
+            if not cmds:
                 embed = discord.Embed(
                     title="Help | Image Manipulation Commands",
-                    description=list_prefixes + "\n\n**All commands in this category have been "
-                    "disabled for this server by one of its Administrators**",
+                    description=self.show_info(ctx) + "\n\n**All commands in this category "
+                    "have been disabled for this server by one of its Administrators**",
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
@@ -187,33 +172,34 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Image Manipulation Commands",
-                    description=list_prefixes + "\n\n**For all of these commands you need to "
-                    "either attach an image, insert an image url, or @mention another user "
-                    "after the command to use their avatar. If you don't put anything, I'll "
-                    "search the previous 10 messages for an image and use it if I find one. If "
-                    "I don't, I'll just default to your user's avatar**", color=find_color(ctx))
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['Image']} commands)\n\n" + self.show_info(ctx) + "\n\n**For all "
+                    "of these commands you need to either attach an image, insert an image url, "
+                    "or @mention another user after the command to use their avatar. If you "
+                    "don't put anything, I'll search the previous 10 messages for an image and "
+                    "use it if I find one. If I don't, I'll just default to your user's avatar**",
+                    color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
 
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
+            return await send_basic_paginator(ctx, embeds, 5)
 
-        elif cat.lower() == "info":
+        elif cat.lower() == "info" or cat.lower() == "information":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Info" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
-            if len(cmds) == 0:
+            if not cmds:
                 embed = discord.Embed(
-                    title="Help | Information Commands", description=list_prefixes + "\n\n**All "
-                    "commands in this category have been disabled for this server by one of "
-                    "its Administrators**", color=find_color(ctx))
+                    title="Help | Information Commands", description=self.show_info(ctx) +
+                    "\n\n**All commands in this category have been disabled for this server by "
+                    "one of its Administrators**", color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
 
@@ -222,20 +208,21 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             embeds = []
             for i in cmds:
                 embed = discord.Embed(
-                    title="Help | Information Commands", description=list_prefixes,
+                    title="Help | Information Commands",
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['Info']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
 
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
+            return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "mod" or cat.lower() == "moderation":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Moderation" and
@@ -245,20 +232,21 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             embeds = []
             for i in cmds:
                 embed = discord.Embed(
-                    title="Help | Moderation Commands", description=list_prefixes,
+                    title="Help | Moderation Commands",
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['Moderation']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
 
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
+            return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "music":
             await ctx.send("No commands yet ¯\_(ツ)_/¯")
@@ -267,10 +255,43 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Utility" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
 
-            if len(cmds) == 0:
+            if not cmds:
                 embed = discord.Embed(
-                    title="Help | Utility Commands", description=list_prefixes + "\n\n**All "
-                    "commands in this category have been disabled for this server by one of "
+                    title="Help | Utility Commands", description=self.show_info(ctx) +
+                    "\n\n**All commands in this category have been disabled for this server by "
+                    "one of its Administrators**", color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                return await ctx.send(embed=embed)
+
+            cmds = list(chunks(cmds, 7))
+
+            embeds = []
+            for i in cmds:
+                embed = discord.Embed(
+                    title="Help | Utility Commands",
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['Utility']} commands)\n\n" + self.show_info(ctx),
+                    color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                if len(cmds) > 1:
+                    embed.set_footer(
+                        text=f"Click one of the emojis below to go to the next page or the "
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
+                for c in i:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+                embeds.append(embed)
+
+            return await send_basic_paginator(ctx, embeds, 5)
+
+        elif cat.lower() == "nsfw":
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "NSFW" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
+
+            if not cmds:
+                embed = discord.Embed(
+                    title="Help | NSFW Commands", description=self.show_info(ctx) + "\n\n**"
+                    "All commands in this category have been disabled for this server by one of "
                     "its Administrators**", color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
@@ -280,58 +301,28 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             embeds = []
             for i in cmds:
                 embed = discord.Embed(
-                    title="Help | Utility Commands", description=list_prefixes,
+                    title="Help | NSFW Commands",
+                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    f"({cog_cmds['NSFW']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
                     embed.set_footer(
                         text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
                 for c in i:
                     embed.add_field(name=c.name, value=c.help, inline=False)
                 embeds.append(embed)
 
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
-
-        elif cat.lower() == "nsfw":
-            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "NSFW" and
-                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
-
-            if len(cmds) == 0:
-                embed = discord.Embed(
-                    title="Help | NSFW Commands", description=list_prefixes + "\n\n**All commands"
-                    " in this category have been disabled for this server by one of its "
-                    "Administrators**", color=find_color(ctx))
-                embed.set_author(name="MAT's Bot")
-                return await ctx.send(embed=embed)
-
-            cmds = list(chunks(cmds, 7))
-
-            embeds = []
-            for i in cmds:
-                embed = discord.Embed(
-                    title="Help | NSFW Commands", description=list_prefixes,
-                    color=find_color(ctx))
-                embed.set_author(name="MAT's Bot")
-                if len(cmds) > 1:
-                    embed.set_footer(
-                        text=f"Click one of the emojis below to go to the next page or the "
-                        "previous one. This help message will be automatically deleted after "
-                        "10 minutes")
-                for c in i:
-                    embed.add_field(name=c.name, value=c.help, inline=False)
-                embeds.append(embed)
-
-            msg = await ctx.send(embed=embeds[0])
-            return await self.send_help_embeds(ctx, msg, embeds)
+            return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "all":
             cmds = sorted(list(self.bot.commands), key=lambda c: c.name)
 
             embed = discord.Embed(
-                title="Help | All Commands", description=list_prefixes, color=find_color(ctx))
+                title="Help | All Commands", description=self.show_info(ctx),
+                color=find_color(ctx))
             embed.set_author(name="MAT's Bot")
             embed.set_footer(
                 text="Do \"<prefix> help <command name>\" for help on a specific command")
@@ -385,8 +376,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                     if cmd.aliases:
                         embed.add_field(name="Aliases", value=f"`{'`, `'.join(cmd.aliases)}`")
 
-                    await ctx.send(embed=embed)
-                    return
+                    return await ctx.send(embed=embed)
 
             await ctx.send(
                 "That's not a category. The ones you can pick are:\n\n`fun` (Fun commands)\n"

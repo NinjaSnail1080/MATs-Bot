@@ -18,10 +18,8 @@
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
-import discord
-import aiohttp
 from PIL import Image
-import rapidjson as json
+import discord
 
 import datetime
 import asyncio
@@ -30,7 +28,6 @@ import functools
 import os
 import io
 import re
-import sys
 import uuid
 
 import config
@@ -48,129 +45,188 @@ class ChannelNotNSFW(commands.CommandError):
     pass
 
 
-def get_data(to_return=None):
-    """Gets data from all of the .data.json file"""
-
-    if os.path.exists("bot.data.json"):
-        with open("bot.data.json", "r") as f:
-            botdata = dict(json.load(f))
-    else:
-        with open("bot.data.json", "w") as f:
-            botdata = {"messages_read": {}, "commands_used": {}}
-            json.dump(botdata, f)
-
-    if os.path.exists("server.data.json"):
-        with open("server.data.json", "r") as f:
-            serverdata = dict(json.load(f))
-    else:
-        with open("server.data.json", "w") as f:
-            serverdata = {}
-            json.dump(serverdata, f)
-
-    if os.path.exists("user.data.json"):
-        with open("user.data.json", "r") as f:
-            userdata = dict(json.load(f))
-    else:
-        with open("user.data.json", "w") as f:
-            userdata = {}
-            json.dump(userdata, f)
-
-    if os.path.exists("reminders.data.json"):
-        with open("reminders.data.json", "r") as f:
-            reminders = list(json.load(f))
-    else:
-        with open("reminders.data.json", "w") as f:
-            reminders = []
-            json.dump(reminders, f)
-
-    if os.path.exists("giveaways.data.json"):
-        with open("giveaways.data.json", "r") as f:
-            giveaways = list(json.load(f))
-    else:
-        with open("giveaways.data.json", "w") as f:
-            giveaways = []
-            json.dump(giveaways, f)
-
-    if to_return is None:
-        return
-    elif to_return == "bot":
-        return botdata
-    elif to_return == "server":
-        return serverdata
-    elif to_return == "user":
-        return userdata
-    elif to_return == "reminders":
-        return reminders
-    elif to_return == "giveaways":
-        return giveaways
-    else:
-        raise TypeError("\"to_return\" param must be either \"bot\", \"server\", \"user\", "
-                        "\"reminders\", or \"giveaways\"")
-
-
-def dump_data(to_dump, file):
-    """Dumps data to the .data.json files"""
-
-    if file == "bot":
-        with open("bot.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "server":
-        with open("server.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "user":
-        with open("user.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "reminders":
-        with open("reminders.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-
-    elif file == "giveaways":
-        with open("giveaways.data.json", "w") as f:
-            json.dump(to_dump, f, indent=4)
-    else:
-        raise TypeError("\"file\" param must be either \"bot\", \"server\", \"user\", "
-                        "\"reminders\", or \"giveaways\"")
+def chunks(L, s):
+    """Yield s-sized chunks from L"""
+    for i in range(0, len(L), s):
+        yield L[i:i + s]
 
 
 async def delete_message(ctx, time: float):
-    """Deletes a command's message if the command was formatted incorectly"""
+    """Deletes a command's message after a certain amount of time"""
 
-    await asyncio.sleep(time)
     try:
-        await ctx.message.delete()
-    except:
+        await ctx.message.delete(delay=time)
+    except discord.Forbidden:
         pass
     return
+
+
+async def send_log(ctx, send_embed):
+    """Creates a #logs channel if it doesn't already exist so people can keep track of what the
+    mods are doing. Then send the embed from a moderation command
+    """
+    if ctx.bot.guilddata[ctx.guild.id]["logs"] is None:
+        logs = await ctx.guild.create_text_channel(
+            "logs", overwrites={ctx.guild.default_role: discord.PermissionOverwrite(
+                send_messages=False)})
+
+        await logs.send("I created this channel just now to keep a log of all my moderation "
+                        "commands that have been used. Feel free to edit this channel "
+                        "however you'd like, but make sure I always have access to it!"
+                        "\n\nP.S. I don't have to use this channel if you don't want me to. You "
+                        "can use the `setlogs` command to set a different logs channel or "
+                        "the `nologs` command to disable logging moderation commands entirely.")
+
+        ctx.bot.guilddata[ctx.guild.id]["logs"] = logs.id
+        async with ctx.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET logs = {}
+                WHERE id = {}
+            ;""".format(logs.id, ctx.guild.id))
+
+    elif not ctx.bot.guilddata[ctx.guild.id]["logs"]:
+        return
+    else:
+        logs = ctx.guild.get_channel(ctx.bot.guilddata[ctx.guild.id]["logs"])
+
+    await logs.send(embed=send_embed)
+
+
+async def send_basic_paginator(ctx, embeds, timeout: int, wrap_ends: bool=True):
+    """Send the basic embed paginator with 2 reactions"""
+
+    def check_reaction(message):
+        def check(reaction, user):
+            if reaction.message.id != message.id or user == ctx.bot.user:
+                return False
+            elif reaction.emoji == "\U00002b05":
+                return True
+            elif reaction.emoji == "\U000027a1":
+                return True
+            return False
+        return check
+
+    index = 0
+    msg = await ctx.send(embed=embeds[index])
+    while True:
+        await msg.edit(embed=embeds[index])
+        if wrap_ends:
+            await msg.add_reaction("\U00002b05")
+            await msg.add_reaction("\U000027a1")
+        else:
+            if index == 0:
+                await msg.add_reaction("\U000027a1")
+            elif index == len(embeds) - 1:
+                await msg.add_reaction("\U00002b05")
+            else:
+                await msg.add_reaction("\U00002b05")
+                await msg.add_reaction("\U000027a1")
+        try:
+            react, user = await ctx.bot.wait_for(
+                "reaction_add", timeout=datetime.timedelta(minutes=timeout).total_seconds(),
+                check=check_reaction(msg))
+        except asyncio.TimeoutError:
+            break
+        if react.emoji == "\U00002b05":
+            index -= 1
+        elif react.emoji == "\U000027a1":
+            index += 1
+        if index > len(embeds) - 1 or index < -len(embeds) + 1:
+            index = 0
+        await msg.clear_reactions()
+    await msg.delete()
+    return await ctx.message.delete()
+
+
+async def send_advanced_paginator(ctx, embeds, timeout: int):
+    """Send the advanced embed paginator with 3 reactions"""
+
+    def check_reaction(message):
+        def check(reaction, user):
+            if reaction.message.id != message.id or user == ctx.bot.user:
+                return False
+            elif reaction.emoji in ["\U000025c0", "\U000025b6", "\U0001f522"]:
+                return True
+            return False
+        return check
+
+    def check_message(author):
+        def check(message):
+            return message.author == author
+        return check
+
+    index = 0
+    msg = await ctx.send(embed=embeds[index])
+    for e in ["\U000025c0", "\U000025b6", "\U0001f522"]:
+        await msg.add_reaction(e)
+
+    while True:
+        try:
+            react, user = await ctx.bot.wait_for(
+                "reaction_add", timeout=datetime.timedelta(minutes=timeout).total_seconds(),
+                check=check_reaction(msg))
+        except asyncio.TimeoutError:
+            break
+        if react.emoji == "\U000025c0":
+            index -= 1
+        elif react.emoji == "\U000025b6":
+            index += 1
+        elif react.emoji == "\U0001f522":
+            jump_msg = await ctx.send(
+                f"{user.mention}, type the page number you'd like to jump to")
+            while True:
+                try:
+                    message = await ctx.bot.wait_for(
+                        "message", timeout=10, check=check_message(user))
+                except asyncio.TimeoutError:
+                    await jump_msg.delete()
+                    await ctx.send(f"{user.mention} took too long to respond, so the "
+                                    "operation was cancelled", delete_after=5.0)
+                    break
+                if message.content.isdigit():
+                    if int(message.content) >= 1 and int(message.content) <= len(embeds):
+                        index = int(message.content) - 1
+                    else:
+                        await ctx.send("Invalid page number", delete_after=3.0)
+                else:
+                    await ctx.send("That's not a page number", delete_after=3.0)
+                await jump_msg.delete()
+                await message.delete()
+                break
+        await msg.remove_reaction(react, user)
+
+        if index > len(embeds) - 1 or index < -len(embeds) + 1:
+            index = 0
+        await msg.edit(embed=embeds[index])
+
+    await msg.delete()
+    return await ctx.message.delete()
 
 
 async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timestamp: bool, error_msg: str, *subs):
     """Get a random post from a subreddit"""
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"https://www.reddit.com/r/{'+'.join(subs)}/hot.json?limit={limit}",
-                headers=config.R_USER_AGENT) as w:
+        async with ctx.bot.session.get(
+            f"https://www.reddit.com/r/{'+'.join(subs)}/hot.json?limit={limit}",
+            headers=config.R_USER_AGENT) as w:
 
-                resp = await w.json()
+            resp = await w.json()
 
         is_nsfw = False
         for p in resp["data"]["children"].copy():
             if p["data"]["stickied"] or p["data"]["pinned"]:
                 resp["data"]["children"].remove(p)
-            elif p["data"]["over_18"] and not ctx.channel.is_nsfw():
+            if p["data"]["over_18"] and not ctx.channel.is_nsfw():
                 resp["data"]["children"].remove(p)
                 is_nsfw = True
-            elif img_only:
+            if img_only:
                 if not p["data"]["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "webp")):
                     if "imgur.com" in p["data"]["url"] and "/a/" not in p["data"]["url"]:
-                        copy = p
-                        copy["data"]["url"] += ".png"
-                        resp["data"]["children"] = [
-                            copy if x == p else x for x in resp["data"]["children"]]
+                        fix = p
+                        fix["data"]["url"] += ".png"
+                        resp["data"]["children"][resp["data"]["children"].index(p)] = fix
                     else:
                         resp["data"]["children"].remove(p)
 
@@ -179,6 +235,9 @@ async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timest
         #* To format some special characters (like &, <, >, etc.) correctly
         data["title"] = BeautifulSoup(data["title"], "lxml").get_text()
         data["selftext"] = BeautifulSoup(data["selftext"], "lxml").get_text()
+
+        #* To change reddit spoiler markers into discord spoiler markers
+        data["selftext"] = data["selftext"].replace(">!", "||").replace("!<", "||")
 
         #* To change the html code for a zero-width space into something Python can understand
         zwspace = re.compile("&#x200b;", re.IGNORECASE)
@@ -268,7 +327,7 @@ async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timest
 
 
 def find_color(ctx):
-    """Find the bot's rendered color. Or if it's a DM, return Discord's "blurple" color"""
+    """Find the bot's rendered color. If it's the default color or we're in a DM, return Discord's "blurple" color"""
 
     try:
         if ctx.guild.me.color == discord.Color.default():
@@ -295,7 +354,7 @@ async def send_nekobot_image(ctx, resp):
     await ctx.send(embed=embed)
 
 
-async def send_dank_memer_img(loop, ctx, resp, is_gif: bool=False):
+async def send_dank_memer_img(ctx, resp, is_gif: bool=False):
     """Send an image for a command that called the Dank Memer Imgen API"""
 
     def save_image(resp):
@@ -310,7 +369,7 @@ async def send_dank_memer_img(loop, ctx, resp, is_gif: bool=False):
         return filepath
 
     try:
-        filepath = await loop.run_in_executor(None, functools.partial(save_image, resp))
+        filepath = await ctx.bot.loop.run_in_executor(None, functools.partial(save_image, resp))
         filename = ctx.command.name + filepath[-4:]
 
         f = discord.File(filepath, filename=filename)

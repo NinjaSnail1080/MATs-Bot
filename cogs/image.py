@@ -21,13 +21,11 @@ from utils import find_color, delete_message, send_nekobot_image, send_dank_meme
 from discord.ext import commands
 from PIL import Image as IMG
 from PIL import ImageEnhance, ImageFilter
+import ascii as ascii_lib
 import discord
-import aiohttp
 import validators
 import pytesseract
-import ascii
 import urllib3
-import rapidjson as json
 
 import typing
 import functools
@@ -38,8 +36,8 @@ import uuid
 
 import config
 
-#* MAT's Bot uses the NekoBot API for most of these commands.
-#* More info at https://docs.nekobot.xyz/
+#* MAT's Bot uses the NekoBot API and Dank Memer API for many of these commands.
+#* More info at https://docs.nekobot.xyz/ for NekoBot and https://dankmemer.services/ for Dank Memer
 
 
 class Image(commands.Cog):
@@ -55,19 +53,19 @@ class Image(commands.Cog):
 
     async def get_image(self, ctx, user_url: typing.Union[discord.Member, str]=None):
         if user_url is None and not ctx.message.attachments:
-            found = False
-            async for m in ctx.channel.history(limit=10):
+            async for m in ctx.channel.history(limit=11):
                 if m.embeds:
                     img = m.embeds[0].image.url
                     if img is not discord.Embed.Empty:
-                        found = True
                         break
                 if m.attachments:
                     img = m.attachments[0].url
-                    found = True
                     break
-            if not found:
+            else:
+                #* If it didn't find an image to use
                 img = ctx.author.avatar_url_as(format="png")
+        elif ctx.message.attachments:
+            img = ctx.message.attachments[0].url
         elif user_url is not None:
             if isinstance(user_url, discord.Member):
                 img = user_url.avatar_url_as(format="png")
@@ -75,9 +73,7 @@ class Image(commands.Cog):
                 img = user_url
             else:
                 raise commands.BadArgument
-        elif user_url is None and ctx.message.attachments:
-            img = ctx.message.attachments[0].url
-        return img
+        return str(img)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> affect (OPTIONAL)<@mention user OR attach an image OR "
@@ -87,11 +83,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/affect?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/affect?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> america (OPTIONAL)<@mention user OR attach an image OR "
@@ -101,29 +96,28 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/america?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/america?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
-                      "image url>`")
-    async def ascii(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+                      "image url>`", name="ascii")
+    async def ascii_command(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Converts an image or a member's avatar into ascii art. Will work for most images
         __Note__: For some images, you might want to zoom out to see the full ascii art (Ctrl – OR ⌘ –)
         ~~Rip mobile users~~
         """
-
-        def make_ascii(url: str, columns: int, color: bool):
-            ascii_art = ascii.loadFromUrl(url, columns, color)
+        def make_ascii(url: str):
+            ascii_art = ascii_lib.loadFromUrl(url, 60, False)
             return ascii_art
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            art = await self.bot.loop.run_in_executor(
-                None, functools.partial(make_ascii, img, 60, False))
+            art = await self.bot.loop.run_in_executor(None, functools.partial(make_ascii, img))
             if len(art) > 1994:
                 art = "".join(art.split())
                 split_art = re.findall(".{1,1920}", art)
@@ -141,11 +135,11 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
-                    resp = await w.json()
-                    await send_nekobot_image(ctx, resp)
+            async with self.bot.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=awooify&url={img}") as w:
+
+                resp = await w.json()
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
@@ -155,11 +149,11 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
-                    resp = await w.json()
-                    await send_nekobot_image(ctx, resp)
+            async with self.bot.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=blurpify&image={img}") as w:
+
+                resp = await w.json()
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> brazzers (OPTIONAL)<@mention user OR attach an image OR "
@@ -169,11 +163,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/brazzers?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/brazzers?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> cancer (OPTIONAL)<@mention user OR attach an image OR "
@@ -183,11 +178,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/cancer?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/cancer?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(aliases=["caption"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> caption (OPTIONAL)<@mention user OR "
@@ -200,10 +194,11 @@ class Image(commands.Cog):
             headers = {"Content-Type": "application/json; charset=utf-8"}
             payload = {"Content": img, "Type": "CaptionRequest"}
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.post("https://captionbot.azurewebsites.net/api/messages",
-                                            headers=headers, json=payload) as w:
-                        caption = await w.text()
+                async with self.bot.session.post(
+                    "https://captionbot.azurewebsites.net/api/messages",
+                    headers=headers, json=payload) as w:
+
+                    caption = await w.text()
                 embed = discord.Embed(
                     title=str(caption),
                     description="*Powered by [CaptionBot](https://www.captionbot.ai/)*",
@@ -226,11 +221,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/communism?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/communism?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> corporate <picture 1> <picture 2>`\n\nFor the pictures, "
@@ -243,13 +239,11 @@ class Image(commands.Cog):
         with ctx.channel.typing():
             img1 = await self.get_image(ctx, member_url_1)
             img2 = await self.get_image(ctx, member_url_2)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://dankmemer.services/api/corporate?avatar1={img1}&avatar2={img2}",
-                    headers=config.DANK_MEMER_AUTH) as w:
-
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get("https://dankmemer.services/api/corporate?"
+                                            f"avatar1={img1}&avatar2={img2}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> deepfry (OPTIONAL)<@mention user OR attach an image OR "
@@ -259,11 +253,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/deepfry?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/deepfry?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> delete (OPTIONAL)<@mention user OR attach an image OR "
@@ -273,11 +268,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/delete?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/delete?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> disability (OPTIONAL)<@mention user OR attach an image OR "
@@ -287,11 +281,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/disability?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/disability?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> door (OPTIONAL)<@mention user OR attach an image OR "
@@ -301,11 +296,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/door?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/door?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> failure (OPTIONAL)<@mention user OR attach an image OR "
@@ -315,11 +309,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/failure?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/failure?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> fakenews (OPTIONAL)<@mention user OR attach an image OR "
@@ -329,11 +324,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/fakenews?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/fakenews?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gay (OPTIONAL)<@mention user OR attach an image OR "
@@ -343,11 +339,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/gay?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/gay?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext (OPTIONAL)<@mention user OR attach an image OR "
@@ -375,9 +370,8 @@ class Image(commands.Cog):
 
         try:
             with ctx.channel.typing():
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(await self.get_image(ctx, member_url)) as resp:
-                        bytes = await resp.read()
+                async with self.bot.session.get(await self.get_image(ctx, member_url)) as resp:
+                    bytes = await resp.read()
 
                 text = await self.bot.loop.run_in_executor(
                      None, functools.partial(read_image, bytes))
@@ -408,11 +402,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/hitler?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/hitler?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> invert (OPTIONAL)<@mention user OR attach an image OR "
@@ -422,11 +415,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/invert?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/invert?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> iphonex (OPTIONAL)<@mention user OR attach an image OR "
@@ -436,11 +428,11 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
-                    resp = await w.json()
-                    await send_nekobot_image(ctx, resp)
+            async with self.bot.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=iphonex&url={img}") as w:
+
+                resp = await w.json()
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> jail (OPTIONAL)<@mention user OR attach an image OR "
@@ -450,11 +442,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/jail?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/jail?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(aliases=["magikify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
@@ -464,11 +455,11 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
-                    resp = await w.json()
-                    await send_nekobot_image(ctx, resp)
+            async with self.bot.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=magik&image={img}") as w:
+
+                resp = await w.json()
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> radialblur (OPTIONAL)<@mention user OR attach an image OR "
@@ -478,11 +469,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/radialblur?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/radialblur?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> sickban (OPTIONAL)<@mention user OR attach an image OR "
@@ -492,11 +484,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/sickban?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/sickban?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tablet (OPTIONAL)<@mention user OR attach an image OR "
@@ -506,11 +499,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/airpods?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/airpods?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
@@ -520,11 +514,11 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
-                    resp = await w.json()
-                    await send_nekobot_image(ctx, resp)
+            async with self.bot.session.get(
+                f"https://nekobot.xyz/api/imagegen?type=threats&url={img}") as w:
+
+                resp = await w.json()
+                await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> trash (OPTIONAL)<@mention user OR attach an image OR "
@@ -534,11 +528,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/trash?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/trash?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> triggered (OPTIONAL)<@mention user>`")
@@ -547,11 +540,12 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/trigger?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp, True)
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/trigger?avatar1={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp, True)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ugly (OPTIONAL)<@mention user OR attach an image OR "
@@ -561,11 +555,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/ugly?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/ugly?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> wanted (OPTIONAL)<@mention user OR attach an image OR "
@@ -575,11 +568,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/wanted?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with ctx.bot.session.get(f"https://dankmemer.services/api/wanted?avatar1={img}",
+                                           headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> warp (OPTIONAL)<@mention user OR attach an image OR "
@@ -589,11 +581,10 @@ class Image(commands.Cog):
 
         with ctx.channel.typing():
             img = await self.get_image(ctx, member_url)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://dankmemer.services/api/warp?avatar1={img}",
-                                       headers=config.DANK_MEMER_AUTH) as w:
-                    resp = await w.read()
-                    await send_dank_memer_img(self.bot.loop, ctx, resp)
+            async with self.bot.session.get(f"https://dankmemer.services/api/warp?avatar1={img}",
+                                            headers=config.DANK_MEMER_AUTH) as w:
+                resp = await w.read()
+                await send_dank_memer_img(ctx, resp)
 
 
 def setup(bot):

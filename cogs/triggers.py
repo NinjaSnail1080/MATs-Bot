@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, get_data
+from utils import find_color
 
 from discord.ext import commands
 import discord
@@ -44,9 +44,8 @@ class Triggers(commands.Cog):
             return
 
         if message.guild is not None:
-            if "triggers_disabled" in get_data("server")[str(message.guild.id)]:
-                if str(message.channel.id) in get_data("server")[str(message.guild.id)]["triggers_disabled"]:
-                    return
+            if message.channel.id in self.bot.guilddata[message.guild.id]["triggers_disabled"]:
+                return
 
         if message.author.id == 281807963147075584:
             #* This is the user ID of SigmaBot, who is the love interest for MAT

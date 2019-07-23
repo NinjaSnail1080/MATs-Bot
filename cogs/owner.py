@@ -24,6 +24,7 @@ import discord
 import asyncio
 import time
 import os
+import pprint
 
 
 class Owner(commands.Cog, command_attrs={"hidden": True}):
@@ -77,16 +78,64 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
         self.bot.loop.create_task(the_end(ctx, runtime * 60))
 
     @commands.command()
-    async def quit(self, ctx, *, arg: str=None):
+    async def deletemsg(self, ctx, msgs: commands.Greedy[discord.Message]):
+        """Delete a message or messages (intended to be used in DM channels)"""
+
+        for msg in msgs:
+            await msg.delete()
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+
+    @commands.command()
+    async def execute(self, ctx, *, query):
+        """Execute a query in the database"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.bot.pool.acquire() as conn:
+                    result = await conn.execute(query)
+            await ctx.send(f"Query complete:```{result}```")
+        except Exception as e:
+            await ctx.send(f"Query failed:```{e}```")
+
+    @commands.command()
+    async def fetch(self, ctx, *, query):
+        """Run a query in the database and fetch the result"""
+
+        try:
+            with ctx.channel.typing():
+                async with self.bot.pool.acquire() as conn:
+                    result = await conn.fetch(query)
+
+            fmtd_result = pprint.pformat([dict(i) for i in result])
+            await ctx.send(f"Query complete:```{fmtd_result}```")
+        except Exception as e:
+            await ctx.send(f"Query failed:```{e}```")
+
+    @commands.command()
+    async def quit(self, ctx):
         """Quit the bot's program"""
 
         try:
             await ctx.message.delete()
         except discord.Forbidden:
             pass
-        for task in asyncio.Task.all_tasks(self.bot.loop):
-            task.cancel()
-        await self.bot.logout()
+        try:
+            print("\n\nClosing...\n")
+
+            for task in asyncio.all_tasks(self.bot.loop):
+                task.cancel()
+                print("Cancelled task: " + str(task._coro))
+
+            print("\nLogging out...")
+            await self.bot.logout()
+        finally:
+            await self.bot.pool.close()
+            await self.bot.session.close()
+            self.bot.loop.close()
+            print("\nClosed\n")
 
     @commands.command()
     async def reload(self, ctx, *, cog=None):
