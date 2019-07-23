@@ -118,6 +118,7 @@ mat_experimental.py
 /akinator
 /ascii
 /async_timeout
+/asyncpg
 /attr
 /bs4
 /cchardet
@@ -126,8 +127,10 @@ mat_experimental.py
 /chardet
 cycler.py
 /dateutil
+/dbl
 decorator.py
 /discord
+/google_images_download
 /googletrans
 /idna
 idna_ssl.py
@@ -148,9 +151,12 @@ pyparsing.py
 /pytesseract
 /pytimeparse
 /qrcode
+ratelimiter.py
 /requests
+/selenium
 six.py
 /soupsieve
+speedtest.py
 typing_extensions.py
 typing.py
 /urllib3
@@ -165,3 +171,4 @@ config.py
 
 # Ignore test file if I make one
 test.py
+test.txt
