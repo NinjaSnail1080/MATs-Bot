@@ -58,10 +58,16 @@ class Error_Handlers(commands.Cog):
 
 
         elif isinstance(exc, commands.CommandOnCooldown):
+            if await self.bot.is_owner(ctx.author):
+                return await ctx.reinvoke()
+
+            c = exc.cooldown
             await ctx.send(
-                f"```WIP```You are on cooldown. Try again in {round(exc.retry_after, 2)} seconds",
-                delete_after=20.0)
-            return await delete_message(ctx, 20)
+                f"This command is on cooldown. Try again in **{round(exc.retry_after, 2)}** "
+                f"seconds.\n\n**Cooldown**: {c.rate} use{'' if c.rate == 1 else 's'} per "
+                f"{int(c.per)} second{'' if c.per == 1 else 's'}",
+                delete_after=15.0)
+            return await delete_message(ctx, 15)
 
 
         elif isinstance(exc, commands.NotOwner):
@@ -111,10 +117,6 @@ class Error_Handlers(commands.Cog):
         elif isinstance(exc, commands.NoPrivateMessage):
             return await ctx.send(
                 "This command cannot be used in private messages. You must be in a server")
-
-
-        # elif isinstance(exc, asyncpg.DataError):
-        #     return
 
 
         elif isinstance(exc, discord.Forbidden):
