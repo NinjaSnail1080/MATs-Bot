@@ -5,8 +5,8 @@ asyncpg
 beautifulsoup4
 cchardet
 certifi
-chardet==1.24
-dbl
+chardet
+dblpy
 decorator
 discord.py[voice]
 google_images_download
