@@ -78,6 +78,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> affect (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def affect(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """How does it affect your baby?"""
 
@@ -91,6 +92,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> america (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def america(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Overlay the American flag over an image"""
 
@@ -106,6 +108,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`", name="ascii")
+    @commands.cooldown(1, 45, commands.BucketType.user)
     async def ascii_command(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Converts an image or a member's avatar into ascii art. Will work for most images
         __Note__: For some images, you might want to zoom out to see the full ascii art (Ctrl – OR ⌘ –)
@@ -130,6 +133,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> awooify (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def awooify(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Awooify an image or a member's avatar"""
 
@@ -144,6 +148,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> blurpify (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def blurpify(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Blurpify an image or a member's avatar"""
 
@@ -158,6 +163,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> brazzers (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def brazzers(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Add the Brazzers logo to an image"""
 
@@ -173,6 +179,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> cancer (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def cancer(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """What is cancer?"""
 
@@ -186,6 +193,7 @@ class Image(commands.Cog):
     @commands.command(aliases=["caption"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> caption (OPTIONAL)<@mention user OR "
                       "attach an image OR image url>`")
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def captionbot(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """The CaptionBot AI will attempt to understand the content of an image and describe it"""
 
@@ -204,6 +212,7 @@ class Image(commands.Cog):
                     description="*Powered by [CaptionBot](https://www.captionbot.ai/)*",
                     color=find_color(ctx))
                 embed.set_image(url=img)
+
                 msg = await ctx.send(embed=embed)
                 await msg.add_reaction("\U00002705")
                 await msg.add_reaction("\U0000274c")
@@ -216,6 +225,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> america (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def communism(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Overlay the Communist flag over an image"""
 
@@ -231,6 +241,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> corporate <picture 1> <picture 2>`\n\nFor the pictures, "
                       "use image urls or @mention members instead of attaching pictures")
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def corporate(self, ctx, member_url_1: typing.Union[discord.Member, str], member_url_2: typing.Union[discord.Member, str]):
         """Corporate needs you to find the differences between this picture and this picture
         Format like this: `<prefix> corporate <picture 1> <picture 2>`
@@ -248,6 +259,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> deepfry (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def deepfry(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Deepfry an image or a member's avatar"""
 
@@ -263,6 +275,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> delete (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def delete(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Delete this garbage"""
 
@@ -276,6 +289,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> disability (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def disability(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Not all disabilities look like this: :wheelchair:"""
 
@@ -291,6 +305,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> door (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def door(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """\\*Enters\\* \\*Immediately leaves\\*"""
 
@@ -304,6 +319,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> failure (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def failure(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Today's class is about failures..."""
 
@@ -319,6 +335,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> fakenews (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def fakenews(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """TURN OFF THE FAKE NEWS"""
 
@@ -334,6 +351,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gay (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def gay(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Overlay the gay pride flag over an image"""
 
@@ -346,7 +364,8 @@ class Image(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> gettext (OPTIONAL)<@mention user OR attach an image OR "
-                      "image url>`")
+                      "image url>`", aliases=["readtext"])
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def gettext(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """*Attempts* to read text from an image.
         Note: Works best with black text on a white background or vice versa
@@ -397,6 +416,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> hitler (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`", aliases=["wth"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def hitler(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Worse than Hitler!"""
 
@@ -410,6 +430,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> invert (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def invert(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Invert the colors of an image or a member's avatar"""
 
@@ -423,6 +444,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> iphonex (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def iphonex(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Places a picture inside of an iPhone X. Do what you will with the resulting pic"""
 
@@ -437,6 +459,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> jail (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def jail(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Put someone or something in jail"""
 
@@ -450,6 +473,7 @@ class Image(commands.Cog):
     @commands.command(aliases=["magikify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> magik (OPTIONAL)<@mention user OR "
                       "attach an image OR image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def magik(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Magikify an image or a member's avatar"""
 
@@ -464,6 +488,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> radialblur (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def radialblur(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Radially blur an image or a member's avatar"""
 
@@ -479,6 +504,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> sickban (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def sickban(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """BAN THIS SICK FILTH"""
 
@@ -494,6 +520,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tablet (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`", aliases=["airpods"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def tablet(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Drawing an image on a tablet"""
 
@@ -509,6 +536,7 @@ class Image(commands.Cog):
     @commands.command(aliases=["threat"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> threats (OPTIONAL)<@mention user "
                       "OR attach an image OR image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def threats(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Identify a threat to society"""
 
@@ -523,6 +551,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> trash (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def trash(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Turn someone or something into trash"""
 
@@ -535,6 +564,7 @@ class Image(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> triggered (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def triggered(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """TRIGGERED"""
 
@@ -550,6 +580,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ugly (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def ugly(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """It's even uglier up close"""
 
@@ -563,6 +594,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> wanted (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def wanted(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """WANTED: Dead or Alive"""
 
@@ -576,6 +608,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> warp (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def warp(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Heavily warp an image or a member's avatar"""
 

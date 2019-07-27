@@ -115,7 +115,7 @@ class Utility(commands.Cog):
                       "like this: `<prefix> bitly <URL to shorten>`\n\nAlternatively, you can "
                       "also put an existing bit.ly link and I'll expand it back into the "
                       "original URL")
-    @commands.cooldown(2, 9, commands.BucketType.user)
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def bitly(self, ctx, *, url):
         """Shortens or expands a link with Bitly.
         Format like this: `<prefix> bitly <URL to shorten>`
@@ -193,32 +193,28 @@ class Utility(commands.Cog):
         base_in_src = 1 / resp["rates"][src] #* Reverses "1 EUR to X src" to "1 src to X EUR"
         dest_in_src = base_in_src * resp["rates"][dest] #* Gets "X dest to 1 src" w/ proportions
         converted = dest_in_src * amount
-        #* Improvise, Adapt, Overcome
+        #! Improvise, Adapt, Overcome
 
         if amount.is_integer():
-            fmtd_amount = "{0:,.0f}".format(amount)
-        else:
-            fmtd_amount = "{0:,.2f}".format(amount)
+            amount = int(amount)
         if converted.is_integer():
-            fmtd_converted = "{0:,.0f}".format(converted)
-        else:
-            fmtd_converted = "{0:,.2f}".format(converted)
+            converted = int(converted)
 
         embed = discord.Embed(
             title="MAT's Currency Converter",
             description="Powered by [Fixer](https://fixer.io/)\n\n"
-                        f"**Exchange Rate**: `1 {src} = {round(dest_in_src, 4)} {dest}`",
+                        f"**Exchange Rate**: `1 {src} = {round(dest_in_src, 5)} {dest}`",
             timestamp=datetime.datetime.utcfromtimestamp(resp["timestamp"]),
             color=find_color(ctx))
         if amount != 1:
-            embed.add_field(name="FROM:", value=f"```{fmtd_amount} {src}```", inline=False)
-            embed.add_field(name="TO:", value=f"```{fmtd_converted} {dest}```", inline=False)
+            embed.add_field(name="FROM:", value=f"```{amount} {src}```", inline=False)
+            embed.add_field(name="TO:", value=f"```{converted} {dest}```", inline=False)
         embed.set_footer(text="These rates are accurate as of")
 
         await ctx.send(embed=embed)
 
     @commands.command(brief="You need to include a word for me to define")
-    @commands.cooldown(1, 9, commands.BucketType.user)
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def define(self, ctx, *, word):
         """Get the definition of a word"""
 
@@ -293,7 +289,7 @@ class Utility(commands.Cog):
             "note that the experimental bot likely won't be online very often")
 
     @commands.command(aliases=["googleimages", "images"])
-    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.cooldown(1, 18, commands.BucketType.user)
     async def gimages(self, ctx, *, keywords):
         """Get images from Google Images.
         Format like this: `<prefix> gimages <search terms>`
@@ -372,7 +368,7 @@ class Utility(commands.Cog):
             title=terms.title() + "?", description=f"[Let Me Google That For You]({link})",
             color=find_color(ctx))
         embed.set_thumbnail(url="https://lmgtfy.com/assets/sticker-b222a421fb6cf257985abfab188be7"
-                            "d6746866850efe2a800a3e57052e1a2411.png")
+                                "d6746866850efe2a800a3e57052e1a2411.png")
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["avatar"], brief="Invalid formatting. The command is supposed to "
@@ -416,6 +412,12 @@ class Utility(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def add(self, ctx, pre: str):
 
+        if len(self.bot.guilddata[ctx.guild.id]["prefixes"]) == 10:
+            await ctx.send("This server already has 10 custom prefixes, which is the maximum. As "
+                           "much as I'm sure you need yet another one, you can't add it unless "
+                           "you remove one of the already existing prefixes", delete_after=12.0)
+            return await delete_message(ctx, 12)
+
         prefixes = set(self.bot.guilddata[ctx.guild.id]["prefixes"])
         prefixes.add(pre)
         self.bot.guilddata[ctx.guild.id]["prefixes"] = list(prefixes)
@@ -428,7 +430,8 @@ class Utility(commands.Cog):
             ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["prefixes"])
 
         embed = discord.Embed(description=f"```{pre}```This new custom prefix will only work on "
-                              f"this server\nExample usage: `{pre}help`", color=find_color(ctx))
+                                          f"this server\nExample usage: `{pre}help`",
+                              color=find_color(ctx))
         embed.set_author(name=f"{ctx.author.name} added a new server-specific command",
                          icon_url=ctx.author.avatar_url)
 
@@ -508,7 +511,7 @@ class Utility(commands.Cog):
                       " `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`\n"
                       "Note: There are 5 levels you can choose from. Do `<prefix> random levels` "
                       "for more info")
-    @commands.cooldown(1, 3, commands.BucketType.user)
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def random(self, ctx, levels: typing.Optional[str]=None, length: int=64, level: int=3):
         """Generates a string of random characters.
         Format like this: `<prefix> random <length (defaults to 64)> <level (defaults to 3)>`
@@ -616,7 +619,7 @@ class Utility(commands.Cog):
             raise commands.BadArgument
 
     @commands.command(brief="You need to include a word so I can get ones that rhyme with it")
-    @commands.cooldown(1, 9, commands.BucketType.user)
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def rhymes(self, ctx, *, word):
         """Get words that rhyme with another word"""
 
@@ -1179,7 +1182,7 @@ class Utility(commands.Cog):
 
     @commands.command(aliases=["synonyms", "antonyms"], brief="You need to include a word for me "
                       "to get the synonyms and antonyms of")
-    @commands.cooldown(1, 9, commands.BucketType.user)
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def thesaurus(self, ctx, *, word):
         """Get the synonyms and antonyms of a word"""
 
@@ -1269,7 +1272,7 @@ class Utility(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(invoke_without_command=True)
-    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.cooldown(1, 18, commands.BucketType.user)
     async def weather(self, ctx, *, location):
         """Get weather info for a location.
         Format like this: `<prefix> weather <name of location>`

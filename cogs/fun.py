@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, get_reddit, send_nekobot_image, send_dank_memer_img
+from utils import find_color, delete_message, get_reddit, send_nekobot_image, send_dank_memer_img, ChannelNotNSFW
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -83,6 +83,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text for the baby to say",
                       aliases=["abandoned", "disown", "disowned"])
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def abandon(self, ctx, *, text: str):
         """Disowned!
         Format like this: `<prefix> abandon <text for the baby to say>`
@@ -95,6 +96,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> aborted (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def aborted(self, ctx, member: discord.Member=None):
         """All the Reasons I Should Have Been Aborted
         Format like this: `<prefix> aborted (OPTIONAL)<member>`
@@ -138,6 +140,7 @@ class Fun(commands.Cog):
             os.remove(filename)
 
     @commands.command(aliases=["aki"])
+    @commands.cooldown(1, 45, commands.BucketType.user)
     async def akinator(self, ctx):
         """Start a game with the legendary Akinator!"""
 
@@ -379,6 +382,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> armor <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def armor(self, ctx, *, text: str):
         """Nothing gets through this armor
         Format like this: `<prefix> armor <text>`
@@ -392,6 +396,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bed <member 1> (OPTIONAL)<member 2>`\nIf you leave out "
                       "member 2, I'll just use you")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def bed(self, ctx, member1: discord.Member, member2: discord.Member=None):
         """There's a monster under my bed!
         Format like this: `<prefix> bed <member 1> (OPTIONAL)<member 2>`
@@ -411,6 +416,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> bigletter <text>`", aliases=["bigletters"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def bigletter(self, ctx, *, text: str):
         """Turn text into :regional_indicator_b: :regional_indicator_i: :regional_indicator_g:   :regional_indicator_l: :regional_indicator_e: :regional_indicator_t: :regional_indicator_t: :regional_indicator_e: :regional_indicator_r: :regional_indicator_s:
         Format like this: `<prefix> bigletter <text>`
@@ -418,8 +424,8 @@ class Fun(commands.Cog):
         await ctx.channel.trigger_typing()
         text = list(text.lower())
         bigletters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯', '🇰', '🇱',
-                        '🇲', '🇳', '🇴', '🇵', '🇶', '🇷', '🇸', '🇹', '🇺', '🇻', '🇼', '🇽',
-                        '🇾', '🇿']
+                      '🇲', '🇳', '🇴', '🇵', '🇶', '🇷', '🇸', '🇹', '🇺', '🇻', '🇼', '🇽',
+                      '🇾', '🇿']
         big = []
 
         for i in text:
@@ -435,6 +441,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> boo <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def boo(self, ctx, *, text: str):
         """**__BOO!__**
         Format like this: `<prefix> boo <text>`
@@ -450,6 +457,7 @@ class Fun(commands.Cog):
                       "this: `<prefix> brain <4 strings of text>`\n\nYou can only have 4 strings "
                       "of text. No more, no less. They must be separated by a comma and a space\n"
                       "__Example Usage__: `<prefix> brain This, is, just a, test`")
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def brain(self, ctx, *, text: str):
         """Create an expanding brain meme with 4 panels
         Format like this: `<prefix> brain <text>`
@@ -467,6 +475,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> byemom (OPTIONAL)<member> <text to Google>`\nIf you don't "
                       "put the member, I'll just use you")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def byemom(self, ctx, member: typing.Optional[discord.Member]=None, *, text: str):
         """What do you Google when Mom leaves the house?
         Format like this: `<prefix> byemom (OPTIONAL)<member> <text to Google>`
@@ -483,6 +492,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> captcha (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def captcha(self, ctx, user: discord.Member=None):
         """Turns a user's avatar into a CAPTCHA "I am not a robot" test
         Format like this: `<prefix> captcha (OPTIONAL)<@mention user>`
@@ -498,6 +508,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> changemymind <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def changemymind(self, ctx, *, text: str):
         """Dare people to change your mind
         Format like this: `<prefix> changemymind <text>`
@@ -510,6 +521,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["clydify"], brief="You didn't format the command correctly. It's "
                       "supposed to look like this: `<prefix> clyde <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def clyde(self, ctx, *, text: str):
         """Make Clyde say something
         Format like this: `<prefix> clyde <text>`
@@ -532,10 +544,13 @@ class Fun(commands.Cog):
             await ctx.send(coin)
 
     @commands.command(aliases=["shitpost"])
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def copypasta(self, ctx):
-        """Posts a random copypasta
-        Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW copypastas
-        """
+        """Posts a random copypasta (Use in an NSFW channel)"""
+
+        if not ctx.channel.is_nsfw():
+            raise ChannelNotNSFW
+
         await ctx.channel.trigger_typing()
         return await get_reddit(ctx, 1, 50, False, False, "a copypasta", "copypasta")
 
@@ -544,6 +559,7 @@ class Fun(commands.Cog):
                       "in the crab rave video should be split into two parts with 2 dashes (--). "
                       "The first part will appear on top, and the second on the bottom\n__"
                       "Example usage__: `<prefix> crab first part of text--second part of text`")
+    @commands.cooldown(1, 45, commands.BucketType.user)
     async def crab(self, ctx, *, text: str):
         """Start a crab rave!
         Format like this: `<prefix> crab <text>`
@@ -585,6 +601,7 @@ class Fun(commands.Cog):
 
     @commands.command(aliases=["zalgo", "zalgofy"],
                       brief="You need to include some text for me to creepify")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def creepify(self, ctx, *, text: str):
         """Turns text into c̛̜̎ṟ͆̃e̲͛̋e͇̭̐p̮̺ͮy̷ͪ͡ ź͉ͯą͗ͪl̬̦̈g̯̪̊ờ͙ ṯ̸̦e͔̎̀x̡͈ͪṫ͟͞
         Note: Due to an issue with Discord, this command won't work very well on large amounts of text. Use [this generator](https://lingojam.com/ZalgoText) if you want to convert a lot of text
@@ -600,6 +617,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> cry <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def cry(self, ctx, *, text: str):
         """To survive in the wild, you need a reliable source of water
         Format like this: `<prefix> cry <text>`
@@ -611,6 +629,7 @@ class Fun(commands.Cog):
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command(aliases=["ch", "cyha", "c&h"])
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def cyhap(self, ctx):
         """Posts a random Cyanide & Happiness comic"""
 
@@ -640,6 +659,7 @@ class Fun(commands.Cog):
                       brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ddlc <character> <background> <pose> <face> <text>`"
                       "\nDo `!mat help ddlc` for more info on how to use this command.")
+    @commands.cooldown(1, 45, commands.BucketType.user)
     async def ddlc(self, ctx, character, background, pose, face, *, text: commands.clean_content(fix_channel_mentions=True)):
         """Generate a DDLC (Doki Doki Literature Club) custom dialogue
         Format like this: `<prefix> ddlc <character> <background> <pose> <face> <text>`
@@ -652,14 +672,16 @@ class Fun(commands.Cog):
         characters = ["sayori", "yuri", "natsuki", "monika"]
         backgrounds = ["bedroom", "class", "closet", "club", "corridor", "house", "kitchen",
                        "residential", "sayori_bedroom"]
+
         monika_faces = [i for i in "abcdefghijklmnopqr"]
         natsuki_faces = [i for i in "abcdefghijklmnopqrstuvwxyz"]
         natsuki_faces.extend(
             ["1t", "2bt", "2bta", "2btb", "2btc", "2btd", "2bte", "2btf", "2btg", "2bth",
-            "2bti", "2t", "2ta", "2tb", "2tc", "2td", "2te", "2tf", "2tg", "2th", "2ti"])
+             "2bti", "2t", "2ta", "2tb", "2tc", "2td", "2te", "2tf", "2tg", "2th", "2ti"])
         sayori_faces = [i for i in "abcdefghijklmnopqrstuvwxy"]
         yuri_faces = [i for i in "abcdefghijklmnopqrstuvwx"]
         yuri_faces.extend(["y1", "y2", "y3", "y4", "y5", "y6", "y7"])
+
         ddlc_items = {
             "pose": {
                 "monika": [ "1", "2" ],
@@ -691,12 +713,14 @@ class Fun(commands.Cog):
         if len(text) >= 140:
             await ctx.send("Text is too long. Must be under 140 characters", delete_after=5.0)
             return await delete_message(ctx, 5)
+
         character = character.lower()
         if character not in characters:
             await ctx.send(
                 "Not a valid character. Must be either `sayori`, `yuri`, `natsuki`, OR `monika`",
                 delete_after=7.0)
             return await delete_message(ctx, 7)
+
         background = background.lower()
         if background not in backgrounds:
             await ctx.send("Not a valid background. Must be either `bedroom`, `class`, `closet`, "
@@ -704,12 +728,15 @@ class Fun(commands.Cog):
                            "`sayori_bedroom`", delete_after=10.0)
             return await delete_message(ctx, 10)
 
+        pose = pose.lower()
         if not pose in ddlc_items.get("pose").get(character):
             await ctx.send(
                 f"Not a valid pose for {character.capitalize()}. See "
                 f"{reference_links.get('pose').get(character)} to view her various poses",
                 delete_after=15.0)
             return await delete_message(ctx, 15)
+
+        face = face.lower()
         if not face in ddlc_items.get("face").get(character):
             await ctx.send(
                 f"Not a valid face for {character.capitalize()}. See "
@@ -746,6 +773,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> excuseme <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def excuseme(self, ctx, *, text: str):
         """excuse me what the fuck
         Format like this: `<prefix> excuseme <text>`
@@ -768,6 +796,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> facts <text>`", aliases=["fact"])
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def facts(self, ctx, *, text: str):
         """Book of facts
         Format like this: `<prefix> facts <text>`
@@ -781,6 +810,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> floor (OPTIONAL)<@mention member> <text>`\nThe text can't "
                       "be longer than 35 characters")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def floor(self, ctx, member: typing.Optional[discord.Member]=None, *, text: str):
         """The floor is...
         Format like this: `<prefix> floor (OPTIONAL)<member> <text>`
@@ -807,6 +837,7 @@ class Fun(commands.Cog):
                       "this: `<prefix> gru <3 strings of text>`\n\nYou can only have 3 strings "
                       "of text. No more, no less. They must be separated by a comma and a space\n"
                       "__Example Usage__: `<prefix> gru This, is a, test`", aliases=["plan"])
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def gru(self, ctx, *, text: str):
         """Create a Gru's plan meme
         Format like this: `<prefix> gru <text>`
@@ -822,6 +853,7 @@ class Fun(commands.Cog):
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command()
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def joke(self, ctx):
         """Sends a joke
         Note: For best results, use in a NSFW channel. Then I'll also be able to send NSFW jokes
@@ -835,6 +867,7 @@ class Fun(commands.Cog):
                       "Google, and the second string will be who wants to know your location\n"
                       "__Example Usage__: `<prefix> knowyourlocation Discord bots that are "
                       "better than MAT--NinjaSnail1080`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def knowyourlocation(self, ctx, *, text: str):
         """They want to know your location
         Format like this: `<prefix> knowyourlocation <2 strings of text>`
@@ -854,6 +887,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> laid (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def laid(self, ctx, member: discord.Member=None):
         """People who get laid
         Format like this: `<prefix> laid (OPTIONAL)<member>`
@@ -889,6 +923,7 @@ class Fun(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def meirl(self, ctx):
         """Sends posts that are u irl"""
 
@@ -896,6 +931,7 @@ class Fun(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a meme", "me_irl", "meirl")
 
     @commands.command()
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def meme(self, ctx):
         """Posts a dank meme"""
 
@@ -903,6 +939,7 @@ class Fun(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a meme", "dankmemes")
 
     @commands.command(aliases=["weirdspeak"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def mock(self, ctx, *, stuff: commands.clean_content()=None):
         """Say something and I'll mock you"""
 
@@ -931,6 +968,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> ohno <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def ohno(self, ctx, *, text: str):
         """Oh no, it's retarded
         Format like this: `<prefix> ohno <text>`
@@ -943,6 +981,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`")
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def phcomment(self, ctx, user: typing.Optional[discord.Member]=None, *, comment: str):
         """Generate a PornHub comment!
         Format like this: `<prefix> phcomment (OPTIONAL)<@mention user> <comment>`
@@ -959,6 +998,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> presentation <text>`")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def presentation(self, ctx, *, text: str):
         """Create a Lisa Simpson presentation meme
         Format like this: `<prefix> presentation <text>`
@@ -974,6 +1014,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> quote <@mention user> <message text>`\nText can't be "
                       "longer than 56 characters")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def quote(self, ctx, member: discord.Member, *, text: str):
         """Generate a fake Discord message
         Format like this: `<prefix> quote <member> <message text>`
@@ -995,6 +1036,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You're supposed to include a subreddit for me to get a random post "
                       "from after the command. Like this: `<prefix> reddit <subreddit>`")
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def reddit(self, ctx, sub):
         """Get a random post from any subreddit
         Format like this: `<prefix> reddit <subreddit>`
@@ -1004,6 +1046,7 @@ class Fun(commands.Cog):
         return await get_reddit(ctx, 2, 50, False, True, "a post from this sub", sub)
 
     @commands.command()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def reverse(self, ctx, *, stuff: commands.clean_content()=None):
         """Reverse the text you give me!"""
 
@@ -1017,6 +1060,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> rip (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def rip(self, ctx, member: discord.Member=None):
         """***__RIP__***
         Format like this: `<prefix> rip (OPTIONAL)<member>`
@@ -1032,6 +1076,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> roblox (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def roblox(self, ctx, member: discord.Member=None):
         """Become a Roblox character
         Format like this: `<prefix> roblox (OPTIONAL)<member>`
@@ -1049,6 +1094,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> salty (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def salty(self, ctx, member: discord.Member=None):
         """Are you salty, bro?
         Format like this: `<prefix> salty (OPTIONAL)<member>`
@@ -1064,6 +1110,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> satan (OPTIONAL)<@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def satan(self, ctx, member: discord.Member=None):
         """Become Satan
         Format like this: `<prefix> satan (OPTIONAL)<member>`
@@ -1079,6 +1126,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> savehumanity <text>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def savehumanity(self, ctx, *, text: str):
         """I bring the secret to saving humanity!
         Format like this: `<prefix> savehumanity <text>`
@@ -1091,8 +1139,7 @@ class Fun(commands.Cog):
                 resp = await w.read()
                 await send_dank_memer_img(ctx, resp)
 
-    @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<",
-                               "puts"])
+    @commands.command(aliases=["print", "printf", "System.out.println", "echo", "std::cout<<"])
     async def say(self, ctx, *, stuff: commands.clean_content()=None):
         """Make me say something!"""
 
@@ -1104,22 +1151,33 @@ class Fun(commands.Cog):
             await ctx.send(stuff)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> screams (OPTIONAL)<@mention user>`", aliases=["normal"])
-    async def screams(self, ctx, member: discord.Member=None):
+                      "this: `<prefix> screams (OPTIONAL)<@mention user> (OPTIONAL)<member 2>`\n"
+                      "If you don't include member 2, I'll leave it blank", aliases=["normal"])
+    @commands.cooldown(1, 3, commands.BucketType.user)
+    async def screams(self, ctx, member: discord.Member=None, member2: discord.Member=None):
         """Why can't you just be normal?
-        Format like this: `<prefix> screams (OPTIONAL)<member>`
+        Format like this: `<prefix> screams (OPTIONAL)<member> (OPTIONAL)<member 2>`
+        If you don't include member 2, I'll leave it blank
         """
         with ctx.channel.typing():
             if member is None:
                 member = ctx.author
             img = member.avatar_url_as(format="png")
-            async with self.bot.session.get("https://dankmemer.services/api/screams?avatar1="
-                                            f"https://i.imgur.com/4dic8Bn.png&avatar2={img}",
-                                            headers=config.DANK_MEMER_AUTH) as w:
+
+            if member2 is None:
+                img2 = "https://i.imgur.com/4dic8Bn.png"
+            else:
+                img2 = member2.avatar_url_as(format="png")
+
+            async with self.bot.session.get(
+                f"https://dankmemer.services/api/screams?avatar1={img2}&avatar2={img}",
+                headers=config.DANK_MEMER_AUTH) as w:
+
                 resp = await w.read()
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command(aliases=["showerthoughts"])
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def showerthought(self, ctx):
         """Posts a random showerthought"""
 
@@ -1129,6 +1187,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> slap <user getting slapped> (OPTIONAL)<user doing the "
                       "slapping>`\nIf you don't include the second user, I'll use you")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def slap(self, ctx, member1: discord.Member, member2: discord.Member=None):
         """Slap another user
         Format like this: `<prefix> slap <user getting slapped> (OPTIONAL)<user doing the slapping>`
@@ -1150,6 +1209,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> spank <user getting spanked> (OPTIONAL)<user doing the "
                       "spanking>`\nIf you don't include the second user, I'll use you")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def spank(self, ctx, member1: discord.Member, member2: discord.Member=None):
         """Spank another user
         Format like this: `<prefix> slap <user getting spanked> (OPTIONAL)<user doing the spanking>`
@@ -1169,6 +1229,7 @@ class Fun(commands.Cog):
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command()
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def thanos(self, ctx):
         """Thanos did nothing wrong"""
 
@@ -1177,6 +1238,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to "
                       "include some text for me to thiccify")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def thiccify(self, ctx, *, text: commands.clean_content()=None):
         """Turns text into 乇乂丅尺卂 丅卄工匚匚 letters"""
 
@@ -1202,6 +1264,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> trap <@mention user>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def trap(self, ctx, member: discord.Member):
         """Trap another user with your trapcard!
         Format like this: `<prefix> trap <@mention user>`
@@ -1216,6 +1279,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. You're supposed to include "
                       "some text for the tweet `<prefix> trumptweet <tweet>`")
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def trumptweet(self, ctx, *, tweet: str):
         """Tweet as Trump!
         Format like this: `<prefix> trumptweet <tweet>`
@@ -1228,6 +1292,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> tweet <twitter usernamer> <tweet>`")
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def tweet(self, ctx, user: str, *, tweet: str):
         """Tweet as yourself or another twitter user!
         Format like this: `<prefix> tweet <twitter username> <tweet>`
@@ -1241,6 +1306,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> unpopular (OPTIONAL)<@mention user> <text for opinion>`\n"
                       "If you don't put a member, I'll just use you")
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def unpopular(self, ctx, member: typing.Optional[discord.Member]=None, *, text: str):
         """Do you have an unpopular opinion?
         Format like this: `<prefix> unpopular (OPTIONAL)<member> <opinion>`
@@ -1258,6 +1324,7 @@ class Fun(commands.Cog):
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def upsidedown(self, ctx, *, text: commands.clean_content()=None):
         """Turn text ¡uʍop ǝpᴉsdn"""
 
@@ -1285,6 +1352,7 @@ class Fun(commands.Cog):
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> walking <text>`", aliases=["dancing", "theresa"])
+    @commands.cooldown(2, 6, commands.BucketType.user)
     async def walking(self, ctx, *, text: str):
         """Create a "Theresa May awkwardly walking/dancing onstage" meme
         Format like this: `<prefix> walking <text>`
@@ -1296,7 +1364,8 @@ class Fun(commands.Cog):
                 await send_dank_memer_img(ctx, resp)
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`")
+                      "this: `<prefix> whowouldwin <@mention user1> (OPTIONAL)<@mention user2>`")
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def whowouldwin(self, ctx, user1: discord.Member, user2: discord.Member=None):
         """Who would win?
         Format like this: `<prefix> whowouldwin <@mention user 1> (OPTIONAL)<@mention user 2>`
@@ -1312,6 +1381,7 @@ class Fun(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["wc", "tagcloud"])
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def wordcloud(self, ctx, users: commands.Greedy[discord.Member], channel: typing.Optional[discord.TextChannel]=None, limit: typing.Optional[int]=2000):
         """Generate a word cloud, which is an image that shows the frequencies of various words from messages sent in a channel
         Format like this: `<prefix> wordcloud (OPTIONAL)<@mention user(s)> (OPTIONAL)<channel> (OPTIONAL)<# of msgs to process>`
@@ -1383,6 +1453,7 @@ class Fun(commands.Cog):
                 pass
 
     @commands.command()
+    @commands.cooldown(3, 9, commands.BucketType.user)
     async def xkcd(self, ctx):
         """Posts a random xkcd comic"""
         try:
@@ -1413,6 +1484,7 @@ class Fun(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> youtube (OPTIONAL)<@mention user> <text for comment>`\n"
                       "If you don't put a member, I'll just use you", aliases=["ytcomment"])
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def youtube(self, ctx, member: typing.Optional[discord.Member]=None, *, text: str):
         """Generate a Youtube comment!
         Format like this: `<prefix> youtube (OPTIONAL)<@mention user> <comment>`

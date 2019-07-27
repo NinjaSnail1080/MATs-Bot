@@ -40,6 +40,7 @@ class NSFW(commands.Cog):
         return True
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def anal(self, ctx):
         """Sends gifs of anal sex"""
 
@@ -49,6 +50,7 @@ class NSFW(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def artsy(self, ctx):
         """Posts some artsy porn"""
 
@@ -57,6 +59,7 @@ class NSFW(commands.Cog):
                                 "SexyButNotPorn", "LaBeauteFeminine", "BacklitBeauty", "nsfw_bw")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def asian(self, ctx):
         """Posts pics of hot asians"""
 
@@ -66,6 +69,7 @@ class NSFW(commands.Cog):
                                 "juicyasians", "AsianNSFW")
 
     @commands.command(aliases=["butt", "butts", "booty"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def ass(self, ctx):
         """Posts some ass"""
 
@@ -96,6 +100,7 @@ class NSFW(commands.Cog):
             return await delete_message(ctx, 5)
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def bdsm(self, ctx):
         """Posts some bdsm or bondage porn"""
 
@@ -103,6 +108,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a post", "bdsm", "bondage")
 
     @commands.command(aliases=["tits"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def boobs(self, ctx):
         """Posts some boobs"""
 
@@ -133,6 +139,7 @@ class NSFW(commands.Cog):
             return await delete_message(ctx, 5)
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def cute(self, ctx):
         """Posts some cute nude girls"""
 
@@ -141,6 +148,7 @@ class NSFW(commands.Cog):
                                 "adorableporn", "TooCuteForPorn", "legalteens", "18_19")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def cosplay(self, ctx):
         """Posts some sexy cosplay"""
 
@@ -149,6 +157,7 @@ class NSFW(commands.Cog):
                                 "cosplaygirls", "cosplayonoff", "FictionalBabes", "NSFWCostumes")
 
     @commands.command(aliases=["dickpic", "penis", "cock"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def dick(self, ctx):
         """Posts a dick pic"""
 
@@ -157,6 +166,7 @@ class NSFW(commands.Cog):
                                 "PenisPics", "penis", "ratemycock", "MassiveCock", "Cock")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def ecchi(self, ctx):
         """Posts some ecchi (basically softcore hentai)"""
 
@@ -164,6 +174,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a post", "ecchi")
 
     @commands.command(name="4k", aliases=["fourk", "hdporn"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def fourk(self, ctx):
         """Sends some 4k/UHD porn"""
 
@@ -172,6 +183,7 @@ class NSFW(commands.Cog):
             ctx, 1, 100, True, False, "a post", "NSFW_Wallpapers", "HighResNSFW", "UHDnsfw")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def gonewild(self, ctx):
         """Sends a random post from either r/gonewild, r/gonewildcurvy, r/GoneWildSmiles, r/PetiteGoneWild, or r/RealGirls"""
 
@@ -181,6 +193,7 @@ class NSFW(commands.Cog):
             "gonewild", "gonewildcurvy", "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def hentai(self, ctx, arg: str=None):
         """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post. Add nothing extra for a regular hentai pic"""
 
@@ -205,6 +218,7 @@ class NSFW(commands.Cog):
             return await delete_message(ctx, 10)
 
     @commands.command(aliases=["stockings", "panties"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def lingerie(self, ctx):
         """Posts pics of hot girls in lingerie"""
 
@@ -213,6 +227,7 @@ class NSFW(commands.Cog):
                                 "lingerie", "stockings", "pantyfetish", "panties")
 
     @commands.command(aliases=["nekos"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def neko(self, ctx):
         """Posts some lewd nekos if used in an NSFW channel, or nonlewd nekos if used in a regular channel."""
 
@@ -237,6 +252,7 @@ class NSFW(commands.Cog):
             return await delete_message(ctx, 5)
 
     @commands.command(aliases=["porngif"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def pgif(self, ctx):
         """Posts a porn gif"""
 
@@ -246,6 +262,7 @@ class NSFW(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["vagina"])
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def pussy(self, ctx):
         """Posts some pussy"""
 
@@ -254,6 +271,7 @@ class NSFW(commands.Cog):
                                 "pussy", "rearpussy", "simps", "spreading", "landingstrip")
 
     @commands.command()
+    @commands.cooldown(5, 15, commands.BucketType.user)
     async def thighs(self, ctx):
         """Sends some thiccccccccc thighs"""
 
