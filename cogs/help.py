@@ -63,9 +63,10 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                     "specs>`\n\n*An asterisk* (*) *next to a prefix listed above means there "
                     "must be a space in between the prefix and the command*")
 
-        msg += ("\n\nIf you're having problems, you can get help on my [support server](https://"
-                "discord.gg/P4Fp3jA).\nInvite me to other servers [here](https://discordapp.com/o"
-                "auth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591).")
+        msg += ("\n\nIf you're having problems or want to give feedback, you can join my "
+                "[support server](https://discord.gg/P4Fp3jA).\nInvite me to other servers [here]"
+                "(https://discordapp.com/oauth2/authorize?client_id=459559711210078209&scope="
+                "bot&permissions=2146958591).")
 
         return msg
 
