@@ -40,12 +40,18 @@ class Triggers(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author == self.bot.user:
+        if message.author.bot or not self.bot.ready_for_commands:
             return
 
         if message.guild is not None:
             if message.channel.id in self.bot.guilddata[message.guild.id]["triggers_disabled"]:
                 return
+        else:
+            return
+
+        if message.guild.id in [336642139381301249, 264445053596991498]:
+            #* discord.py and Discord Bot List servers
+            return
 
         if message.author.id == 281807963147075584:
             #* This is the user ID of SigmaBot, who is the love interest for MAT
