@@ -77,9 +77,9 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if (self.bot.guilddata[payload.guild_id]["starboard"] is None or
+        if (payload.guild_id is None or
                 payload.emoji.name not in self.star_emojis or
-                    payload.guild_id is None):
+                    self.bot.guilddata[payload.guild_id]["starboard"] is None):
             return
         if payload.channel_id == self.bot.guilddata[payload.guild_id]["starboard"]["channel"]:
             return
@@ -1067,15 +1067,15 @@ class Moderation(commands.Cog):
 
         for m in purged:
             messages[m.author.display_name] += 1
-        added_fields = {}
+        added_fields = []
         for a, m in messages.items():
             embed.add_field(name=a, value=f"{m} message{'' if m == 1 else 's'}")
-            added_fields.update({a:m})
+            added_fields.append(a)
             if len(added_fields) == 24 and len(messages) > 25:
                 authors_left = {a:m for a, m in messages.items() if a not in added_fields}
                 embed.add_field(
                     name=f"...and {len(authors_left)} more",
-                    value=f"{len(sum(authors_left.values()))} message{'' if m == 1 else 's'}")
+                    value=f"{sum(authors_left.values())} message{'' if m == 1 else 's'}")
                 break
 
         if len(purged) < 10:
@@ -1570,7 +1570,7 @@ class Moderation(commands.Cog):
         Set up a starboard system where people can "star" a funny or otherwise significant message to have it saved in a channel.
         Format like this: `<prefix> setstarboard <#mention channel> <reaction threshold (defaults to 4)>`
         Say the reaction threshold is 4; whenever a message gets at least 4 total "star reactions", a copy of the message will be sent to the starboard channel where it can be saved.
-        The "Star Reactions": \U00002b50, \U0001f31f, \U0001f320, and \U00002734
+        The "Star Reactions": \U00002b50, \U0001f31f, \U0001f320, or \U00002734
         """
         await ctx.channel.trigger_typing()
         starboard = {
