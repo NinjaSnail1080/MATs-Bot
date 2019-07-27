@@ -57,7 +57,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
             await conn.set_type_codec("json", encoder=json.dumps, decoder=json.loads,
                                       schema="pg_catalog")
 
-        pool = await asyncpg.create_pool(self.bot.postgres_dsn, init=init_connection)
+        pool = await asyncpg.create_pool(config.POSTGRES, init=init_connection)
         return pool
 
     async def init_data(self, pool):
