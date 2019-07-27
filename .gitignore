@@ -106,9 +106,6 @@ venv.bak/
 ##################################################################################################
 ##################################################################################################
 
-# Ignore .data.json files
-*.data.json
-
 # Ignore experimental bot launcher
 mat_experimental.py
 
@@ -139,7 +136,7 @@ idna_ssl.py
 /mpl_toolkits
 /multidict
 /nacl
-numpy
+/numpy
 /PIL
 /pkg_resources
 /psutil
