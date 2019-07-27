@@ -29,6 +29,8 @@ class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.Cog.listener()
+    async def on_ready(self):
         self.joins_and_leaves = self.bot.get_channel(465393762512797696)
 
     @commands.Cog.listener()
@@ -140,8 +142,8 @@ class Listeners(commands.Cog):
             inline=False)
 
         await self.joins_and_leaves.send(
-            content=f"I am now part of {len(self.bot.guilds)} servers and have {len(self.users)} "
-                    "unique users!",
+            content=f"I am now part of {len(self.bot.guilds)} servers and have "
+                    f"{len(self.bot.users)} unique users!",
             embed=embed)
 
     @commands.Cog.listener()
@@ -154,7 +156,8 @@ class Listeners(commands.Cog):
 
         await self.joins_and_leaves.send(
             content=f"I am now part of {len(self.bot.guilds)} servers and have "
-                    f"{len(self.users)} unique users", embed=embed)
+                    f"{len(self.bot.users)} unique users",
+            embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
