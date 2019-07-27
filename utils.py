@@ -218,9 +218,11 @@ async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timest
         for p in resp["data"]["children"].copy():
             if p["data"]["stickied"] or p["data"]["pinned"]:
                 resp["data"]["children"].remove(p)
+                continue
             if p["data"]["over_18"] and not ctx.channel.is_nsfw():
                 resp["data"]["children"].remove(p)
                 is_nsfw = True
+                continue
             if img_only:
                 if not p["data"]["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "webp")):
                     if "imgur.com" in p["data"]["url"] and "/a/" not in p["data"]["url"]:
