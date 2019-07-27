@@ -42,6 +42,7 @@ for f in os.listdir("cogs"):
     if f.endswith(".py"):
         f = f[:-3]
         initial_extensions.append("cogs." + f)
+initial_extensions.remove("cogs.discordbots")  #* Don't have token yet
 # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
 #* Set up logger
@@ -79,8 +80,6 @@ class MAT(commands.Bot):
 
         self.ready_for_commands = False
 
-        self.postgres_dsn = config.POSTGRES_EXPERIMENTAL
-
         async def create_session():
             self.session = aiohttp.ClientSession(loop=self.loop)
 
@@ -93,7 +92,7 @@ class MAT(commands.Bot):
                       "\"!mat help\" for help", "some epic game you don't have", "with you",
                       "dead", "with myself", "a prank on you", "with fire", "hard-to-get",
                       "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma",
-                      f"on {len(self.guilds)} servers!"]
+                      "on {} servers!"]
 
         self.loop.create_task(self.switch_games())
 
@@ -185,8 +184,12 @@ class MAT(commands.Bot):
     async def switch_games(self):
         await self.wait_until_ready()
         while True:
-            await self.change_presence(activity=discord.Game(random.choice(self.games)))
-            await asyncio.sleep(random.randint(5, 10))
+            try:
+                await self.change_presence(
+                    activity=discord.Game(random.choice(self.games).format(len(self.guilds))))
+            except:
+                await self.change_presence(activity=discord.Game(random.choice(self.games)))
+            await asyncio.sleep(random.randint(6, 12))
 
     def run(self, token):
         try:
