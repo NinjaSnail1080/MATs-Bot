@@ -26,6 +26,7 @@ import datetime
 import typing
 import sys
 import asyncio
+import collections
 
 
 class Info(commands.Cog):
@@ -437,8 +438,7 @@ class Info(commands.Cog):
                     s.afk_timeout // 60) + minute_s)
         else:
             embed.add_field(name="AFK Channel", value="No AFK channel")
-        embed.add_field(
-            name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
+        embed.add_field(name="Server Created", value=s.created_at.strftime("%b %-d, %Y"))
         if s.features:
             embed.add_field(
                 name="Server Features",
@@ -447,6 +447,18 @@ class Info(commands.Cog):
         embed.add_field(
             name="Server Owner", value=s.owner.mention + " (User ID: " + str(s.owner_id) + ")",
             inline=False)
+        embed.add_field(name="Total Messages I've Read",
+                        value=f"{self.bot.messages_read[str(ctx.guild.id)]:,}",
+                        inline=False)
+        if self.bot.guilddata[ctx.guild.id]["commands_used"]:
+            cmds_used = collections.Counter(
+                self.bot.guilddata[ctx.guild.id]["commands_used"]).most_common(11)[1:]
+            total = self.bot.guilddata[ctx.guild.id]["commands_used"]["TOTAL"]
+            embed.add_field(
+                name="Most Popular Commands",
+                value=f"__**Total**:__ {total:,} uses\n" + "\n".join(
+                      f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} uses)" for c in cmds_used),
+                inline=False)
 
         delta = datetime.datetime.utcnow() - s.created_at
 
@@ -501,6 +513,38 @@ class Info(commands.Cog):
         embed.set_image(url=tester.results.dict()["share"])
         embed.set_footer(
             text=f"Test performed by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def stats(self, ctx):
+        """See some of my stats"""
+
+        await ctx.channel.trigger_typing()
+        cmds_used = self.bot.commands_used.most_common(11)[1:]
+
+        embed = discord.Embed(
+            description=f"User ID: {self.bot.user.id}",
+            timestamp=datetime.datetime.utcnow(),
+            color=find_color(ctx))
+        embed.add_field(name="Server Count", value=f"{len(self.bot.guilds):,} servers")
+        embed.add_field(name="User Count", value=f"{len(self.bot.users):,} unique users")
+        embed.add_field(
+            name="Channel Count",
+            value=f"{len(list(self.bot.get_all_channels()) + self.bot.private_channels):,} "
+                  "channels")
+        embed.add_field(
+            name="Memory Usage",
+            value=f"{round(self.bot.process.memory_info().rss / 1000000, 2)} MB")
+        embed.add_field(name="Total Messages Read", value=f"{self.bot.messages_read['TOTAL']:,}")
+        embed.add_field(name="Total Commands Used", value=f"{self.bot.commands_used['TOTAL']:,}")
+        embed.add_field(
+            name="Most Popular Commands",
+            value="\n".join(
+                f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} total uses)" for c in cmds_used),
+            inline=False)
+        embed.set_author(name="MAT's Bot: Statistics", icon_url=self.bot.user.avatar_url)
+        embed.set_footer(text="These statistics are accurate as of: ")
+
         await ctx.send(embed=embed)
 
     @commands.command(name="uptime")
@@ -624,6 +668,15 @@ class Info(commands.Cog):
                 name=f"Roles ({len(roles)})", value=", ".join(roles), inline=False)
         else:
             embed.add_field(name="Roles", value="`No roles`")
+        if self.bot.userdata[user.id]["commands_used"]:
+            cmds_used = collections.Counter(
+                self.bot.userdata[user.id]["commands_used"]).most_common(11)[1:]
+            total = self.bot.userdata[user.id]["commands_used"]["TOTAL"]
+            embed.add_field(
+                name="Most Used Commands",
+                value=f"__**Total**__: {total:,} uses\n" + "\n".join(
+                    f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} uses)" for c in cmds_used),
+                inline=False)
 
         delta = datetime.datetime.utcnow() - user.created_at
 
@@ -652,7 +705,8 @@ class Info(commands.Cog):
 
         if user.premium_since is not None:
             await ctx.send(content="\U00002666 This member is a Nitro server booster since "
-                           f"{user.premium_since.strftime('%b %-d, %Y')}!", embed=embed)
+                                   f"{user.premium_since.strftime('%b %-d, %Y')}!",
+                           embed=embed)
         else:
             await ctx.send(embed=embed)
 
