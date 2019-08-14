@@ -115,29 +115,6 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
             await ctx.send(f"Query failed:```{e}```")
 
     @commands.command()
-    async def quit(self, ctx):
-        """Quit the bot's program"""
-
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
-        try:
-            print("\n\nClosing...\n")
-
-            for task in asyncio.all_tasks(self.bot.loop):
-                task.cancel()
-                print("Cancelled task: " + str(task._coro))
-
-            print("\nLogging out...")
-            await self.bot.logout()
-        finally:
-            await self.bot.pool.close()
-            await self.bot.session.close()
-            self.bot.loop.close()
-            print("\nClosed\n")
-
-    @commands.command()
     async def reload(self, ctx, *, cog=None):
         """Reload one or all of MAT's cogs"""
 
