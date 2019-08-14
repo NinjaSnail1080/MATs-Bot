@@ -5,6 +5,8 @@ __Default prefixes__: `!mat`, `mat.`, or `mat/`
 
 Note: The prefix `!mat` must have a space between it and the command. The other two don't require this space.
 
+---
+
 The prefix can be changed for your server with the `prefix` command.
 
 ## Self-Hosting
