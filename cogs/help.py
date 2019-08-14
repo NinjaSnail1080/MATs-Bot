@@ -27,7 +27,7 @@ import datetime
 import random
 
 
-class Help(commands.Cog, command_attrs={"hidden": True}):
+class Help(commands.Cog):
     """Help commands"""
 
     def __init__(self, bot):
@@ -108,15 +108,13 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 "for more info")
             embed.add_field(
                 name=":tools: Utility", value=f"{cog_cmds['Utility']} commands\n`<prefix> "
-                "help nsfw` for more info")
+                "help utility` for more info")
             if disabled:
                 embed.add_field(name=":no_entry_sign: Disabled Commands",
                                 value=f"`{'`, `'.join(disabled)}`", inline=False)
             embed.set_footer(text="Do \"<prefix> help all\" for a list of all of my commands")
 
-            await ctx.send(
-                content="I'm still in beta, so many more commands are coming in the near future!",
-                embed=embed)
+            await ctx.send(embed=embed)
 
         elif cat.lower() == "economy":
             await ctx.send("No commands yet ¯\_(ツ)_/¯")
@@ -228,7 +226,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
         elif cat.lower() == "mod" or cat.lower() == "moderation":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Moderation" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
-            cmds = list(chunks(cmds, 7))
+            cmds = list(chunks(cmds, 5))
 
             embeds = []
             for i in cmds:
@@ -264,7 +262,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
 
-            cmds = list(chunks(cmds, 7))
+            cmds = list(chunks(cmds, 8))
 
             embeds = []
             for i in cmds:
@@ -297,7 +295,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
                 embed.set_author(name="MAT's Bot")
                 return await ctx.send(embed=embed)
 
-            cmds = list(chunks(cmds, 7))
+            cmds = list(chunks(cmds, 8))
 
             embeds = []
             for i in cmds:
@@ -361,9 +359,7 @@ class Help(commands.Cog, command_attrs={"hidden": True}):
             if disabled:
                 embed.add_field(name=":no_entry_sign: Disabled Commands",
                                 value=f"`{'`, `'.join(disabled)}`", inline=False)
-            await ctx.send(
-                content="I'm still in beta, so many more commands are coming in the near future!",
-                embed=embed)
+            await ctx.send(embed=embed)
 
         else:
             for cmd in self.bot.commands:
