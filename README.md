@@ -1,5 +1,5 @@
 # MAT's Bot
-**A multi-purpose Discord Bot created by NinjaSnail1080#8581**
+***A multi-purpose Discord Bot created by NinjaSnail1080#8581***
 
 __Default prefixes__: `!mat`, `mat.`, or `mat/`
 Note: The prefix `!mat` must have a space between it and the command. The other two don't require this space.
