@@ -83,7 +83,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                     logs BIGINT,
                     commands_used JSON,
                     disabled TEXT[] NOT NULL DEFAULT '{}',
-                    triggers_disabled BIGINT[] NOT NULL DEFAULT '{}',
+                    custom_roles BIGINT[] NOT NULL DEFAULT '{}',
                     mute_role BIGINT,
                     starboard JSON,
                     welcome JSON,
@@ -97,6 +97,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS userdata (
                     id BIGINT PRIMARY KEY,
+                    commands_used JSON,
                     us_units BOOLEAN NOT NULL DEFAULT FALSE
                 )
             ;""")
@@ -164,6 +165,13 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
             for data in self.bot.guilddata.values():
                 await conn.execute("""
                     UPDATE guilddata
+                    SET commands_used = $1::JSON
+                    WHERE id = {}
+                ;""".format(data["id"]), data["commands_used"])
+
+            for data in self.bot.userdata.values():
+                await conn.execute("""
+                    UPDATE userdata
                     SET commands_used = $1::JSON
                     WHERE id = {}
                 ;""".format(data["id"]), data["commands_used"])
