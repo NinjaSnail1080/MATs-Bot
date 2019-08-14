@@ -19,6 +19,7 @@
 from discord.ext import commands
 from utils import CommandDisabled
 import discord
+import psutil
 
 import collections
 import datetime
@@ -46,7 +47,7 @@ initial_extensions.remove("cogs.discordbots")  #* Don't have token yet
 # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
 #* Set up logger
-logger = logging.getLogger("discord")
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(filename="mat.log", encoding="utf-8", mode="w")
 handler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s"))
@@ -78,6 +79,8 @@ class MAT(commands.Bot):
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=True)
 
+        self.process = psutil.Process((os.getpid()))
+
         self.ready_for_commands = False
 
         async def create_session():
@@ -89,10 +92,8 @@ class MAT(commands.Bot):
 
         self.games = ["\"!mat help\" for help", "\"!mat help\" for help",
                       "\"!mat help\" for help", "\"!mat help\" for help",
-                      "\"!mat help\" for help", "some epic game you don't have", "with you",
-                      "dead", "with myself", "a prank on you", "with fire", "hard-to-get",
-                      "Project X", "you like a god damn fiddle", "getting friendzoned by Sigma",
-                      "on {} servers!"]
+                      "with you", "dead", "with myself", "a prank on you", "with fire",
+                      "hard-to-get", "you like a god damn fiddle", "on {} servers!"]
 
         self.loop.create_task(self.switch_games())
 
@@ -112,10 +113,11 @@ class MAT(commands.Bot):
 
         self.join_new_guild_message = (
             "Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
-            f"{self.owner.mention}. I can do a bunch of stuff, but I'm still very much in "
-            "developement, so even more features are coming soon!\n\nIn addition to all my "
-            "commands, I also have a numerous trigger words that server to amuse/infuriate the "
-            "people of this server!\n\nDo `!mat help` to get started")
+            f"{self.owner.mention}. I can do a bunch of stuff with my "
+            f"{len([c for c in self.commands if not c.hidden])} commands, but I'm still "
+            "in developement, so even more features are coming soon.\n\nMy prefixes are "
+            "`!mat`, `mat.` or `mat/`, though they are customizable per server.\nDo `!mat help` "
+            "to get started")
 
         print("\nConnected to Discord")
 
@@ -137,6 +139,12 @@ class MAT(commands.Bot):
             self.commands_used["TOTAL"] += 1
             self.commands_used[ctx.command.qualified_name] += 1
             self.botdata["commands_used"] = dict(self.commands_used)
+
+            user_commands_used = collections.Counter(
+                self.userdata[ctx.author.id]["commands_used"])
+            user_commands_used["TOTAL"] += 1
+            user_commands_used[ctx.command.qualified_name] += 1
+            self.userdata[ctx.author.id]["commands_used"] = dict(user_commands_used)
 
             if ctx.guild is not None:
                 guild_commands_used = collections.Counter(
@@ -189,7 +197,7 @@ class MAT(commands.Bot):
                     activity=discord.Game(random.choice(self.games).format(len(self.guilds))))
             except:
                 await self.change_presence(activity=discord.Game(random.choice(self.games)))
-            await asyncio.sleep(random.randint(6, 12))
+            await asyncio.sleep(random.randint(12, 20))
 
     def run(self, token):
         try:
@@ -209,6 +217,7 @@ class MAT(commands.Bot):
             self.loop.run_until_complete(self.logout())
         finally:
             self.loop.run_until_complete(self.pool.close())
+            # self.loop.run_until_complete(self.dbl.close())
             self.loop.run_until_complete(self.session.close())
             self.loop.close()
             print("\nClosed\n")
