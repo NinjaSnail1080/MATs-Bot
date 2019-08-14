@@ -106,9 +106,6 @@ class Listeners(commands.Cog):
                 embed.add_field(name="Webhooks", value="None")
         except discord.Forbidden:
             embed.add_field(name="Webhooks", value="Unknown")
-        embed.add_field(
-            name="File Size Upload Limit", value=f"{guild.filesize_limit // 1000000} MB")
-        embed.add_field(name="Bitrate Limit", value=f"{int(guild.bitrate_limit // 1000)} kbps")
         if guild.premium_tier:
             embed.add_field(name="Nitro Server Boost Status", value=f"Level {guild.premium_tier}")
         else:
