@@ -20,6 +20,7 @@ from utils import find_color, delete_message, get_reddit, send_nekobot_image, Ch
 
 from discord.ext import commands
 import discord
+import rapidjson as json
 
 import random
 
@@ -40,7 +41,7 @@ class NSFW(commands.Cog):
         return True
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def anal(self, ctx):
         """Sends gifs of anal sex"""
 
@@ -50,7 +51,7 @@ class NSFW(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def artsy(self, ctx):
         """Posts some artsy porn"""
 
@@ -59,7 +60,7 @@ class NSFW(commands.Cog):
                                 "SexyButNotPorn", "LaBeauteFeminine", "BacklitBeauty", "nsfw_bw")
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def asian(self, ctx):
         """Posts pics of hot asians"""
 
@@ -69,7 +70,7 @@ class NSFW(commands.Cog):
                                 "juicyasians", "AsianNSFW")
 
     @commands.command(aliases=["butt", "butts", "booty"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def ass(self, ctx):
         """Posts some ass"""
 
@@ -100,15 +101,23 @@ class NSFW(commands.Cog):
             return await delete_message(ctx, 5)
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def bdsm(self, ctx):
         """Posts some bdsm or bondage porn"""
 
         await ctx.channel.trigger_typing()
         return await get_reddit(ctx, 1, 100, True, False, "a post", "bdsm", "bondage")
 
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def bigboobs(self, ctx):
+        """Big Boobs"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 100, True, False, "a post", "bigboobs", "BigBoobsGW")
+
     @commands.command(aliases=["tits"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def boobs(self, ctx):
         """Posts some boobs"""
 
@@ -138,17 +147,16 @@ class NSFW(commands.Cog):
                            "again later", delete_after=5.0)
             return await delete_message(ctx, 5)
 
-    @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
-    async def cute(self, ctx):
-        """Posts some cute nude girls"""
+    @commands.command(aliases=["collar"])
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def collared(self, ctx):
+        """Sends pics of girls in collars"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, 100, True, False, "a post",
-                                "adorableporn", "TooCuteForPorn", "legalteens", "18_19")
+        return await get_reddit(ctx, 1, 50, True, False, "a post", "collared")
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def cosplay(self, ctx):
         """Posts some sexy cosplay"""
 
@@ -156,17 +164,35 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a post",
                                 "cosplaygirls", "cosplayonoff", "FictionalBabes", "NSFWCostumes")
 
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def cumsluts(self, ctx):
+        """Sends some pics of cumsluts"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 75, True, False, "a post",
+                                "cumsluts", "cumfetish", "before_after_cumsluts", "FacialFun")
+
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def cute(self, ctx):
+        """Posts some cute nude girls"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 100, True, False, "a post",
+                                "adorableporn", "TooCuteForPorn", "legalteens", "18_19")
+
     @commands.command(aliases=["dickpic", "penis", "cock"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def dick(self, ctx):
-        """Posts a dick pic"""
+        """Sends a dick pic"""
 
         await ctx.channel.trigger_typing()
         return await get_reddit(ctx, 1, 200, True, False, "a post",
                                 "PenisPics", "penis", "ratemycock", "MassiveCock", "Cock")
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def ecchi(self, ctx):
         """Posts some ecchi (basically softcore hentai)"""
 
@@ -174,7 +200,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a post", "ecchi")
 
     @commands.command(name="4k", aliases=["fourk", "hdporn"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def fourk(self, ctx):
         """Sends some 4k/UHD porn"""
 
@@ -182,8 +208,24 @@ class NSFW(commands.Cog):
         return await get_reddit(
             ctx, 1, 100, True, False, "a post", "NSFW_Wallpapers", "HighResNSFW", "UHDnsfw")
 
+    @commands.command(aliases=["futanari"])
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def futa(self, ctx):
+        """Posts some futanari"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 50, True, False, "a post", "futanari")
+
+    @commands.command(aliases=["gayporn"])
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def gayp(self, ctx):
+        """Posts some gay porn"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 50, True, False, "a post", "gayporn")
+
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def gonewild(self, ctx):
         """Sends a random post from either r/gonewild, r/gonewildcurvy, r/GoneWildSmiles, r/PetiteGoneWild, or r/RealGirls"""
 
@@ -193,7 +235,7 @@ class NSFW(commands.Cog):
             "gonewild", "gonewildcurvy", "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def hentai(self, ctx, arg: str=None):
         """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post. Add nothing extra for a regular hentai pic"""
 
@@ -217,8 +259,16 @@ class NSFW(commands.Cog):
                            "extra for regular hentai", delete_after=10.0)
             return await delete_message(ctx, 10)
 
+    @commands.command(aliases=["lesbians"])
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def lesbian(self, ctx):
+        """Sends pics of lesbians"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 75, True, False, "a post", "lesbians")
+
     @commands.command(aliases=["stockings", "panties"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def lingerie(self, ctx):
         """Posts pics of hot girls in lingerie"""
 
@@ -227,7 +277,7 @@ class NSFW(commands.Cog):
                                 "lingerie", "stockings", "pantyfetish", "panties")
 
     @commands.command(aliases=["nekos"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def neko(self, ctx):
         """Posts some lewd nekos if used in an NSFW channel, or nonlewd nekos if used in a regular channel."""
 
@@ -251,8 +301,16 @@ class NSFW(commands.Cog):
                            "again later", delete_after=5.0)
             return await delete_message(ctx, 5)
 
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def oldschool(self, ctx):
+        """Posts some old-school NSFW pics"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 50, True, False, "a post", "OldSchoolCoolNSFW")
+
     @commands.command(aliases=["porngif"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def pgif(self, ctx):
         """Posts a porn gif"""
 
@@ -262,7 +320,7 @@ class NSFW(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["vagina"])
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def pussy(self, ctx):
         """Posts some pussy"""
 
@@ -270,8 +328,53 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 100, True, False, "a post",
                                 "pussy", "rearpussy", "simps", "spreading", "landingstrip")
 
+    @commands.command(aliases=["redhead", "redheads"])
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def red(self, ctx):
+        """Hot redheads!"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 75, True, False, "a post", "lesbians")
+
     @commands.command()
-    @commands.cooldown(5, 15, commands.BucketType.user)
+    @commands.cooldown(2, 6, commands.BucketType.user)
+    async def rule34(self, ctx, *, tag: str=None):
+        """Posts some Rule 34
+        Format like this: `<prefix> rule34 (OPTIONAL)<tag>`
+        If you don't include a specific tag to search for, I'll just send a random rule 34 pic
+        """
+        await ctx.channel.trigger_typing()
+        if tag is None:
+            return await get_reddit(ctx, 1, 100, True, False, "a post", "rule34")
+        else:
+            tag = tag.lower().replace(" ", "_")
+            try:
+                async with self.bot.session.get("https://rule34.xxx/index.php?page=dapi&s=post&q="
+                                                f"index&json=1&tags={tag}") as w:
+                    resp = json.loads(await w.text())
+
+                for p in resp.copy():
+                    if "loli" in p["tags"] or "shota" in p["tags"]:
+                        resp.remove(p)
+                data = random.choice(resp)
+
+                embed = discord.Embed(
+                    title=tag,
+                    description=f"By [{data['owner']}](https://rule34.xxx/index.php?page=account"
+                                f"&s=profile&uname={data['owner']})",
+                    color=find_color(ctx))
+                embed.set_image(
+                    url=f"https://img.rule34.xxx/images/{data['directory']}/{data['image']}")
+                embed.set_footer(text=f"rule34 | {ctx.author.display_name}")
+
+                await ctx.send(embed=embed)
+
+            except (json.JSONDecodeError, IndexError):
+                await ctx.send(f"No images were found for the `{tag}` tag", delete_after=5.0)
+                return await delete_message(ctx, 5)
+
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
     async def thighs(self, ctx):
         """Sends some thiccccccccc thighs"""
 
@@ -279,6 +382,56 @@ class NSFW(commands.Cog):
         async with self.bot.session.get("https://nekobot.xyz/api/image?type=thigh") as w:
             resp = await w.json()
             await send_nekobot_image(ctx, resp)
+
+    @commands.command(brief="You need to include a tag to search with")
+    @commands.cooldown(2, 6, commands.BucketType.user)
+    async def yandere(self, ctx, *, tag: str):
+        """Searches yande.re for a tag
+        Format like this: `<prefix> yandere <tag>`
+        """
+        await ctx.channel.trigger_typing()
+        async with self.bot.session.get(f"https://yande.re/post.json?limit=100&tags={tag}") as w:
+            resp = await w.json()
+
+        if resp:
+            for p in resp.copy():
+                if "loli" in p["tags"] or "shota" in p["tags"]:
+                    resp.remove(p)
+            try:
+                data = random.choice(resp)
+            except IndexError:
+                await ctx.send(f"No posts were found for the `{tag}` tag", delete_after=5.0)
+                return await delete_message(ctx, 5)
+
+            embed = discord.Embed(
+                title=f"#{data['id']} | " + data["tags"],
+                description=f"By [{data['author']}](https://yande.re/user/show/"
+                            f"{data['creator_id']})",
+                url=f"https://yande.re/post/show/{data['id']}",
+                color=find_color(ctx))
+            embed.set_image(url=data["jpeg_url"])
+            embed.set_footer(text=f"yandere | {ctx.author.display_name}")
+
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"No posts were found for the `{tag}` tag", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def yaoi(self, ctx):
+        """Posts some yaoi (gay hentai)"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 25, True, False, "a post", "yaoi")
+
+    @commands.command()
+    @commands.cooldown(4, 9, commands.BucketType.user)
+    async def yuri(self, ctx):
+        """Posts some yuri (lesbian hentai)"""
+
+        await ctx.channel.trigger_typing()
+        return await get_reddit(ctx, 1, 50, True, False, "a post", "yuri")
 
 
 def setup(bot):
