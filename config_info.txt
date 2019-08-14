@@ -4,7 +4,7 @@ Here are all of the variables stored in the "config" module:
 
 - TOKEN: Assigned to a string that contains the bot's token. It's needed in order to run the bot.
 - POSTGRES: Assigned to a string the contains that Postgres DSN for the bot's database. It's needed for the bot to be able to store data in a SQL database. It looks like this: "postgres://<user>:<password>@<host>:<port>/<database>" without the <> (Some options may not be needed)
-- DBL_TOKEN: Assigned to a string that contains the discordbots.org API token. It's needed for voting rewards to work. Be prepared to edit some code if you leave this out.
+- DBL_TOKEN: Assigned to a string that contains the discordbots.org API token. It's needed for voting rewards to work. If you're self-hosting this bot, you'll have to leave this one out. If that's the case, go to "mat.py" and uncomment the line "initial_extensions.remove("cogs.discordbots")". Then go to "cogs/error_handlers.py" and delete the if statement under the comment "Voting Reward"
 - BITLY: Assigned to a string containing my bitly.com access token for the API. It's needed for the "bitly" command to work.
 - R_USER_AGENT: Assigned to a dictionary that contains a Reddit user agent for the commands that use the Reddit API, such as "meme", "gonewild", and "reddit". It looks like this: {"User-Agent": "<user agent here>"}
 - TESSERACT_PATH: Assigned to a string that contains the path to the tesseract library (so you need to install "tesseract-ocr" for this). It's needed for the "gettext" command.
