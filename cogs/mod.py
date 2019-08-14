@@ -153,9 +153,20 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
+
+        #* Checks to see if the role deleted was a guild's mute role or one of its custom roles
         if role.id == self.bot.guilddata[role.guild.id]["mute_role"]:
             self.bot.guilddata[role.guild.id]["mute_role"] = None
             await self.db_set_null(channel.guild.id, "mute_role")
+
+        if role.id in self.bot.guilddata[role.guild.id]["custom_roles"]:
+            self.bot.guilddata[role.guild.id]["custom_roles"].remove(role.id)
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET custom_roles = $1::BIGINT[]
+                    WHERE id = {}
+                ;""".format(role.guild.id), self.bot.guilddata[role.guild.id]["custom_roles"])
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -269,6 +280,52 @@ class Moderation(commands.Cog):
             return False
         return check
 
+    @commands.command(
+        brief="Role or member not found. Try again (note that the role name is case-sensitive)")
+    @commands.bot_has_permissions(manage_roles=True)
+    async def addrole(self, ctx, member: typing.Optional[discord.Member]=None, *, role: discord.Role=None):
+        """**Must have the "Manage Roles" permission UNLESS you're adding a custom role to yourself**
+        Adds a given role to a member
+        Format like this: `<prefix> addrole (OPTIONAL)<@mention member> <role to add>`
+        If you don't mention a member, I'll add the role to you
+        """
+        if role is None:
+            await ctx.send("You didn't format the command correctly. It's supposed to look like "
+                           f"this: `{ctx.prefix}addrole (OPTIONAL)<@mention member> <role to "
+                           "add>\n\nIf you don't mention a member, I'll add the role to you. "
+                           "However, you must have the **Manage Roles** to do this UNLESS the "
+                           f"role is a custom role (`{ctx.prefix}customroles` for more info).\n"
+                           "Also note that role names are case-sensitive",
+                           delete_after=30.0)
+            return await delete_message(ctx, 30)
+
+        if member is None:
+            member = ctx.author
+
+        if (not ctx.author.guild_permissions.manage_roles and
+                (role.id not in self.bot.guilddata[ctx.guild.id]["custom_roles"] or
+                    member != ctx.author)):
+            await ctx.send("You don't have the proper perms to do that. You need the **Manage "
+                           "Roles** perm to add non-custom roles to yourself or someone else. "
+                           "Without that perm, you can only add custom roles to yourself (See "
+                           f"`{ctx.prefix}customroles` for more info)",
+                           delete_after=20.0)
+            return await delete_message(ctx, 20)
+
+        try:
+            await member.add_roles(role, reason=f"Action performed by {ctx.author.name}")
+        except discord.Forbidden:
+            await ctx.send("That role is above mine in the role hierarchy, so I don't have "
+                           "permission to add it to anyone",
+                           delete_after=10.0)
+            return await delete_message(ctx, 10)
+
+        if member == ctx.author:
+            await ctx.send(f"You now have the {role.mention} role")
+        else:
+            await ctx.send(
+                f"{member.mention} was given the {role.mention} role by {ctx.author.mention}")
+
     @commands.command(brief="User not found. Try again")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
@@ -329,7 +386,7 @@ class Moderation(commands.Cog):
             embed = discord.Embed(
                 title=f"I couldn't ban {cant_ban[0].name}",
                 description=f"{cant_ban[0].mention} has a role that's higher than mine in the "
-                "server hierarchy, so I couldn't ban them",
+                            "server hierarchy, so I couldn't ban them",
                 color=find_color(ctx))
             await ctx.send(embed=embed)
 
@@ -337,11 +394,114 @@ class Moderation(commands.Cog):
             embed = discord.Embed(
                 title="I couldn't ban all the users you listed",
                 description="Some of the users you listed have a role that's higher than mine in "
-                "the server hierarchy, so I couldn't ban them",
+                            "the server hierarchy, so I couldn't ban them",
                 color=find_color(ctx))
             embed.add_field(name="Here are the users I couldn't ban:",
                             value=f"{', '.join(u.mention for u in cant_ban)}")
             await ctx.send(embed=embed)
+
+    @commands.group(invoke_without_command=True)
+    async def customroles(self, ctx):
+        """Shows the custom roles on this server, if there are any. Custom roles are role that any member can self-assign themselves without needing the **Manage Roles** perm.
+        This command can also be used to add or remove custom roles. Do `<prefix> customroles help` for more info
+        """
+        custom_roles = sorted(
+            [ctx.guild.get_role(i) for i in self.bot.guilddata[ctx.guild.id]["custom_roles"]],
+            key=lambda r: len(r.members), reverse=True)
+
+        if not custom_roles:
+            await ctx.send("This server has no custom roles.\n\nCustom roles are roles that "
+                           "members can self-assign themselves with the `addrole` command and "
+                           "remove with the `rmrole` command, without needing to have the "
+                           "**Manage Roles** perm.\n\nThis can be useful if you want members to "
+                           "be represented by a role of their choosing. For example, in a server "
+                           "for a video game, members could choose from roles named after "
+                           "different characters in the game based on their own favorite "
+                           f"characters.\n\nDo `{ctx.prefix}customroles help` for info on how "
+                           "to add or remove custom roles")
+        else:
+            embed = discord.Embed(
+                description="These are the custom roles of this server. Custom roles are roles "
+                            "that members can self-assign themselves with the `addrole` command "
+                            "and remove with the `rmrole` command, without needing to have the "
+                            f"**Manage Roles** perm.\n\nDo `{ctx.prefix}customroles help` for "
+                            "info on how to add or remove custom roles",
+                color=find_color(ctx))
+            embed.set_author(name=f"{ctx.guild.name}: Custom Roles", icon_url=ctx.guild.icon_url)
+
+            for r in custom_roles:
+                embed.add_field(name="\u200b", value=f"{r.mention}\nMembers: {len(r.members)}")
+
+            await ctx.send(embed=embed)
+
+    @customroles.command()
+    async def help(self, ctx):
+        await ctx.send("Custom roles are roles that members can self-assign themselves with the "
+                       "`addrole` command and remove with the `rmrole` command, without needing "
+                       "to have the **Manage Roles** perm.\n\nThis can be useful if you want "
+                       "members to be represented by a role of their choosing. For example, in a "
+                       "server for a video game, members could choose from roles named after "
+                       "different characters in the game based on their own favorite characters\n"
+                       f"\n***__Commands__:***\n`{ctx.prefix}customroles add <role name>`: This "
+                       f"will turn an existing role into a custom role\n`{ctx.prefix}customroles "
+                       "remove <role name>`: This will remove the custom role and make it no "
+                       "longer self-assignable\n__Note__: Role names are case-sensitive")
+
+    @customroles.command()
+    @commands.has_permissions(manage_roles=True)
+    async def add(self, ctx, *, role: discord.Role):
+        if len(self.bot.guilddata[ctx.guild.id]["custom_roles"]) == 25:
+            await ctx.send("This server has reached 25 custom roles, which is the maximum amount",
+                           delete_after=6.0)
+            return await delete_message(ctx, 6)
+
+        if role.id in self.bot.guilddata[ctx.guild.id]["custom_roles"]:
+            await ctx.send(f"{role.mention} is already a custom role on this server",
+                           delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+        self.bot.guilddata[ctx.guild.id]["custom_roles"].append(role.id)
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET custom_roles = $1::BIGINT[]
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["custom_roles"])
+
+        embed = discord.Embed(description=f"{role.mention} is now self-assignable for all "
+                                          "members using the `addrole` and `rmrole` commands",
+                              color=find_color(ctx))
+        embed.set_author(
+            name=ctx.author.name + " added a new custom role", icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
+
+    @customroles.command(name="remove", aliases=["delete"])
+    @commands.has_permissions(manage_roles=True)
+    async def remove_(self, ctx, *, role: discord.Role):
+        #* For some fucking reason, if I call the command function `remove`, it doesn't work, so I
+        #* have to call it `remove_` and put `name="remove"` in the command decorator for it to
+        #* work as intended
+        if role.id not in self.bot.guilddata[ctx.guild.id]["custom_roles"]:
+            await ctx.send(f"{role.mention} isn't a custom role on this server", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+        self.bot.guilddata[ctx.guild.id]["custom_roles"].remove(role.id)
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET custom_roles = $1::BIGINT[]
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["custom_roles"])
+
+        embed = discord.Embed(description=f"{role.mention} is no longer self-assignable",
+                              color=find_color(ctx))
+        embed.set_author(
+            name=ctx.author.name + " REMOVED a custom role", icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
 
     @commands.command()
     @commands.bot_has_permissions(manage_nicknames=True)
@@ -559,6 +719,7 @@ class Moderation(commands.Cog):
                       "channel the command was performed in\n\nThe duration should look "
                       "something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES). The only "
                       "characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`")
+    @commands.bot_has_permissions(manage_messages=True)
     @commands.has_permissions(manage_guild=True)
     async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, num_winners: typing.Optional[int]=1, duration: str="", *, prize: str=None):
         """**Must have the "Manage Server" permission**
@@ -599,10 +760,11 @@ class Moderation(commands.Cog):
         if blacklist:
             embed.add_field(name="Blacklist", value=", ".join(m.mention for m in blacklist))
         embed.set_footer(text=f"{num_winners} winner{'' if num_winners == 1 else 's'} | "
-                         "This giveaway will end:")
+                              "This giveaway will end:")
         msg = await channel.send(embed=embed)
         await msg.add_reaction("\U0001f3ab")
         await msg.add_reaction("\U0001f6d1")
+        await ctx.message.delete()
 
         new_giveaway = {
             "msg": msg.id,
@@ -848,7 +1010,7 @@ class Moderation(commands.Cog):
             try:
                 if channel is None:
                     await m.remove_roles(mute_role, reason="The temporary mute assigned by "
-                                         f"{ctx.author.name} is over")
+                                                           f"{ctx.author.name} is over")
                     await m.send(f"You are no longer muted in the server, __{ctx.guild.name}__")
                 else:
                     await channel.set_permissions(
@@ -876,6 +1038,94 @@ class Moderation(commands.Cog):
         await ctx.send(
             "Logging moderation commands has been turned off for this server "
             f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
+
+    @commands.command(aliases=["survey", "strawpoll"],
+                      brief="You didn't format the command correctly. It's supposed to look like "
+                      "this: `<prefix> poll <#mention channel> <title of poll>`\n\nThe poll can "
+                      "have up to ten options and will be created in the channel you specified")
+    @commands.bot_has_permissions(manage_messages=True)
+    @commands.has_permissions(manage_messages=True)
+    async def poll(self, ctx, channel: discord.TextChannel, *, title: str):
+        """Create a straw poll
+        Format like this: `<prefix> poll <#mention channel> <title of poll>`
+        The poll can have up to ten options and will be created in the channel you specified
+        """
+        def check_message():
+            def check(message):
+                return message.author == ctx.author
+            return check
+
+        options = {":one:": None, ":two:": None, ":three:": None, ":four:": None, ":five:": None,
+                   ":six:": None, ":seven:": None, ":eight:": None, ":nine:": None,
+                   ":keycap_ten:": None}
+        counter = 1
+        last_option = None
+        for o in options.keys():
+            msg = (f"{ctx.author.mention}, type **Option {o}** for the poll __{title}__ in "
+                   f"the channel {channel.mention}.\n\nYou can also type `!cancel` to cancel the "
+                   "creation of this poll")
+            if counter > 2:
+                msg += (f" or `!finish` to create the poll with the {counter - 1} options you "
+                        "put so far")
+            if counter == 10:
+                msg += (".\n\nAfter you type the 10th option, the poll will be created in "
+                        f"{channel.mention} since you will have reached the maximum number "
+                        "of poll options")
+            if last_option is not None:
+                last_option_num = list(options.keys())[counter - 2]
+                msg = f"Option {last_option_num} will be **{last_option}**.\n\n" + msg
+            wizard = await ctx.send(msg)
+
+            try:
+                message = await self.bot.wait_for("message", timeout=45, check=check_message())
+            except asyncio.TimeoutError:
+                await wizard.delete()
+                await ctx.send(
+                    f"{ctx.author.mention} took too long to respond so the creation of the poll "
+                    f"*{title}* has been canceled", delete_after=15.0)
+                return await delete_message(ctx, 15)
+            if message.content.lower() == "!cancel":
+                temp = await ctx.send(
+                    f"Ok, the creation of the poll __{title}__ has been canceled",
+                    delete_after=6.0)
+                await asyncio.sleep(6)
+                await message.delete()
+                await wizard.delete()
+                return await ctx.message.delete()
+            elif message.content.lower() == "!finish" and counter > 2:
+                await message.delete()
+                await wizard.delete()
+                await ctx.send(
+                    f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
+                    delete_after=6.0)
+                await delete_message(ctx, 6)
+                break
+            last_option = message.content
+            options[o] = last_option
+            await message.delete()
+            await wizard.delete()
+            if counter == 10:
+                await ctx.send(
+                    f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
+                    delete_after=6.0)
+                await delete_message(ctx, 6)
+                break
+            counter += 1
+
+        options = {k:v for k, v in options.items() if v is not None}
+        reactions = ["\u0031\u20E3", "\u0032\u20E3", "\u0033\u20E3", "\u0034\u20E3",
+                     "\u0035\u20E3", "\u0036\u20E3", "\u0037\u20E3", "\u0038\u20E3",
+                     "\u0039\u20E3", "\U0001F51F"][:len(options)]
+
+        embed = discord.Embed(
+            title=title, description="\n\n".join([f"{k}. {v}" for k, v in options.items()]),
+            color=find_color(ctx))
+        embed.set_author(name=f"{ctx.author.display_name} is holding a straw poll:",
+                         icon_url=ctx.author.avatar_url)
+        embed.set_footer(text="React with one of the emojis below to vote")
+        strawpoll = await channel.send(embed=embed)
+        for r in reactions:
+            await strawpoll.add_reaction(r)
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> prune <days>`\n\nInactive members are denoted if they have not "
@@ -1392,38 +1642,6 @@ class Moderation(commands.Cog):
                          icon_url=ctx.author.avatar_url)
         await send_log(ctx, embed)
 
-    @commands.command(aliases=["snipe"])
-    @commands.has_permissions(manage_messages=True)
-    async def restore(self, ctx):
-        """**Must have the "Manage Messages" permission**
-        Restores the last deleted message by a non-bot member
-        Note: Because of how Discord works, I can't restore attachments to messages, just the text of the message
-        """
-        last_delete = self.bot.guilddata[ctx.guild.id]["last_delete"]
-        if last_delete is None:
-            await ctx.send(
-                "Unable to find the last deleted message. Sorry!", delete_after=5.0)
-            return await delete_message(ctx, 5)
-
-        if len(f"```{last_delete['content']}```") <= 1024:
-            embed = discord.Embed(
-                title="Restored last deleted message",
-                description=f"**Sent by**: {last_delete['author']}\n" + last_delete["creation"],
-                color=find_color(ctx))
-            embed.add_field(name="Message", value=f"```{last_delete['content']}```", inline=False)
-            embed.add_field(name="Channel", value=last_delete["channel"])
-        else:
-            embed = discord.Embed(
-                title="Restored last deleted message",
-                description=f"**Message**:\n```{last_delete['content']}```",
-                color=find_color(ctx))
-            embed.add_field(name="Sent by", value=last_delete['author'])
-            embed.add_field(name="Channel", value=last_delete["channel"])
-            embed.add_field(name="Sent on", value=last_delete["creation"][13:])
-        embed.set_footer(text="Restored by " + ctx.author.name, icon_url=ctx.author.avatar_url)
-
-        await ctx.send(embed=embed)
-
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def rmgoodbye(self, ctx):
@@ -1435,13 +1653,7 @@ class Moderation(commands.Cog):
                            "the `setgoodbye` command to make one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        self.bot.guilddata[ctx.guild.id]["goodbye"] = None
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET goodbye = NULL
-                WHERE id = {}
-            ;""".format(ctx.guild.id))
+        await self.db_set_null(ctx.guild.id, "goodbye")
 
         embed = discord.Embed(description=f"**Message**: ```{msg.format('(member)')}```",
                               color=find_color(ctx))
@@ -1450,6 +1662,63 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
+
+    @commands.command(
+        brief="Role or member not found. Try again (note that the role name is case-sensitive)")
+    @commands.bot_has_permissions(manage_roles=True)
+    async def rmrole(self, ctx, member: typing.Optional[discord.Member]=None, *, role: discord.Role=None):
+        """**Must have the "Manage Roles" permission UNLESS you're removing a custom role from yourself**
+        Removes a given role from a member
+        Format like this: `<prefix> rmrole (OPTIONAL)<@mention member> <role to remove>`
+        If you don't mention a member, I'll remove the role from you
+        """
+        if role is None:
+            await ctx.send("You didn't format the command correctly. It's supposed to look like "
+                           f"this: `{ctx.prefix}rmrole (OPTIONAL)<@mention member> <role to "
+                           "remove>\n\nIf you don't mention a member, I'll remove the role from "
+                           "you. However, you must have the **Manage Roles** to do this UNLESS "
+                           f"the role is a custom role (`{ctx.prefix}customroles` for more "
+                           "info).\nAlso note that role names are case-sensitive",
+                           delete_after=30.0)
+            return await delete_message(ctx, 30)
+
+        if member is None:
+            member = ctx.author
+
+        if (not ctx.author.guild_permissions.manage_roles and
+                (role.id not in self.bot.guilddata[ctx.guild.id]["custom_roles"] or
+                    member != ctx.author)):
+            await ctx.send("You don't have the proper perms to do that. You need the **Manage "
+                           "Roles** perm to remove non-custom roles from yourself or someone "
+                           "else. Without that perm, you can only remove custom roles from "
+                           f"yourself (See `{ctx.prefix}customroles` for more info)",
+                           delete_after=20.0)
+            return await delete_message(ctx, 20)
+
+        if role not in member.roles:
+            if member == ctx.author:
+                await ctx.send(f"You don't have the {role.mention} role. I can't remove "
+                               "something from you that you never had",
+                               delete_after=10.0)
+            else:
+                await ctx.send(f"{member.mention} doesn't have the {role.mention} role. I can't "
+                               "remove something from them that they never had",
+                               delete_after=10.0)
+            return await delete_message(ctx, 10)
+
+        try:
+            await member.remove_roles(role, reason=f"Action performed by {ctx.author.name}")
+        except discord.Forbidden:
+            await ctx.send("That role is above mine in the role hierarchy, so I don't have "
+                           "permission to remove it from anyone",
+                           delete_after=10.0)
+            return await delete_message(ctx, 10)
+
+        if member == ctx.author:
+            await ctx.send(f"You no longer have the {role.mention} role")
+        else:
+            await ctx.send(f"{member.mention} no longer has the {role.mention} role. "
+                           f"Removed by {ctx.author.mention}")
 
     @commands.command()
     @commands.has_permissions(administrator=True)
@@ -1462,14 +1731,7 @@ class Moderation(commands.Cog):
                            "the `setstarboard` command to set one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        starboard = self.bot.guilddata[ctx.guild.id]["starboard"]
-        self.bot.guilddata[ctx.guild.id]["starboard"] = None
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET starboard = NULL
-                WHERE id = {}
-            ;""".format(ctx.guild.id))
+        await self.db_set_null(ctx.guild.id, "starboard")
 
         embed = discord.Embed(description="Now messages will no longer be sent to "
                               f"{self.bot.get_channel(starboard['channel']).mention} when they "
@@ -1492,13 +1754,7 @@ class Moderation(commands.Cog):
                            "the `setwelcome` command to make one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
-        self.bot.guilddata[ctx.guild.id]["welcome"] = None
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET welcome = NULL
-                WHERE id = {}
-            ;""".format(ctx.guild.id))
+        await self.db_set_null(ctx.guild.id, "welcome")
 
         embed = discord.Embed(description=f"**Message**: ```{msg.format('(member)')}```",
                               color=find_color(ctx))
@@ -1627,6 +1883,41 @@ class Moderation(commands.Cog):
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
 
+    @commands.command(aliases=["restore"])
+    @commands.has_permissions(manage_messages=True)
+    async def snipe(self, ctx):
+        """**Must have the "Manage Messages" permission**
+        Restores the last deleted message by a non-bot member
+        Note: Because of how Discord works, I can't restore attachments to messages, just the text of the message
+        """
+        last_delete = self.bot.guilddata[ctx.guild.id]["last_delete"]
+        if last_delete is None:
+            await ctx.send(
+                "Unable to find the last deleted message. Sorry!", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
+        if len(f"```{last_delete['content']}```") <= 1024:
+            embed = discord.Embed(
+                description=f"**Sent by**: {last_delete['author']}\n{last_delete['creation']}",
+                color=find_color(ctx))
+            embed.add_field(
+                name="Message", value=f"```{last_delete['content']}```", inline=False)
+            embed.add_field(name="Channel", value=last_delete["channel"])
+        else:
+            embed = discord.Embed(
+                description=f"**Message**:\n```{last_delete['content']}```",
+                color=find_color(ctx))
+            embed.add_field(name="Sent by", value=last_delete['author'])
+            embed.add_field(name="Channel", value=last_delete["channel"])
+            embed.add_field(name="Sent on", value=last_delete["creation"][13:])
+
+        embed.set_author(name=f"Restored last deleted message in {ctx.guild.name}",
+                         icon_url=ctx.guild.icon_url)
+        embed.set_footer(text="Sniped by " + ctx.author.name,
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+
     @commands.command(brief="Incorrect formatting. The command is supposed to look like this: "
                       "`<prefix> softban <@mention user> (OPTINAL)<days of msgs to delete>`\nThe "
                       "number of days worth of messages to delete must be at least 1 and no more "
@@ -1671,101 +1962,6 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
-
-    @commands.group(invoke_without_command=True)
-    @commands.has_permissions(manage_messages=True)
-    async def triggers(self, ctx):
-        """**Must have the "Manage Messages" permission**
-        Toggles my trigger words on/off for a channel or for the whole server
-        To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers toggle`
-        To turn trigger words **off** for the entire server, do: `<prefix> triggers all off`
-        Finally, to turn trigger words **on** for the entire server, do: `<prefix> triggers all on`
-        """
-        await ctx.send(
-            "To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers "
-            "toggle`\n\nTo turn trigger words **off** for the entire server, do: `<prefix> "
-            "triggers all off`\n\nFinally, to turn trigger words **on** for the entire server, "
-            "do: `<prefix> triggers all on`")
-
-    @triggers.group(invoke_without_command=True)
-    @commands.has_permissions(manage_messages=True)
-    async def all(self, ctx):
-        #* Just send the same help message that "triggers" sends
-        await ctx.send(
-            "To **toggle** trigger words on/off for a single channel, do: `<prefix> triggers "
-            "toggle`\n\nTo turn trigger words **off** for the entire server, do: `<prefix> "
-            "triggers all off`\n\nFinally, to turn trigger words **on** for the entire server, "
-            "do: `<prefix> triggers all on`")
-
-    @all.command()
-    @commands.has_permissions(manage_messages=True)
-    async def off(self, ctx):
-
-        if ctx.author.guild_permissions.manage_messages:
-            for c in ctx.guild.text_channels:
-                self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(c.id)
-            await ctx.send("Ok, triggers have been turned off for all channels in this server")
-        else:
-            await ctx.send("You only have the **Manage Messages** permission for this channel. "
-                           "In order to turn off triggers for all channels, you need the server-"
-                           "wide **Manage Messages** perm", delete_after=8.0)
-            return await delete_message(ctx, 8)
-
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET triggers_disabled = $1::BIGINT[]
-                WHERE id = {}
-            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
-
-        embed = discord.Embed(color=find_color(ctx))
-        embed.set_author(name=f"{ctx.author.name} has DISABLED my triggers for ALL channels",
-                         icon_url=ctx.author.avatar_url)
-        await send_log(ctx, embed)
-
-    @all.command()
-    @commands.has_permissions(manage_messages=True)
-    async def on(self, ctx):
-
-        if ctx.author.guild_permissions.manage_messages:
-            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].clear()
-            await ctx.send("Ok, triggers have been turned on for all channels in this server")
-        else:
-            await ctx.send("You only have the **Manage Messages** permission for this channel. "
-                           "In order to turn triggers on for all channels, you need the server-"
-                           "wide **Manage Messages** perm", delete_after=8.0)
-            return await delete_message(ctx, 8)
-
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET triggers_disabled = $1::BIGINT[]
-                WHERE id = {}
-            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
-
-        embed = discord.Embed(color=find_color(ctx))
-        embed.set_author(name=f"{ctx.author.name} has ENABLED my triggers for ALL channels",
-                         icon_url=ctx.author.avatar_url)
-        await send_log(ctx, embed)
-
-    @triggers.command()
-    @commands.has_permissions(manage_messages=True)
-    async def toggle(self, ctx):
-
-        if ctx.channel.id not in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
-            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(ctx.channel.id)
-            await ctx.send("Ok, I'll stop reacting to triggers in this channel")
-
-        elif ctx.channel.id in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
-            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].remove(ctx.channel.id)
-            await ctx.send("Ok, I'll start reacting to triggers in this channel again!")
-
-        async with self.bot.pool.acquire() as conn:
-            await conn.execute("""
-                UPDATE guilddata
-                SET triggers_disabled = $1::BIGINT[]
-                WHERE id = {}
-            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
 
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
                       "members, use the `allbanned` command.")
