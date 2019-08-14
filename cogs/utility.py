@@ -288,7 +288,8 @@ class Utility(commands.Cog):
             "features and commands before they get released on me, the main bot. However, please "
             "note that the experimental bot likely won't be online very often")
 
-    @commands.command(aliases=["googleimages", "images"])
+    @commands.command(aliases=["googleimages", "images"],
+                      brief="You need to include some search terms so I can get images")
     @commands.cooldown(1, 18, commands.BucketType.user)
     async def gimages(self, ctx, *, keywords):
         """Get images from Google Images.
@@ -317,7 +318,7 @@ class Utility(commands.Cog):
                 timestamp=datetime.datetime.utcnow(), color=find_color(ctx))
             embed.set_author(name=f"{ctx.author.display_name}", icon_url=ctx.author.avatar_url)
             embed.set_footer(text="This message will be automatically deleted if left idle for "
-                             "longer than 5 minutes")
+                                  "longer than 5 minutes")
             embed.set_image(url=url)
             embeds.append(embed)
         return await send_advanced_paginator(ctx, embeds, 5)
