@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import delete_message, CommandDisabled, ChannelNotNSFW
+from utils import delete_message, find_color, CommandDisabled, ChannelNotNSFW
 
 from discord.ext import commands
 import discord
@@ -39,9 +39,8 @@ class Error_Handlers(commands.Cog):
                         "403): Missing Permissions"):
             return
 
-
-        elif str(exc) == ("Command raised an exception: NotFound: NOT FOUND (status code: "
-                          "404): Unknown Message"):
+        elif str(exc) == ("Command raised an exception: NotFound: 404 NOT FOUND (error code: "
+                          "10008): Unknown Message"):
             return
 
 
@@ -62,12 +61,20 @@ class Error_Handlers(commands.Cog):
                 return await ctx.reinvoke()
 
             c = exc.cooldown
-            await ctx.send(
-                f"This command is on cooldown. Try again in **{round(exc.retry_after, 2)}** "
-                f"seconds.\n\n**Cooldown**: {c.rate} use{'' if c.rate == 1 else 's'} per "
-                f"{int(c.per)} second{'' if c.per == 1 else 's'}",
-                delete_after=15.0)
-            return await delete_message(ctx, 15)
+            embed = discord.Embed(
+                description="__This command is on cooldown__. Try again in **"
+                            f"{round(exc.retry_after, 2)}** seconds.\n\n**Default Cooldown**: "
+                            f"{c.rate} use{'' if c.rate == 1 else 's'} every {int(c.per)} "
+                            f"second{'' if c.per == 1 else 's'}",
+                color=find_color(ctx))
+            await ctx.send(embed=embed)
+            await delete_message(ctx, 15)
+
+            #* Voting reward
+            # if await self.bot.dbl.get_user_vote(ctx.author.id):
+            #     await asyncio.sleep(c.per * (2/3))
+            #     await ctx.reinvoke()
+            return
 
 
         elif isinstance(exc, commands.NotOwner):
