@@ -151,9 +151,9 @@ async def send_advanced_paginator(ctx, embeds, timeout: int):
             return False
         return check
 
-    def check_message(author):
+    def check_message(author, channel):
         def check(message):
-            return message.author == author
+            return message.author == author and message.channel == channel
         return check
 
     index = 0
@@ -178,7 +178,7 @@ async def send_advanced_paginator(ctx, embeds, timeout: int):
             while True:
                 try:
                     message = await ctx.bot.wait_for(
-                        "message", timeout=10, check=check_message(user))
+                        "message", timeout=10, check=check_message(user, ctx.channel))
                 except asyncio.TimeoutError:
                     await jump_msg.delete()
                     await ctx.send(f"{user.mention} took too long to respond, so the "
