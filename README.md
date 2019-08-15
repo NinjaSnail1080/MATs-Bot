@@ -74,3 +74,7 @@ Invite MAT's Bot to your server and type `!mat help` for more info and a full li
  - Economy
  - Auto moderation
  - Leveling
+
+---
+
+###### Dedicated to AwooMAT1417#7540
