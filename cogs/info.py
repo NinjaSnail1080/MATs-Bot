@@ -668,15 +668,17 @@ class Info(commands.Cog):
                 name=f"Roles ({len(roles)})", value=", ".join(roles), inline=False)
         else:
             embed.add_field(name="Roles", value="`No roles`")
-        if self.bot.userdata[user.id]["commands_used"]:
-            cmds_used = collections.Counter(
-                self.bot.userdata[user.id]["commands_used"]).most_common(11)[1:]
-            total = self.bot.userdata[user.id]["commands_used"]["TOTAL"]
-            embed.add_field(
-                name="Most Used Commands",
-                value=f"__**Total**__: {total:,} uses\n" + "\n".join(
-                    f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} uses)" for c in cmds_used),
-                inline=False)
+        if user.id in self.bot.userdata:
+            if self.bot.userdata[user.id]["commands_used"]:
+                cmds_used = collections.Counter(
+                    self.bot.userdata[user.id]["commands_used"]).most_common(11)[1:]
+                total = self.bot.userdata[user.id]["commands_used"]["TOTAL"]
+                list_cmds_used = list(
+                    f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} uses)" for c in cmds_used)
+                embed.add_field(
+                    name="Most Used Commands",
+                    value=f"__**Total**__: {total:,} uses\n" + "\n".join(list_cmds_used),
+                    inline=False)
 
         delta = datetime.datetime.utcnow() - user.created_at
 
