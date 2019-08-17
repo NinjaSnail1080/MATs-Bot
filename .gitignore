@@ -167,5 +167,4 @@ typing.py
 config.py
 
 # Ignore test file if I make one
-test.py
-test.txt
+test.*
