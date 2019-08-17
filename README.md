@@ -1,3 +1,5 @@
+[![Discord Bots](https://discordbots.org/api/widget/459559711210078209.svg)](https://discordbots.org/bot/459559711210078209)
+
 # MAT's Bot
 ***A multi-purpose Discord Bot created by NinjaSnail1080#8581***
 
