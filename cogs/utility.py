@@ -184,8 +184,8 @@ class Utility(commands.Cog):
         if not resp["success"]:
             await ctx.send(f"```Error {resp['error']['code']}\n{resp['error']['info']}```"
                            "An unknown error has occured. Try again, and if it persists, get in"
-                           f"touch with my owner, {self.bot.owner.mention}. You can find him on "
-                           "my support server: https://discord.gg/P4Fp3jA")
+                           f"touch with my owner, **{self.bot.owner}**. You can find him on "
+                           "my support server: https://discord.gg/khGGxxj")
             return
 
         #* Default base is 1 Euro. I can't change it cause my API plan is the Free version and
@@ -636,8 +636,8 @@ class Utility(commands.Cog):
                 else:
                     return await ctx.send(
                         f"An unknown error has occured:```{resp['message']}```If this "
-                        f"problem persists, get in touch with my owner, {self.bot.owner}. "
-                        "You can reach him at my support server: https://discord.gg/P4Fp3jA")
+                        f"problem persists, get in touch with my owner, **{self.bot.owner}**. "
+                        "You can reach him at my support server: https://discord.gg/khGGxxj")
 
         rhyming_words = resp["rhymes"]
         if len(rhyming_words) > 1:
@@ -677,7 +677,7 @@ class Utility(commands.Cog):
 
         await ctx.send("Here's a link to my support server if you're having any problems running "
                        "me! My owner and the other members will be glad to help!"
-                       "\nhttps://discord.gg/P4Fp3jA")
+                       "\nhttps://discord.gg/khGGxxj")
 
     async def update_db_tags(self, ctx):
         """Update the tags in the database"""
@@ -1227,8 +1227,8 @@ class Utility(commands.Cog):
             else:
                 return await ctx.send(
                     "An unknown error has occured:```" + "\n".join(error) + "```If this problem "
-                    f"persists, get in touch with my owner, {self.bot.owner}. You can reach him "
-                    "at my support server: https://discord.gg/P4Fp3jA")
+                    f"persists, get in touch with my owner, **{self.bot.owner}**. You can reach "
+                    "him at my support server: https://discord.gg/khGGxxj")
 
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> translate <lang to translate into> <text to translate>`\n"
