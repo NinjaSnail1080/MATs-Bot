@@ -40,6 +40,10 @@ class DiscordBotsAPI(commands.Cog):
         await self.bot.dbl.post_guild_count()
 
     @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        await self.bot.dbl.post_guild_count()
+
+    @commands.Cog.listener()
     async def on_dbl_vote(self, data):
         #TODO: Eventually this will contain economy stuff
         pass
