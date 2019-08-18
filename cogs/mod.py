@@ -96,7 +96,7 @@ class Moderation(commands.Cog):
             [r.count for r in message.reactions if r.emoji in self.star_emojis])
 
         if star_reactions >= num_reactions:
-            msg_content = message.clean_content
+            msg_content = message.content
 
             #* The following code is to better format custom emojis that appear in the content
             custom_emoji = re.compile(r"<:(\w+):(\d+)>")
@@ -111,6 +111,8 @@ class Moderation(commands.Cog):
             embed.add_field(name="Message ID", value=message.id)
             if message.attachments:
                 embed.set_image(url=message.attachments[0].url)
+            elif message.embeds:
+                embed.set_image(url=message.embeds[0].image.url)
 
             await starboard.send(embed=embed)
             self.bot.guilddata[payload.guild_id]["starboard"]["messages"].append(message.id)
@@ -157,7 +159,7 @@ class Moderation(commands.Cog):
         #* Checks to see if the role deleted was a guild's mute role or one of its custom roles
         if role.id == self.bot.guilddata[role.guild.id]["mute_role"]:
             self.bot.guilddata[role.guild.id]["mute_role"] = None
-            await self.db_set_null(channel.guild.id, "mute_role")
+            await self.db_set_null(role.guild.id, "mute_role")
 
         if role.id in self.bot.guilddata[role.guild.id]["custom_roles"]:
             self.bot.guilddata[role.guild.id]["custom_roles"].remove(role.id)
@@ -247,8 +249,7 @@ class Moderation(commands.Cog):
                     embed = discord.Embed(
                         description=f"\U0001f31f \U00002b50 Congratulations to the "
                         f"{num_winners} winners of **{prize}**! \U00002b50 \U0001f31f",
-                        timestamp=datetime.datetime.utcnow(),
-                        color=channel.guild.me.color)
+                        timestamp=datetime.datetime.utcnow(), color=channel.guild.me.color)
                     embed.add_field(
                         name="Winners", value="\n".join(w.mention for w in winners))
 
@@ -321,10 +322,10 @@ class Moderation(commands.Cog):
             return await delete_message(ctx, 10)
 
         if member == ctx.author:
-            await ctx.send(f"You now have the {role.mention} role")
+            await ctx.send(f"You now have the **{role.name}** role")
         else:
             await ctx.send(
-                f"{member.mention} was given the {role.mention} role by {ctx.author.mention}")
+                f"{member.mention} was given the **{role.name}** role by {ctx.author.mention}")
 
     @commands.command(brief="User not found. Try again")
     @commands.bot_has_permissions(ban_members=True)
@@ -456,7 +457,7 @@ class Moderation(commands.Cog):
             return await delete_message(ctx, 6)
 
         if role.id in self.bot.guilddata[ctx.guild.id]["custom_roles"]:
-            await ctx.send(f"{role.mention} is already a custom role on this server",
+            await ctx.send(f"**{role.name}** is already a custom role on this server",
                            delete_after=5.0)
             return await delete_message(ctx, 5)
 
@@ -484,7 +485,8 @@ class Moderation(commands.Cog):
         #* have to call it `remove_` and put `name="remove"` in the command decorator for it to
         #* work as intended
         if role.id not in self.bot.guilddata[ctx.guild.id]["custom_roles"]:
-            await ctx.send(f"{role.mention} isn't a custom role on this server", delete_after=5.0)
+            await ctx.send(
+                f"**{role.name}** isn't a custom role on this server", delete_after=5.0)
             return await delete_message(ctx, 5)
 
         self.bot.guilddata[ctx.guild.id]["custom_roles"].remove(role.id)
@@ -749,7 +751,7 @@ class Moderation(commands.Cog):
                        "\U0001f3ab to enter the giveaway!\nJust remove your reaction to exit the "
                        f"giveaway.\n\nAs the creator of this raffle, {ctx.author.mention} can "
                        "cancel it by reacting with \U0001f6d1\nNote: Don't delete this message, "
-                       "or the giveaway won't work!")
+                       "or the giveaway won't work")
         if blacklist:
             description += ("\n\nIf you're on the blacklist, you can react all you want, but you "
                             "won't be part of the drawing pool when a winner is selected")
@@ -1460,16 +1462,6 @@ class Moderation(commands.Cog):
         except: #* If it's already in place
             pass
 
-        if ctx.channel.id in self.bot.guilddata[ctx.guild.id]["triggers_disabled"]:
-            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].remove(ctx.channel.id)
-            self.bot.guilddata[ctx.guild.id]["triggers_disabled"].append(cleared.id)
-            async with self.bot.pool.acquire() as conn:
-                await conn.execute("""
-                    UPDATE guilddata
-                    SET triggers_disabled = $1::BIGINT[]
-                    WHERE id = {}
-                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["triggers_disabled"])
-
         embed = discord.Embed(description=cleared.mention + " was completely cleared",
                               color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " ran a purge command",
@@ -1697,11 +1689,11 @@ class Moderation(commands.Cog):
 
         if role not in member.roles:
             if member == ctx.author:
-                await ctx.send(f"You don't have the {role.mention} role. I can't remove "
+                await ctx.send(f"You don't have the **{role.name}** role. I can't remove "
                                "something from you that you never had",
                                delete_after=10.0)
             else:
-                await ctx.send(f"{member.mention} doesn't have the {role.mention} role. I can't "
+                await ctx.send(f"{member.mention} doesn't have the **{role.name}** role. I can't "
                                "remove something from them that they never had",
                                delete_after=10.0)
             return await delete_message(ctx, 10)
@@ -1715,9 +1707,9 @@ class Moderation(commands.Cog):
             return await delete_message(ctx, 10)
 
         if member == ctx.author:
-            await ctx.send(f"You no longer have the {role.mention} role")
+            await ctx.send(f"You no longer have the **{role.name}** role")
         else:
-            await ctx.send(f"{member.mention} no longer has the {role.mention} role. "
+            await ctx.send(f"{member.mention} no longer has the **{role.name}** role. "
                            f"Removed by {ctx.author.mention}")
 
     @commands.command()
@@ -1726,17 +1718,20 @@ class Moderation(commands.Cog):
         """**Must have Administrator permissions**
         Remove a previously set starboard channel
         """
-        if self.bot.guilddata[ctx.guild.id]["starboard"] is None:
+        starboard = self.bot.guilddata[ctx.guild.id]["starboard"]
+        if starboard is None:
             await ctx.send("This server doesn't have a starboard channel. Use "
                            "the `setstarboard` command to set one", delete_after=7.0)
             return await delete_message(ctx, 7)
 
         await self.db_set_null(ctx.guild.id, "starboard")
 
-        embed = discord.Embed(description="Now messages will no longer be sent to "
-                              f"{self.bot.get_channel(starboard['channel']).mention} when they "
-                              f"get at least {starboard['num_reactions']} \U00002b50 reactions",
-                              color=find_color(ctx))
+        embed = discord.Embed(
+            description="Now messages will no longer be sent to "
+                        f"{self.bot.get_channel(starboard['channel']).mention} when they "
+                        f"get at least {starboard['num_reactions']} \U00002b50 "
+                        f"reaction{'' if starboard['num_reactions'] == 1 else 's'}",
+            color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " REMOVED the starboard channel",
                          icon_url=ctx.author.avatar_url)
 
@@ -1828,6 +1823,10 @@ class Moderation(commands.Cog):
         Say the reaction threshold is 4; whenever a message gets at least 4 total "star reactions", a copy of the message will be sent to the starboard channel where it can be saved.
         The "Star Reactions": \U00002b50, \U0001f31f, \U0001f320, or \U00002734
         """
+        if num_reactions < 1:
+            await ctx.send("The reaction threshold must be at least 1", delete_after=5.0)
+            return await delete_message(ctx, 5)
+
         await ctx.channel.trigger_typing()
         starboard = {
             "channel": channel.id,
@@ -1844,8 +1843,10 @@ class Moderation(commands.Cog):
 
         embed = discord.Embed(
             description=f"**Channel**: {channel.mention}\n**Reaction Threshold**: {num_reactions}"
-            f"\n\nNow, whenever a message gets at least {num_reactions} \U00002b50 reactions, a "
-            f"copy of the message will be sent to {channel.mention}", color=find_color(ctx))
+                        f"\n\nNow, whenever a message gets at least {num_reactions} \U00002b50 "
+                        f"reaction{'' if num_reactions == 1 else 's'}, a copy of the message "
+                        f"will be sent to {channel.mention}",
+            color=find_color(ctx))
         embed.set_author(name=ctx.author.name + " set a starboard channel",
                          icon_url=ctx.author.avatar_url)
 
