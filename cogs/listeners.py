@@ -135,7 +135,7 @@ class Listeners(commands.Cog):
                 value="`" + "`, `".join([f.replace("_", " ") for f in guild.features]) + "`",
                 inline=False)
         embed.add_field(
-            name="Server Owner", value=guild.owner.mention + f" (User ID: {(guild.owner_id)})",
+            name="Server Owner", value=str(guild.owner) + f" (User ID: {(guild.owner_id)})",
             inline=False)
 
         await self.joins_and_leaves.send(
