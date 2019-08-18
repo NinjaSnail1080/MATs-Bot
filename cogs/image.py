@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, send_nekobot_image, send_dank_memer_img
+from utils import find_color, delete_message, send_nekobot_image, send_dank_memer_img, has_voted
 
 from discord.ext import commands
 from PIL import Image as IMG
@@ -53,7 +53,7 @@ class Image(commands.Cog):
 
     async def get_image(self, ctx, user_url: typing.Union[discord.Member, str]=None):
         if user_url is None and not ctx.message.attachments:
-            async for m in ctx.channel.history(limit=11):
+            async for m in ctx.channel.history(limit=10, before=ctx.message):
                 if m.embeds:
                     img = m.embeds[0].image.url
                     if img is not discord.Embed.Empty:
@@ -108,6 +108,7 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`", name="ascii")
+    @has_voted()
     @commands.cooldown(1, 45, commands.BucketType.user)
     async def ascii_command(self, ctx, member_url: typing.Union[discord.Member, str]=None):
         """Converts an image or a member's avatar into ascii art. Will work for most images
