@@ -69,7 +69,7 @@ MAT's Bot has over 180 commands, including but not limited to:
 - Start an Akinator game
 - ...and more!
 
-Invite MAT's Bot to your server and type `!mat help` for more info and a full list of commands. Report any problems you may run into at my [support server](https://discord.gg/khGGxxj).
+Invite MAT's Bot to your server and type `!mat help` for more info and a full list of commands. Report any problems or suggestions you may have at my [support server](https://discord.gg/khGGxxj).
 
 ### Coming Soon
  - Music commands
