@@ -43,7 +43,7 @@ for f in os.listdir("cogs"):
     if f.endswith(".py"):
         f = f[:-3]
         initial_extensions.append("cogs." + f)
-initial_extensions.remove("cogs.discordbots")  #* Don't have token yet
+# initial_extensions.remove("cogs.discordbots")
 # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
 #* Set up logger
@@ -77,7 +77,7 @@ class MAT(commands.Bot):
                          shard_id=0,
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
-                         fetch_offline_members=True)
+                         fetch_offline_members=False)
 
         self.process = psutil.Process((os.getpid()))
 
@@ -113,7 +113,7 @@ class MAT(commands.Bot):
 
         self.join_new_guild_message = (
             "Hello everyone, it's good to be here!\n\nI'm MAT, a Discord bot created by "
-            f"{self.owner.mention}. I can do a bunch of stuff with my "
+            f"**{self.owner}**. I can do a bunch of stuff with my "
             f"{len([c for c in self.commands if not c.hidden])} commands, but I'm still "
             "in developement, so even more features are coming soon.\n\nMy prefixes are "
             "`!mat`, `mat.` or `mat/`, though they are customizable per server.\nDo `!mat help` "
@@ -217,7 +217,7 @@ class MAT(commands.Bot):
             self.loop.run_until_complete(self.logout())
         finally:
             self.loop.run_until_complete(self.pool.close())
-            # self.loop.run_until_complete(self.dbl.close())
+            self.loop.run_until_complete(self.dbl.close())
             self.loop.run_until_complete(self.session.close())
             self.loop.close()
             print("\nClosed\n")
