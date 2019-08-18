@@ -61,10 +61,11 @@ def has_voted():
 
     async def predicate(ctx):
         try:
-            # if ctx.bot.dbl.get_user_vote(ctx.author.id) or ctx.bot.is_owner(ctx.author):
-            #     return True
-            # else:
-            raise VoteRequired
+            if (await ctx.bot.dbl.get_user_vote(ctx.author.id) or
+                    await ctx.bot.is_owner(ctx.author)):
+                return True
+            else:
+                raise VoteRequired
         except AttributeError: #* If it's on the experimental bot
             return True
 
