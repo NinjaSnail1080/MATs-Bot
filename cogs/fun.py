@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, get_reddit, send_nekobot_image, send_dank_memer_img, ChannelNotNSFW
+from utils import find_color, delete_message, get_reddit, send_nekobot_image, send_dank_memer_img, has_voted, ChannelNotNSFW
 
 from discord.ext import commands
 from bs4 import BeautifulSoup
@@ -377,8 +377,8 @@ class Fun(commands.Cog):
                 f"```{e}```{ctx.author.mention}, due to an unexpected error, the Akinator game "
                 "you started was cancelled. This is most likely an isolated incident. Try again "
                 "later, and if the problem persists, please notify my creator, "
-                f"{self.bot.owner.name}. You can reach him at my support server: "
-                "https://discord.gg/P4Fp3jA")
+                f"**{self.bot.owner}**. You can reach him at my support server: "
+                "https://discord.gg/khGGxxj")
 
     @commands.command(brief="You need to include some text after the command, like this: "
                       "`<prefix> armor <text>`")
@@ -1381,6 +1381,7 @@ class Fun(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["wc", "tagcloud"])
+    @has_voted()
     @commands.cooldown(1, 30, commands.BucketType.user)
     async def wordcloud(self, ctx, users: commands.Greedy[discord.Member], channel: typing.Optional[discord.TextChannel]=None, limit: typing.Optional[int]=2000):
         """Generate a word cloud, which is an image that shows the frequencies of various words from messages sent in a channel
