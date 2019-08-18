@@ -59,14 +59,15 @@ class Help(commands.Cog):
         if show_detail:
             msg += ("\n\nYou must use one of the prefixes before each command in your message."
                     f"\n__Example__: `{random.choice(all_prefixes)}"
-                    f"{random.choice([c.name for c in self.bot.commands])} <any other required "
-                    "specs>`\n\n*An asterisk* (*) *next to a prefix listed above means there "
-                    "must be a space in between the prefix and the command*")
+                    f"{random.choice([c.name for c in self.bot.commands if not c.hidden])} <any "
+                    "other required specs>`\n\n*An asterisk* (*) *next to a prefix listed above "
+                    "means there must be a space in between the prefix and the command*")
 
         msg += ("\n\nIf you're having problems or want to give feedback, you can join my "
-                "[support server](https://discord.gg/P4Fp3jA).\nInvite me to other servers [here]"
-                "(https://discordapp.com/oauth2/authorize?client_id=459559711210078209&scope="
-                "bot&permissions=2146958591).")
+                "[support server](https://discord.gg/khGGxxj).\n[Vote for me](https://discordbots"
+                ".org/bot/459559711210078209/vote) and get special privileges, like shorter "
+                "command cooldowns.\nInvite me to other servers [here](https://discordapp.com/o"
+                "auth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591).")
 
         return msg
 
