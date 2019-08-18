@@ -45,10 +45,30 @@ class ChannelNotNSFW(commands.CommandError):
     pass
 
 
+class VoteRequired(commands.CommandError):
+    """Raised when a user attempts to use a vote-locked command without having voted"""
+
+
 def chunks(L, s):
     """Yield s-sized chunks from L"""
+
     for i in range(0, len(L), s):
         yield L[i:i + s]
+
+
+def has_voted():
+    """Checks if user has voted for the bot"""
+
+    async def predicate(ctx):
+        try:
+            # if ctx.bot.dbl.get_user_vote(ctx.author.id) or ctx.bot.is_owner(ctx.author):
+            #     return True
+            # else:
+            raise VoteRequired
+        except AttributeError: #* If it's on the experimental bot
+            return True
+
+    return commands.check(predicate)
 
 
 async def delete_message(ctx, time: float):
@@ -278,7 +298,7 @@ async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timest
 
         elif level == 2:
             description = (f"By [u/{data['author']}](http://www.reddit.com/user"
-                           f"/{data['author']}/)\n\n{data['selftext']}")
+                           f"/{data['author']})\n\n")
             if len(data["selftext"]) > 2048 - len(description):
                 data["selftext"] = ("*Sorry, but this content is too long for me to send in "
                                     "a single message. Click on the title above to go "
@@ -286,13 +306,13 @@ async def get_reddit(ctx, level: int, limit: int, img_only: bool, include_timest
             if include_timestamp:
                 embed = discord.Embed(
                     title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
-                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
+                    f"com/user/{data['author']})\n\n{data['selftext']}",
                     timestamp=datetime.datetime.utcfromtimestamp(data["created_utc"]),
                     url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
             else:
                 embed = discord.Embed(
                     title=data["title"], description=f"By [u/{data['author']}](http://www.reddit."
-                    f"com/user/{data['author']}/)\n\n{data['selftext']}",
+                    f"com/user/{data['author']})\n\n{data['selftext']}",
                     url="https://www.reddit.com" + data["permalink"], color=find_color(ctx))
 
             if data["url"].lower().endswith(("jpg", "jpeg", "png", "gif", "webp")):
