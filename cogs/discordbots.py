@@ -28,10 +28,16 @@ class DiscordBotsAPI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.bot.dbl = dbl.Client(self.bot, config.DBL_TOKEN, session=self.bot.session)
+        self.bot.dbl = dbl.Client(
+            self.bot, config.DBL_TOKEN, session=self.bot.session, autopost=False)
 
-    def cog_unload(self):
-        self.bot.loop.run_until_complete(self.bot.dbl.close())
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.bot.dbl.post_guild_count()
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        await self.bot.dbl.post_guild_count()
 
     @commands.Cog.listener()
     async def on_dbl_vote(self, data):
