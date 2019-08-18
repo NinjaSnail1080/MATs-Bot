@@ -47,7 +47,7 @@ class Info(commands.Cog):
 
         embed.set_thumbnail(url=app.icon_url)
         embed.add_field(name="Version", value=__version__)
-        embed.add_field(name="Author", value=app.owner.mention)
+        embed.add_field(name="Author", value=app.owner)
         embed.add_field(name="Server Count", value=len(self.bot.guilds))
         embed.add_field(
             name="Language",
