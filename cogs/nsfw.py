@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, get_reddit, send_nekobot_image, ChannelNotNSFW
+from utils import find_color, delete_message, get_reddit, send_nekobot_image, has_voted, ChannelNotNSFW
 
 from discord.ext import commands
 import discord
@@ -165,6 +165,7 @@ class NSFW(commands.Cog):
                                 "cosplaygirls", "cosplayonoff", "FictionalBabes", "NSFWCostumes")
 
     @commands.command()
+    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
     async def cumsluts(self, ctx):
         """Sends some pics of cumsluts"""
@@ -310,6 +311,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 50, True, False, "a post", "OldSchoolCoolNSFW")
 
     @commands.command(aliases=["porngif"])
+    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
     async def pgif(self, ctx):
         """Posts a porn gif"""
