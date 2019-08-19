@@ -151,7 +151,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
         await self.bot.change_presence(
             status=discord.Status.online, activity=discord.Game(random.choice(self.bot.games)))
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=30)
     async def update_db_msg_cmd_count(self):
         """Update the db with message and command counts"""
 
@@ -162,14 +162,14 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                     commands_used = $2::JSON
             ;""", self.bot.botdata["messages_read"], self.bot.botdata["commands_used"])
 
-            for data in self.bot.guilddata.values():
+            for data in self.bot.guilddata.copy().values():
                 await conn.execute("""
                     UPDATE guilddata
                     SET commands_used = $1::JSON
                     WHERE id = {}
                 ;""".format(data["id"]), data["commands_used"])
 
-            for data in self.bot.userdata.values():
+            for data in self.bot.userdata.copy().values():
                 await conn.execute("""
                     UPDATE userdata
                     SET commands_used = $1::JSON
