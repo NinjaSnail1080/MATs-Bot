@@ -1272,13 +1272,21 @@ class Utility(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True,
+                    brief="You formatted the command incorrectly. You're supposed to include a "
+                          "location, like this: `<prefix> weather <name of location>`\n\nI "
+                          "default to showing the data in SI units, like Celsius, kilometers, "
+                          "etc. To see it in U.S. Imperial units, add `-us` before the location, "
+                          "like this: `weather -us new york city, ny`\n\nTo change YOUR default "
+                          "units, do `<prefix> weather setmyunits <\"us\" OR \"si\">`. If you "
+                          "put `us`, I'll always show you U.S. Imperial units. If you put `si`, "
+                          "I'll always show you SI units (this is the default)")
     @commands.cooldown(1, 18, commands.BucketType.user)
     async def weather(self, ctx, *, location):
         """Get weather info for a location.
         Format like this: `<prefix> weather <name of location>`
         I default to showing the data in SI units, like Celsius, kilometers, etc. To see it in U.S. Imperial units, add `-us` before the location, like this: `weather -us new york city, ny`
-        To change your default units, do `<prefix> weather setmyunits <\"us\" OR \"si\">`. If you put `us`, I'll always show you U.S. Imperial units. If you put `si`, I'll always show you SI units (this is the default)
+        To change YOUR default units, do `<prefix> weather setmyunits <\"us\" OR \"si\">`. If you put `us`, I'll always show you U.S. Imperial units. If you put `si`, I'll always show you SI units (this is the default)
         """
         if location.lower().startswith("-us ") or self.bot.userdata[ctx.author.id]["us_units"]:
             units = "us"
