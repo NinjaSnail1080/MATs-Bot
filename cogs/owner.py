@@ -123,11 +123,11 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
                 for extension in self.bot.extensions.keys():
                     self.bot.reload_extension(extension)
                 await ctx.send(f"Reloaded all cogs", delete_after=5.0)
-                return await delete_message(ctx, 5.0)
+                return await delete_message(ctx, 5)
             else:
                 self.bot.reload_extension("cogs." + cog.lower())
                 await ctx.send(f"Reloaded `{cog.capitalize()}`", delete_after=5.0)
-                return await delete_message(ctx, 5.0)
+                return await delete_message(ctx, 5)
         except:
             await ctx.send("Invalid cog name", delete_after=5.0)
             return await delete_message(ctx, 5)
