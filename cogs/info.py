@@ -400,7 +400,7 @@ class Info(commands.Cog):
                 embed.add_field(name="Webhooks", value=len(await s.webhooks()))
             else:
                 embed.add_field(name="Webhooks", value="None")
-        except discord.Forbidden:
+        except:
             embed.add_field(name="Webhooks", value="Unknown")
         embed.add_field(name="File Size Upload Limit", value=f"{s.filesize_limit // 1000000} MB")
         embed.add_field(name="Bitrate Limit", value=f"{int(s.bitrate_limit // 1000)} kbps")
@@ -448,12 +448,12 @@ class Info(commands.Cog):
             name="Server Owner", value=s.owner.mention + " (User ID: " + str(s.owner_id) + ")",
             inline=False)
         embed.add_field(name="Total Messages I've Read",
-                        value=f"{self.bot.messages_read[str(ctx.guild.id)]:,}",
+                        value=f"{self.bot.messages_read[str(s.id)]:,}",
                         inline=False)
-        if self.bot.guilddata[ctx.guild.id]["commands_used"]:
+        if self.bot.guilddata[s.id]["commands_used"]:
             cmds_used = collections.Counter(
-                self.bot.guilddata[ctx.guild.id]["commands_used"]).most_common(11)[1:]
-            total = self.bot.guilddata[ctx.guild.id]["commands_used"]["TOTAL"]
+                self.bot.guilddata[s.id]["commands_used"]).most_common(11)[1:]
+            total = self.bot.guilddata[s.id]["commands_used"]["TOTAL"]
             embed.add_field(
                 name="Most Popular Commands",
                 value=f"__**Total**:__ {total:,} uses\n" + "\n".join(
