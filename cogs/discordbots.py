@@ -28,8 +28,10 @@ class DiscordBotsAPI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.bot.dbl = dbl.Client(
-            self.bot, config.DBL_TOKEN, session=self.bot.session, autopost=False)
+        self.bot.dbl = dbl.Client(self.bot,
+                                  config.DBL_TOKEN,
+                                  session=self.bot.session,
+                                  autopost=False)
 
     @commands.Cog.listener()
     async def on_ready(self):
