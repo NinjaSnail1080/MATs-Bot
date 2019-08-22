@@ -397,6 +397,7 @@ class Utility(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(aliases=["prefixes"], invoke_without_command=True)
+    @commands.guild_only()
     async def prefix(self, ctx):
         """Shows my prefixes for this server. You can also add or remove server-specific prefixes (this requires the Manage Server perm)"""
         if self.bot.guilddata[ctx.guild.id]["prefixes"]:
@@ -452,9 +453,9 @@ class Utility(commands.Cog):
                        f"was added. If you just did `{ctx.prefix}prefix add \"cmd\"`, without "
                        "the space, then `cmdhelp` would work")
 
-    @prefix.command(aliases=["delete"])
+    @prefix.command(name="remove", aliases=["delete"])
     @commands.has_permissions(manage_guild=True)
-    async def remove(self, ctx, pre: str):
+    async def remove_(self, ctx, pre: str):
 
         try:
             self.bot.guilddata[ctx.guild.id]["prefixes"].remove(pre)
