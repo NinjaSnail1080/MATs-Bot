@@ -508,7 +508,7 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(manage_guild=True)
-    async def dehoist(self, ctx, include_num: str=None):
+    async def dehoist(self, ctx, include_num: str=""):
         """**Must have the "Manage Server" permission**
         Dehoists members who have hoisted themselves (This means they've started their nickname with a special character like !, $, etc. for the sole purpose of appearing at the top of the members list).
         This command will change their nickname to "Hoisted"
