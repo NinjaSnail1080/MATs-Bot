@@ -34,7 +34,7 @@ class Help(commands.Cog):
         self.bot = bot
 
     def show_info(self, ctx, show_detail=False):
-        all_prefixes = self.bot.default_prefixes
+        all_prefixes = self.bot.default_prefixes.copy()
 
         default_prefixes = []
         for p in self.bot.default_prefixes:
