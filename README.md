@@ -14,7 +14,7 @@ The prefix can be changed for your server with the `prefix` command.
 ## Self-Hosting
 I would prefer if you didn't self-host my bot. Instead, you can just invite it to your own server [here](https://discordapp.com/oauth2/authorize?client_id=459559711210078209&scope=bot&permissions=2146958591). However, if you really want to self-host it, the installation steps are as follows:
 
-1. **Get Python 3.5.3 or higher**
+1. **Get Python 3.6 or higher**
 
 This is required to actually run the bot
 
