@@ -132,6 +132,34 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
             await ctx.send("Invalid cog name", delete_after=5.0)
             return await delete_message(ctx, 5)
 
+    @commands.command()
+    async def setstatus(self, ctx, status):
+        """Change the bot's presence"""
+
+        if status.startswith("on"):
+            await self.bot.change_presence(status=discord.Status.online)
+        elif status.startswith("id"):
+            await self.bot.change_presence(status=discord.Status.idle)
+        elif status.startswith("d"):
+            await self.bot.change_presence(status=discord.Status.dnd)
+        elif status.startswith("off") or status.startswith("in"):
+            await self.bot.change_presence(status=discord.Status.invisible)
+        else:
+            await ctx.send("Invalid status", delete_after=3.0)
+            return await delete_message(ctx, 3)
+
+        await ctx.send("Set new status", delete_after=3.0)
+        return await delete_message(ctx, 3)
+
+    @commands.command()
+    async def setversion(self, ctx):
+        """Update the bot's version"""
+
+        self.bot.update_version()
+        await ctx.send(f"{self.bot.user.mention} is on version {self.bot.__version__}",
+                       delete_after=5.0)
+        return await delete_message(ctx, 5)
+
 
 def setup(bot):
     bot.add_cog(Owner(bot))
