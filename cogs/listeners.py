@@ -104,7 +104,7 @@ class Listeners(commands.Cog):
                 embed.add_field(name="Webhooks", value=len(await guild.webhooks()))
             else:
                 embed.add_field(name="Webhooks", value="None")
-        except discord.Forbidden:
+        except:
             embed.add_field(name="Webhooks", value="Unknown")
         if guild.premium_tier:
             embed.add_field(name="Nitro Server Boost Status", value=f"Level {guild.premium_tier}")
