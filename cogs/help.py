@@ -138,8 +138,8 @@ class Help(commands.Cog):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Fun Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
-                    f"({cog_cmds['Fun']} commands)\n\n" + self.show_info(ctx),
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['Fun']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
@@ -172,7 +172,7 @@ class Help(commands.Cog):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Image Manipulation Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
                     f"({cog_cmds['Image']} commands)\n\n" + self.show_info(ctx) + "\n\n**For all "
                     "of these commands you need to either attach an image, insert an image url, "
                     "or @mention another user after the command to use their avatar. If you "
@@ -209,8 +209,8 @@ class Help(commands.Cog):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Information Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
-                    f"({cog_cmds['Info']} commands)\n\n" + self.show_info(ctx),
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['Info']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
@@ -227,14 +227,14 @@ class Help(commands.Cog):
         elif cat.lower() == "mod" or cat.lower() == "moderation":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Moderation" and
                                not c.hidden and c.name not in disabled), key=lambda c: c.name)
-            cmds = list(chunks(cmds, 5))
+            cmds = list(chunks(cmds, 4))
 
             embeds = []
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Moderation Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
-                    f"({cog_cmds['Moderation']} commands)\n\n" + self.show_info(ctx),
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['Moderation']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
@@ -269,8 +269,8 @@ class Help(commands.Cog):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | Utility Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
-                    f"({cog_cmds['Utility']} commands)\n\n" + self.show_info(ctx),
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['Utility']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
@@ -302,8 +302,8 @@ class Help(commands.Cog):
             for i in cmds:
                 embed = discord.Embed(
                     title="Help | NSFW Commands",
-                    description=f"**Page {cmds.index(i) + 1}/{len(cmds)}** "
-                    f"({cog_cmds['NSFW']} commands)\n\n" + self.show_info(ctx),
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['NSFW']} commands)\n\n" + self.show_info(ctx),
                     color=find_color(ctx))
                 embed.set_author(name="MAT's Bot")
                 if len(cmds) > 1:
