@@ -32,8 +32,6 @@ import uuid
 
 import config
 
-__version__ = open("VERSION.txt").readline()
-
 
 class CommandDisabled(commands.CommandError):
     """Raised when the user attempts to use a command that has been disabled by a server admin via the "disable" command"""
