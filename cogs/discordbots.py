@@ -31,18 +31,10 @@ class DiscordBotsAPI(commands.Cog):
         self.bot.dbl = dbl.Client(self.bot,
                                   config.DBL_TOKEN,
                                   session=self.bot.session,
-                                  autopost=False)
+                                  autopost=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await self.bot.dbl.post_guild_count()
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        await self.bot.dbl.post_guild_count()
-
-    @commands.Cog.listener()
-    async def on_guild_remove(self, guild):
         await self.bot.dbl.post_guild_count()
 
     @commands.Cog.listener()
