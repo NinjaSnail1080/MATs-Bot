@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, __version__
+from utils import find_color, delete_message
 
 from discord.ext import commands
 import discord
@@ -46,7 +46,7 @@ class Info(commands.Cog):
             f"\n\n**User/Client ID**: {app.id}", color=find_color(ctx))
 
         embed.set_thumbnail(url=app.icon_url)
-        embed.add_field(name="Version", value=__version__)
+        embed.add_field(name="Version", value=self.bot.__version__)
         embed.add_field(name="Author", value=app.owner)
         embed.add_field(name="Server Count", value=len(self.bot.guilds))
         embed.add_field(
