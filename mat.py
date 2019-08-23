@@ -75,11 +75,13 @@ class MAT(commands.Bot):
                          help_command=None,
                          shard_count=1,
                          shard_id=0,
-                         status=discord.Status.dnd,
+                         status=discord.Status.invisible,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
 
         self.process = psutil.Process((os.getpid()))
+
+        self.update_version()
 
         self.ready_for_commands = False
 
@@ -107,6 +109,9 @@ class MAT(commands.Bot):
             return True
 
         self.add_check(check_disabled)
+
+    def update_version(self):
+        self.__version__ = open("VERSION.txt").readline()
 
     async def on_connect(self):
         self.owner = (await self.application_info()).owner
