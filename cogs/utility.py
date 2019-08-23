@@ -28,6 +28,7 @@ import pytimeparse
 import googletrans
 import dateutil.tz
 import requests
+import youtube_dl
 
 import random
 import string
@@ -98,10 +99,11 @@ class Utility(commands.Cog):
                 formatted_start = datetime.datetime.fromtimestamp(r["started_at"]).strftime(
                     "%B %-d, %Y at %X UTC")
                 embed = discord.Embed(
-                    title="Reminder", description=f"{author.mention}, on __{formatted_start}__, "
-                    f"you used the `remindme` command in [this message]({msg.jump_url}) so that "
-                    "I could remind you of something important later. The time has come, so here "
-                    f"it is:```{r['remind_of']}```",
+                    title="\U0001f514 Reminder \U0001f514",
+                    description=f"{author.mention}, on __{formatted_start}__, you used the "
+                                f"`remindme` command in [this message]({msg.jump_url}) so that I "
+                                "could remind you of something important later. The time has "
+                                f"come, so here it is:```{r['remind_of']}```",
                     timestamp=datetime.datetime.utcnow(), color=discord.Color.blurple())
                 await author.send(embed=embed)
                 await remove_reminder(r)
@@ -1442,6 +1444,62 @@ class Utility(commands.Cog):
                                       "Units (SI units) when you use the `weather` command")
         else:
             raise commands.BadArgument
+
+    @commands.command(brief="You need to include some search terms so I can get videos")
+    async def ytsearch(self, ctx, *, keywords):
+        """Search YouTube for videos.
+        Format like this: `<prefix> ytsearch <search terms>`
+        """
+        temp = await ctx.send("Please wait...")
+        with ctx.channel.typing():
+            data = await self.bot.loop.run_in_executor(None, functools.partial(
+                self.bot.ytdl.extract_info,
+                url="https://www.youtube.com/results?search_query="
+                    f"{keywords.replace(' ', '+')}&page=1",
+                download=False))
+
+            embeds = []
+            for v in data["entries"]:
+                if len(v["description"]) > 500:
+                    description = v["description"][:500] + "..."
+                else:
+                    description = v["description"]
+
+                for key, value in v.items():
+                    if value is None:
+                        v[key] = 0
+
+                description = (f"__**Page {data['entries'].index(v) + 1}/{len(data['entries'])}"
+                               "**__\n\n") + description
+                uploaded = datetime.datetime.strptime(v['upload_date'], "%Y%m%d")
+
+                embed = discord.Embed(title=v["title"], description=description,
+                                      url=v['webpage_url'], color=find_color(ctx))
+                embed.add_field(
+                    name="Uploaded by", value=f"[{v['uploader']}]({v['channel_url']})")
+                embed.add_field(name="Published on", value=uploaded.strftime("%a, %b %-d, %Y"))
+                embed.add_field(name="Views", value=f"{v['view_count']:,}")
+                if v['duration'] // 3600 == 0:
+                    embed.add_field(
+                        name="Duration",
+                        value=f"{v['duration'] // 60}:"
+                              f"{v['duration'] - ((v['duration'] // 60) * 60):02}")
+                else:
+                    embed.add_field(
+                        name="Duration",
+                        value=f"{v['duration'] // 3600}:"
+                              f"{((v['duration'] - ((v['duration'] // 3600) * 3600)) // 60):02}:"
+                              f"{v['duration'] - ((v['duration'] // 60) * 60):02}")
+                embed.add_field(name="Likes", value=f"{v['like_count']:,}")
+                embed.add_field(name="Dislikes", value=f"{v['dislike_count']:,}")
+                embed.set_author(name=f"YouTube Video Search Results For: {keywords}")
+                embed.set_image(url=v["thumbnail"])
+                embed.set_footer(text="This message will be automatically deleted if left idle "
+                                      "for longer than 5 minutes")
+                embeds.append(embed)
+
+        await temp.delete()
+        return await send_advanced_paginator(ctx, embeds, 5)
 
 
 def setup(bot):
