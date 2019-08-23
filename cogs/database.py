@@ -85,6 +85,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                     disabled TEXT[] NOT NULL DEFAULT '{}',
                     custom_roles BIGINT[] NOT NULL DEFAULT '{}',
                     mute_role BIGINT,
+                    autorole BIGINT,
                     starboard JSON,
                     welcome JSON,
                     goodbye JSON,
@@ -148,8 +149,6 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
         self.bot.commands_used = collections.Counter(self.bot.botdata["commands_used"])
         self.bot.messages_read = collections.Counter(self.bot.botdata["messages_read"])
         self.bot.ready_for_commands = True
-        await self.bot.change_presence(
-            status=discord.Status.online, activity=discord.Game(random.choice(self.bot.games)))
 
     @tasks.loop(minutes=30)
     async def update_db_msg_cmd_count(self):
