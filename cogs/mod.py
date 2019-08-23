@@ -125,6 +125,8 @@ class Moderation(commands.Cog):
                 self.bot.guilddata[payload.guild_id]["starboard"])
 
     async def db_set_null(self, guild_id, to_set):
+        """Set an entry in the cache to None and the database to NULL"""
+
         self.bot.guilddata[guild_id][to_set] = None
         async with self.bot.pool.acquire() as conn:
             await conn.execute("""
@@ -155,11 +157,15 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
-
-        #* Checks to see if the role deleted was a guild's mute role or one of its custom roles
+        #* Checks to see if the role deleted was a guild's mute role, autorole or one
+        #* of its custom roles
         if role.id == self.bot.guilddata[role.guild.id]["mute_role"]:
             self.bot.guilddata[role.guild.id]["mute_role"] = None
             await self.db_set_null(role.guild.id, "mute_role")
+
+        if role.id == self.bot.guilddata[role.guild.id]["autorole"]:
+            self.bot.guilddata[role.guild.id]["autorole"] = None
+            await self.db_set_null(role.guild.id, "autorole")
 
         if role.id in self.bot.guilddata[role.guild.id]["custom_roles"]:
             self.bot.guilddata[role.guild.id]["custom_roles"].remove(role.id)
@@ -173,6 +179,14 @@ class Moderation(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         #TODO: Eventually this will also contain the antiraid features
+
+        if self.bot.guilddata[member.guild.id]["autorole"] is not None:
+            try:
+                role = member.guild.get_role(self.bot.guilddata[member.guild.id]["autorole"])
+                await member.add_roles(role, reason=f"Autorole")
+            except:
+                pass
+
         welcome = self.bot.guilddata[member.guild.id]["welcome"]
         if welcome is not None:
             channel = self.bot.get_channel(welcome["channel"])
@@ -294,9 +308,9 @@ class Moderation(commands.Cog):
             await ctx.send("You didn't format the command correctly. It's supposed to look like "
                            f"this: `{ctx.prefix}addrole (OPTIONAL)<@mention member> <role to "
                            "add>\n\nIf you don't mention a member, I'll add the role to you. "
-                           "However, you must have the **Manage Roles** to do this UNLESS the "
-                           f"role is a custom role (`{ctx.prefix}customroles` for more info).\n"
-                           "Also note that role names are case-sensitive",
+                           "However, you must have the **Manage Roles** perm to do this UNLESS "
+                           f"the role is a custom role (`{ctx.prefix}customroles` for more info)."
+                           "\nAlso note that role names are case-sensitive",
                            delete_after=30.0)
             return await delete_message(ctx, 30)
 
@@ -1635,6 +1649,30 @@ class Moderation(commands.Cog):
         await send_log(ctx, embed)
 
     @commands.command()
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
+    async def rmautorole(self, ctx):
+        """**Must have the "Manage Roles" permission**
+        Removes a previously set autorole
+        """
+        if self.bot.guilddata[ctx.guild.id]["autorole"] is None:
+            await ctx.send("This server doesn't have an autorole set. Use the"
+                           "`setautorole` command to make one", delete_after=7.0)
+            return await delete_message(ctx, 7)
+
+        role = ctx.guild.get_role(self.bot.guilddata[ctx.guild.id]["autorole"])
+        await self.db_set_null(ctx.guild.id, "autorole")
+
+        embed = discord.Embed(description=f"{role.mention} will no longer be automatically "
+                                          "assigned to new members when they join this server",
+                              color=find_color(ctx))
+        embed.set_author(name=ctx.author.name + " REMOVED the autorole for this server",
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
+
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def rmgoodbye(self, ctx):
         """**Must have Administrator permissions**
@@ -1759,6 +1797,39 @@ class Moderation(commands.Cog):
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
 
+    @commands.command(
+        brief="Role not found. Try again (note that the role name is case-sensitive)")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
+    async def setautorole(self, ctx, *, role: discord.Role = None):
+        """**Must have the "Manage Roles" permission**
+        Set an autorole for this server. An autorole is a role that'll be automatically assigned to new members when they join this server.
+        Format like this: `<prefix> setautorole <role>`
+        Note: The role name is case-sensitive
+        """
+        if role is None:
+            await ctx.send("You didn't format the command correctly. It's supposed to look like "
+                           "this: `<prefix> setautorole <name of role>`\nNote that the role name "
+                           "is case-sensitive", delete_after=20.0)
+            return await delete_message(ctx, 20)
+
+        self.bot.guilddata[ctx.guild.id]["autorole"] = role.id
+        async with self.bot.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE guilddata
+                SET autorole = $1::BIGINT
+                WHERE id = {}
+            ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["autorole"])
+
+        embed = discord.Embed(description=f"{role.mention} will now be automatically assigned to "
+                                          "any new members when they join this server",
+                              color=find_color(ctx))
+        embed.set_author(name=ctx.author.name + " set an autorole for this server",
+                         icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
+        await send_log(ctx, embed)
+
     @commands.command(brief="Invalid formatting. Format like this: `<prefix> setlogs <mention "
                       "channel or channel name>`.\nTo turn off the logs channel, use "
                       "the `nologs` command")
@@ -1820,7 +1891,7 @@ class Moderation(commands.Cog):
         """**Must have Administrator permissions**
         Set up a starboard system where people can "star" a funny or otherwise significant message to have it saved in a channel.
         Format like this: `<prefix> setstarboard <#mention channel> <reaction threshold (defaults to 4)>`
-        Say the reaction threshold is 4; whenever a message gets at least 4 total "star reactions", a copy of the message will be sent to the starboard channel where it can be saved.
+        Say the reaction threshold is 3; whenever a message gets at least 3 total "star reactions", a copy of the message will be sent to the starboard channel where it can be saved.
         The "Star Reactions": \U00002b50, \U0001f31f, \U0001f320, or \U00002734
         """
         if num_reactions < 1:
