@@ -27,4 +27,5 @@ speedtest-cli
 urllib3
 validators
 wordcloud
+youtube_dl
 zalgo-text
