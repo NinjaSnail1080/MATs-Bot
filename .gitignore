@@ -161,6 +161,7 @@ typing.py
 /websockets
 /wordcloud
 /yarl
+/youtube_dl
 /zalgo_text
 
 # Ignore config file
