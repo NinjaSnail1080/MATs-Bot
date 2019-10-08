@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from discord.ext import commands
 import discord
 
@@ -65,6 +66,12 @@ class Listeners(commands.Cog):
             ;""".format(guild.id))
 
             await conn.execute("""
+                UPDATE guilddata
+                SET musicsettings = $1::JSON
+                WHERE musicsettings IS NULL
+            ;""", self.bot.default_musicsettings)
+
+            await conn.execute("""
                 INSERT INTO userdata
                 (id)
                 VALUES {}
@@ -77,7 +84,8 @@ class Listeners(commands.Cog):
 
         self.bot.guilddata.update({new_guild_query[0].get("id"): dict(new_guild_query[0])})
         for i in user_query:
-            self.bot.userdata.update({i.get("id"): dict(i)})
+            if i.get("id") not in self.bot.userdata:
+                self.bot.userdata.update({i.get("id"): dict(i)})
 
         bots = [m for m in guild.members if m.bot]
         try:
@@ -158,7 +166,7 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if member.bot:
+        if member.bot or member.id in self.bot.userdata:
             return
 
         async with self.bot.pool.acquire() as conn:
