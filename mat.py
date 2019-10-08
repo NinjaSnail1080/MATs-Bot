@@ -198,7 +198,11 @@ class MAT(commands.Bot):
     @tasks.loop()
     async def switch_games(self):
         while True:
-            await self.change_presence(activity=discord.Game(random.choice(self.games)))
+            try:
+                await self.change_presence(activity=discord.Game(
+                    random.choice(self.games).format(len(self.guilds))))
+            except:
+                await self.change_presence(activity=discord.Game(random.choice(self.games)))
             await asyncio.sleep(random.randint(12, 20))
 
     @switch_games.before_loop
