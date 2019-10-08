@@ -543,7 +543,7 @@ class Info(commands.Cog):
                 f"**{cmds_used.index(c) + 1}**. `{c[0]}` ({c[1]} total uses)" for c in cmds_used),
             inline=False)
         embed.set_author(name="MAT's Bot: Statistics", icon_url=self.bot.user.avatar_url)
-        embed.set_footer(text="These statistics are accurate as of: ")
+        embed.set_footer(text="These statistics are accurate as of:")
 
         await ctx.send(embed=embed)
 
