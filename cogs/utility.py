@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, send_log, chunks, send_advanced_paginator, send_basic_paginator
+from utils import find_color, delete_message, send_log, chunks, parse_duration, send_advanced_paginator, send_basic_paginator, hastebin
 
 from discord.ext import commands, tasks
 from google_images_download import google_images_download
@@ -89,6 +89,9 @@ class Utility(commands.Cog):
                 try:
                     author = self.bot.get_user(r["author"])
                     channel = self.bot.get_channel(r["channel"])
+                    # try:
+                    #     msg = [m for m in self.bot.cached_messages if m.id == r["msg"]]
+                    # except IndexError:
                     msg = await channel.fetch_message(r["msg"])
                 except:
                     #* If something went wrong (for example, the bot can't see the user anymore),
@@ -111,7 +114,7 @@ class Utility(commands.Cog):
     @check_reminders.before_loop
     async def before_check_reminders(self):
         await self.bot.wait_until_ready()
-        await asyncio.sleep(10) #* To ensure that the database is fully set up before it starts
+        await asyncio.sleep(30) #* To ensure that the database is fully set up before it starts
 
     @commands.command(aliases=["shorten"], brief="You need to include a link to shorten. Format "
                       "like this: `<prefix> bitly <URL to shorten>`\n\nAlternatively, you can "
@@ -436,7 +439,7 @@ class Utility(commands.Cog):
         embed = discord.Embed(description=f"```{pre}```This new custom prefix will only work on "
                                           f"this server\nExample usage: `{pre}help`",
                               color=find_color(ctx))
-        embed.set_author(name=f"{ctx.author.name} added a new server-specific command",
+        embed.set_author(name=f"{ctx.author.name} added a new server-specific prefix",
                          icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
@@ -478,7 +481,7 @@ class Utility(commands.Cog):
         embed = discord.Embed(
             description=f"```{pre}```This custom prefix will no longer work on this server",
             color=find_color(ctx))
-        embed.set_author(name=f"{ctx.author.name} REMOVED a server-specific command",
+        embed.set_author(name=f"{ctx.author.name} REMOVED a server-specific prefix",
                          icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
@@ -625,7 +628,7 @@ class Utility(commands.Cog):
     @commands.command(brief="You need to include a word so I can get ones that rhyme with it")
     @commands.cooldown(1, 12, commands.BucketType.user)
     async def rhymes(self, ctx, *, word):
-        """Get words that rhyme with another word"""
+        """Get words that rhyme with a given word"""
 
         await ctx.channel.trigger_typing()
         async with self.bot.session.get(f"https://wordsapiv1.p.mashape.com/words/{word}/rhymes",
@@ -673,6 +676,58 @@ class Utility(commands.Cog):
                 name=title.title(), value=f"`{'`, `'.join(sorted(words))}`", inline=False)
 
         await ctx.send(embed=embed)
+
+    @commands.command(brief="You need to include some search terms so I can get music")
+    async def soundcloud(self, ctx, *, keywords):
+        """Search SoundCloud for music.
+        Format like this: `<prefix> soundcloud <search terms>`
+        """
+        temp = await ctx.send("Please wait...")
+        with ctx.channel.typing():
+            data = await self.bot.loop.run_in_executor(None, functools.partial(
+                self.bot.ytdl.extract_info,
+                url=f"scsearch16:{keywords}",
+                download=False))
+
+            embeds = []
+            for v in data["entries"]:
+                try:
+                    if len(v["description"]) > 500:
+                        description = v["description"][:500] + "..."
+                    else:
+                        description = v["description"]
+                except:
+                    description = ""
+
+                for key, value in v.items():
+                    if value == "":
+                        v[key] = "None"
+                    if value is None:
+                        v[key] = 0
+
+                description = (f"__**Page {data['entries'].index(v) + 1}/{len(data['entries'])}"
+                               "**__\n\n") + description
+                uploaded = datetime.datetime.strptime(v["upload_date"], "%Y%m%d")
+
+                embed = discord.Embed(title=v["title"], description=description,
+                                      url=v["webpage_url"], color=find_color(ctx),
+                                      timestamp=datetime.datetime.utcnow())
+                embed.add_field(name="Uploaded by", value=f"{v['uploader']}")
+                embed.add_field(name="Published on", value=uploaded.strftime("%a, %b %-d, %Y"))
+                embed.add_field(name="Genre", value=f"{v['genre']}")
+                embed.add_field(name="Views", value=f"{v['view_count']:,}")
+                embed.add_field(name="Duration", value=parse_duration(v["duration"]))
+                embed.add_field(name="Likes", value=f"{v['like_count']:,}")
+                embed.add_field(name="Comments", value=f"{v['comment_count']:,}")
+                embed.add_field(name="Repost Count", value=f"{v['repost_count']:,}")
+                embed.set_author(name=f"SoundCloud Search Results For: {keywords}")
+                embed.set_image(url=v["thumbnail"])
+                embed.set_footer(text="This message will be automatically deleted if left idle "
+                                      "for longer than 5 minutes")
+                embeds.append(embed)
+
+        await temp.delete()
+        return await send_advanced_paginator(ctx, embeds, 5)
 
     @commands.command()
     async def support(self, ctx):
@@ -722,12 +777,13 @@ class Utility(commands.Cog):
             embed.add_field(name=f"{ctx.prefix}tag list (OPTIONAL)<member>", value="Lists all "
                             "tags owned by the specified member. If you don't include a server "
                             "member, I'll list all tags owned by you", inline=False)
-            embed.add_field(name=f"{ctx.prefix}tag purge <member or \"all\">", value="Deletes "
-                            "all tags owned by the specified member. You'll need the **Manage "
-                            "Messages** perm to purge tags owned by other people. If you don't "
-                            "mention a member and instead put the word `all`, I'll remove all "
-                            "the tags on this server (This action also requires the **Manage "
-                            "Messages** perm)", inline=False)
+            embed.add_field(name=f"{ctx.prefix}tag purge <member OR \"unowned\" OR \"all\">",
+                            value="Deletes all tags owned by the specified member. You'll need "
+                            "the **Manage Messages** perm to purge tags owned by other people. If "
+                            "you don't mention a member and instead put the word `unowned`, I'll "
+                            "remove all the tags owned by members who left the server. Or, if you "
+                            "put `all`, I'll remove every single tag on this server (These 2 "
+                            "actions also require the **Manage Messages** perm)", inline=False)
             embed.add_field(name=f"{ctx.prefix}tag remove <name>", value="Removes the tag with "
                             "the given name. You need the **Manage Messages** perm to delete "
                             "tags owned by other people", inline=False)
@@ -778,10 +834,13 @@ class Utility(commands.Cog):
             embed.set_author(name=f"{ctx.guild.name}: All Tags", icon_url=ctx.guild.icon_url)
             embed.set_footer(text=footer)
             for t in i:
+                if self.bot.get_user(tags[t]["owner"]):
+                    owner = self.bot.get_user(tags[t]["owner"]).mention
+                else:
+                    owner = "Unknown"
                 embed.add_field(
                     name=f"{sorted_tags.index(t) + 1}. {t}",
-                    value=f"**Owner**: {self.bot.get_user(tags[t]['owner']).mention}\n"
-                    f"**Uses**: {tags[t]['uses']}")
+                    value=f"**Owner**: {owner}\n**Uses**: {tags[t]['uses']}")
             embeds.append(embed)
 
         if len(embeds) == 1:
@@ -843,8 +902,12 @@ class Utility(commands.Cog):
         if ctx.author.id == owner_id:
             await ctx.send(f"Ok, {ctx.author.mention}'s `{name}` tag has been edited/updated")
         else:
-            await ctx.send(f"Ok, {self.bot.get_user(owner_id).mention}'s `{name}` tag has been "
-                           f"edited/updated by {ctx.author.mention}")
+            if self.bot.get_user(owner_id):
+                await ctx.send(f"Ok, {self.bot.get_user(owner_id).mention}'s `{name}` tag has "
+                               f"been edited/updated by {ctx.author.mention}")
+            else:
+                await ctx.send(
+                    f"Ok, the `{name}` tag has been edited/updated by {ctx.author.mention}")
 
     @tag.command(aliases=["about"], brief="You didn't format the command correctly. It's "
                  "supposed to look like this: `<prefix> tag info <name of tag>`")
@@ -862,11 +925,15 @@ class Utility(commands.Cog):
             title=f"Info on the \"{name}\" tag",
             timestamp=datetime.datetime.fromtimestamp(the_tag["created_at"]),
             color=find_color(ctx))
-        embed.set_author(name=self.bot.get_user(the_tag["owner"]),
-                         icon_url=self.bot.get_user(the_tag["owner"]).avatar_url)
         embed.set_footer(text="Tag created")
 
-        embed.add_field(name="Owner", value=self.bot.get_user(the_tag["owner"]).mention)
+        if self.bot.get_user(the_tag["owner"]):
+            embed.set_author(name=self.bot.get_user(the_tag["owner"]),
+                             icon_url=self.bot.get_user(the_tag["owner"]).avatar_url)
+
+            embed.add_field(name="Owner", value=self.bot.get_user(the_tag["owner"]).mention)
+        else:
+            embed.add_field(name="Owner", value="Unknown")
         embed.add_field(name="Uses", value=the_tag["uses"])
         embed.add_field(
             name="Rank",
@@ -927,9 +994,11 @@ class Utility(commands.Cog):
             return await send_advanced_paginator(ctx, embeds, 5)
 
     @tag.command(brief="You didn't format the command correctly. It's supposed to look like this:"
-                 " `<prefix> tag purge <member or \"all\">`\n\nIf you put a member, I'll remove "
-                 "all the tags owned by that person. If you put the word `all` instead, I'll "
-                 "remove all the tags on this server")
+                 " `<prefix> tag purge <member OR \"unowned\" OR \"all\">`\n\nIf you put a "
+                 "member, I'll remove all the tags owned by that person. If you put the word "
+                 "`unowned` instead, I'll remove all the tags that are owned by members who "
+                 "have left this server. Or, if you put the word `all`, I'll remove every single "
+                 "tag on this server")
     async def purge(self, ctx, member: typing.Union[discord.Member, str]):
         if isinstance(member, discord.Member):
             if ctx.author != member and not ctx.author.guild_permissions.manage_messages:
@@ -945,19 +1014,15 @@ class Utility(commands.Cog):
                     self.bot.guilddata[ctx.guild.id]["tags"].pop(name)
                     removed.append(name)
 
+            if not removed:
+                await ctx.send(f"**{member}** doesn't own any tags", delete_after=5.0)
+                return await delete_message(ctx, 5)
+
             try:
                 temp = await ctx.send("Please wait...")
                 with ctx.channel.typing():
-                    async with self.bot.session.post(
-                        "https://hastebin.com/documents",
-                        data="\n".join(removed).encode("utf-8")) as w:
-
-                        #* For whatever reason, "await w.json()" doesn't work, so I'm using this:
-                        post = json.loads(await w.read())
-                        # post = await w.json()
-                        link = f"https://hastebin.com/raw/{post['key']}"
+                    link = await hastebin(ctx, "\n".join(removed))
             except:
-                #* On the rare occasion that it fails to post to hastebin
                 link = None
 
             await temp.delete()
@@ -975,6 +1040,11 @@ class Utility(commands.Cog):
                                "so you do not have authorization to perform this command",
                                delete_after=10.0)
                 return await delete_message(ctx, 10)
+
+            if not self.bot.guilddata[ctx.guild.id]["tags"]:
+                await ctx.send(f"This server has no tags. Do `{ctx.prefix}tag` to see how to "
+                               "make one", delete_after=7.0)
+                return await delete_message(ctx, 7)
 
             confirm = await ctx.send("React with \U00002705 to confirm that you want to purge "
                                      f"all **{len(self.bot.guilddata[ctx.guild.id]['tags'])}** "
@@ -1012,6 +1082,37 @@ class Utility(commands.Cog):
             msg = (f"All **{len(self.bot.guilddata[ctx.guild.id]['tags'])}** tags on this server "
                    f"were just removed by {ctx.author.mention}")
             self.bot.guilddata[ctx.guild.id]["tags"].clear()
+
+        elif member == "unowned":
+            if not ctx.author.guild_permissions.manage_messages:
+                await ctx.send("You need the **Manage Messages** perm to purge unowned tags, "
+                               "so you do not have authorization to perform this command",
+                               delete_after=10.0)
+                return await delete_message(ctx, 10)
+
+            removed = []
+            for name, data, in self.bot.guilddata[ctx.guild.id]["tags"].copy().items():
+                if self.bot.get_user(data["owner"]) not in ctx.guild.members:
+                    self.bot.guilddata[ctx.guild.id]["tags"].pop(name)
+                    removed.append(name)
+
+            if not removed:
+                await ctx.send(f"This server has no unowned tags", delete_after=5.0)
+                return await delete_message(ctx, 5)
+
+            try:
+                temp = await ctx.send("Please wait...")
+                with ctx.channel.typing():
+                    link = await hastebin(ctx, "\n".join(removed))
+            except:
+                link = None
+
+            await temp.delete()
+            msg = (f"Ok, all **{len(removed)}** of the unowned tags on this server have been "
+                   f"removed by {ctx.author.mention}.")
+            if link is not None:
+                msg += f"\n\nSee {link} for a list of all the tags that were removed"
+
         else:
             raise commands.BadArgument
 
@@ -1042,8 +1143,11 @@ class Utility(commands.Cog):
         if ctx.author.id == owner_id:
             await ctx.send(f"Ok, {ctx.author.mention}'s `{name}` tag has been removed")
         else:
-            await ctx.send(f"Ok, {self.bot.get_user(owner_id).mention}'s `{name}` tag has been "
-                           f"removed by {ctx.author.mention}")
+            if self.bot.get_user(owner_id):
+                await ctx.send(f"Ok, {self.bot.get_user(owner_id).mention}'s `{name}` tag has "
+                               f"been removed by {ctx.author.mention}")
+            else:
+                await ctx.send(f"Ok, the `{name}` tag has been removed by {ctx.author.mention}")
 
     @tag.command(brief="You didn't format the command correctly. It's supposed to look like this:"
                  "`<prefix> tag remove <name of tag> <member>`\nThis will transfer ownership of "
@@ -1075,9 +1179,14 @@ class Utility(commands.Cog):
         self.bot.guilddata[ctx.guild.id]["tags"][name]["owner"] = new_owner.id
         await self.update_db_tags(ctx)
 
-        msg = (f"Ownership of the `{name}` tag has been transferred from {old_owner.mention} to "
-               f"{new_owner.mention}\n\n{new_owner.mention} now has the ability to edit this tag "
-               "in any way they so desire")
+        if old_owner:
+            msg = (f"Ownership of the `{name}` tag has been transferred from {old_owner.mention} "
+                   f"to {new_owner.mention}\n\n{new_owner.mention} now has the ability to edit "
+                   "this tag in any way they so desire")
+        else:
+            msg = (f"Ownership of the `{name}` tag has been transferred to {new_owner.mention}\n"
+                   f"\n{new_owner.mention} now has the ability to edit this tag in any way they "
+                   "so desire")
         if ctx.author != old_owner:
             msg += f"\n\nThis command was performed by {ctx.author.mention}"
 
@@ -1400,7 +1509,7 @@ class Utility(commands.Cog):
                     f"\n**Low**: {round(day['temperatureMin'])}° ({low_time.lower()})\n"
                     f"{day['summary']}\n{precip_emoji} {round(day['precipProbability'] * 100)}%")
                 embed.set_footer(text="This message will be automatically deleted if it's left "
-                                 "idle for longer than 5 minutes")
+                                      "idle for longer than 5 minutes")
                 embeds.append(embed)
 
         return await send_basic_paginator(ctx, embeds, 5, False)
@@ -1471,25 +1580,16 @@ class Utility(commands.Cog):
 
                 description = (f"__**Page {data['entries'].index(v) + 1}/{len(data['entries'])}"
                                "**__\n\n") + description
-                uploaded = datetime.datetime.strptime(v['upload_date'], "%Y%m%d")
+                uploaded = datetime.datetime.strptime(v["upload_date"], "%Y%m%d")
 
                 embed = discord.Embed(title=v["title"], description=description,
-                                      url=v['webpage_url'], color=find_color(ctx))
+                                      url=v["webpage_url"], color=find_color(ctx),
+                                      timestamp=datetime.datetime.utcnow())
                 embed.add_field(
                     name="Uploaded by", value=f"[{v['uploader']}]({v['channel_url']})")
                 embed.add_field(name="Published on", value=uploaded.strftime("%a, %b %-d, %Y"))
                 embed.add_field(name="Views", value=f"{v['view_count']:,}")
-                if v['duration'] // 3600 == 0:
-                    embed.add_field(
-                        name="Duration",
-                        value=f"{v['duration'] // 60}:"
-                              f"{v['duration'] - ((v['duration'] // 60) * 60):02}")
-                else:
-                    embed.add_field(
-                        name="Duration",
-                        value=f"{v['duration'] // 3600}:"
-                              f"{((v['duration'] - ((v['duration'] // 3600) * 3600)) // 60):02}:"
-                              f"{v['duration'] - ((v['duration'] // 60) * 60):02}")
+                embed.add_field(name="Duration", value=parse_duration(int(v["duration"])))
                 embed.add_field(name="Likes", value=f"{v['like_count']:,}")
                 embed.add_field(name="Dislikes", value=f"{v['dislike_count']:,}")
                 embed.set_author(name=f"YouTube Video Search Results For: {keywords}")
