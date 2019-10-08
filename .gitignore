@@ -132,6 +132,7 @@ decorator.py
 /idna
 idna_ssl.py
 /lxml
+/lyricsgenius
 /matplotlib
 /mpl_toolkits
 /multidict
