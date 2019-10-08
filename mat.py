@@ -16,8 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from discord.ext import commands
 from utils import CommandDisabled
+
+from discord.ext import commands
 import discord
 import psutil
 
@@ -75,7 +76,7 @@ class MAT(commands.Bot):
                          help_command=None,
                          shard_count=1,
                          shard_id=0,
-                         status=discord.Status.invisible,
+                         status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
                          fetch_offline_members=False)
 
@@ -97,7 +98,7 @@ class MAT(commands.Bot):
                       "with you", "dead", "with myself", "a prank on you", "with fire",
                       "hard-to-get", "you like a god damn fiddle", "on {} servers!"]
 
-        self.loop.create_task(self.switch_games())
+        self.switch_games.start()
 
         for extension in initial_extensions:
             self.load_extension(extension)
@@ -194,21 +195,22 @@ class MAT(commands.Bot):
                         WHERE id = {}
                     ;""".format(message.guild.id), self.guilddata[message.guild.id]["last_delete"])
 
+    @tasks.loop()
     async def switch_games(self):
-        await self.wait_until_ready()
         while True:
-            try:
-                await self.change_presence(
-                    activity=discord.Game(random.choice(self.games).format(len(self.guilds))))
-            except:
-                await self.change_presence(activity=discord.Game(random.choice(self.games)))
+            await self.change_presence(activity=discord.Game(random.choice(self.games)))
             await asyncio.sleep(random.randint(12, 20))
+
+    @switch_games.before_loop
+    async def before_switch_games(self):
+        await self.wait_until_ready()
 
     def run(self, token):
         try:
             self.loop.run_until_complete(self.start(token))
         except KeyboardInterrupt:
             print("\n\nClosing...\n")
+            self.switch_games.cancel()
 
             for extention in self.extensions.copy():
                 self.unload_extension(extention)
