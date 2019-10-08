@@ -1,6 +1,6 @@
 """
     MAT's Bot: An open-source, general purpose Discord bot written in Python.
-    Copyright (C) 2018  NinjaSnail1080  (Discord User: @NinjaSnail1080#8581)
+    Copyright (C) 2018  NinjaSnail1080  (Discord Username: @NinjaSnail1080#8581)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ for f in os.listdir("cogs"):
     if f.endswith(".py"):
         f = f[:-3]
         initial_extensions.append("cogs." + f)
-# initial_extensions.remove("cogs.discordbots")
+# initial_extensions.remove("cogs.discordbots") #* Uncomment this line to not use the top.gg api
 # initial_extensions.remove("cogs.error_handlers")  #* For debugging purposes
 
 #* Set up logger

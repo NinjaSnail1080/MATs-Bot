@@ -1,4 +1,4 @@
-[![Discord Bots](https://discordbots.org/api/widget/459559711210078209.svg?usernamecolor=FFFFFF&topcolor=000000)](https://discordbots.org/bot/459559711210078209)
+[![Discord Bots](https://top.gg/api/widget/459559711210078209.svg?usernamecolor=FFFFFF&topcolor=000000)](https://top.gg/bot/459559711210078209)
 
 # MAT's Bot
 ***A multi-purpose Discord Bot created by NinjaSnail1080#8581***

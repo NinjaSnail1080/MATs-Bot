@@ -1,6 +1,6 @@
 """
     MAT's Bot: An open-source, general purpose Discord bot written in Python.
-    Copyright (C) 2018  NinjaSnail1080  (Discord User: @NinjaSnail1080#8581)
+    Copyright (C) 2018  NinjaSnail1080  (Discord Username: @NinjaSnail1080#8581)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ class Error_Handlers(commands.Cog):
                 title="\U0001f44d Remember to vote!",
                 description="Voting is required to use this command. On top of that, voting will "
                             "also allow you to have shorter command cooldowns. You can vote by "
-                            "[clicking here](https://discordbots.org/bot/459559711210078209/vote)",
-                url="https://discordbots.org/bot/459559711210078209/vote",
+                            "[clicking here](https://top.gg/bot/459559711210078209/vote)",
+                url="https://top.gg/bot/459559711210078209/vote",
                 color=find_color(ctx))
             await ctx.send(embed=embed, delete_after=45.0)
             return await delete_message(ctx, 45)
@@ -85,7 +85,7 @@ class Error_Handlers(commands.Cog):
                 description=f"Try again in **{round(retry_after, 2)}** seconds.\n\n**Default "
                             f"Cooldown**: {c.rate} use{'' if c.rate == 1 else 's'} every "
                             f"{int(c.per)} second{'' if c.per == 1 else 's'}\n**[Voter](https://"
-                            f"discordbots.org/bot/459559711210078209/vote) Cooldown**: {c.rate} "
+                            f"top.gg/bot/459559711210078209/vote) Cooldown**: {c.rate} "
                             f"use{'' if c.rate == 1 else 's'} every {int(c.per * (2/3))} "
                             f"second{'' if c.per == 1 else 's'}",
                 color=find_color(ctx))
