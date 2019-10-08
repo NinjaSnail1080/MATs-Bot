@@ -16,11 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import delete_message, find_color, CommandDisabled, ChannelNotNSFW, VoteRequired
+from utils import delete_message, find_color, CommandDisabled, ChannelNotNSFW, VoteRequired, MusicCheckFailure
 
 from discord.ext import commands
 import discord
-import asyncpg
 
 import asyncio
 import random
@@ -61,7 +60,7 @@ class Error_Handlers(commands.Cog):
                 title="\U0001f44d Remember to vote!",
                 description="Voting is required to use this command. On top of that, voting will "
                             "also allow you to have shorter command cooldowns. You can vote by "
-                            "clicking the link above",
+                            "[clicking here](https://discordbots.org/bot/459559711210078209/vote)",
                 url="https://discordbots.org/bot/459559711210078209/vote",
                 color=find_color(ctx))
             await ctx.send(embed=embed, delete_after=45.0)
@@ -155,6 +154,10 @@ class Error_Handlers(commands.Cog):
         elif isinstance(exc, commands.NoPrivateMessage):
             return await ctx.send(
                 "This command cannot be used in private messages. You must be in a server")
+
+
+        elif isinstance(exc, MusicCheckFailure):
+            return
 
 
         elif isinstance(exc, discord.Forbidden):
