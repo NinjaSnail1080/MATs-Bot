@@ -236,6 +236,7 @@ class NSFW(commands.Cog):
             "gonewild", "gonewildcurvy", "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
+    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
     async def hentai(self, ctx, arg: str=None):
         """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post. Add nothing extra for a regular hentai pic"""
