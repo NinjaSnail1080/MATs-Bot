@@ -20,6 +20,7 @@ from discord.ext import commands
 from bs4 import BeautifulSoup
 from PIL import Image
 import discord
+import rapidjson as json
 
 import datetime
 import asyncio
@@ -47,6 +48,10 @@ class VoteRequired(commands.CommandError):
     """Raised when a user attempts to use a vote-locked command without having voted"""
 
 
+class MusicCheckFailure(commands.CommandError):
+    """Raised when one of the checks for the music commands fail"""
+
+
 def chunks(L, s):
     """Yield s-sized chunks from L"""
 
@@ -68,6 +73,18 @@ def has_voted():
             return True
 
     return commands.check(predicate)
+
+
+def parse_duration(duration):
+    """Turn a duration in seconds into a human-readable format"""
+
+    duration = round(duration)
+    if duration // 3600 == 0:
+        return f"{duration // 60}:{duration - ((duration // 60) * 60):02}"
+    else:
+        return (f"{duration // 3600}:"
+                f"{((duration - ((duration // 3600) * 3600)) // 60):02}:"
+                f"{duration - ((duration // 60) * 60):02}")
 
 
 async def delete_message(ctx, time: float):
@@ -358,6 +375,18 @@ def find_color(ctx):
     except AttributeError:  #* If it's a DM channel
         color = discord.Color.blurple()
     return color
+
+
+async def hastebin(ctx, content: str):
+    """Post content to hastebin.com"""
+
+    async with ctx.bot.session.post("https://hastebin.com/documents",
+                                    data=content.encode("utf-8")) as w:
+        #* For whatever reason, "await w.json()" doesn't work, so I'm using this:
+        post = json.loads(await w.read())
+        # post = await w.json()
+        link = f"https://hastebin.com/raw/{post['key']}"
+    return link
 
 
 async def send_nekobot_image(ctx, resp):
