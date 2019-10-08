@@ -37,22 +37,29 @@ You will need version 9.5 or higher
 Create a file in the root directory called `config.py` and add the variables required to run the bot. There's a list of them in `config_info.txt`.
 
 ## Features
-MAT's Bot has over 180 commands, including but not limited to:
+MAT's Bot has over 200 commands, with features including but not limited to:
 
 - Moderation
 	- Kick, ban, softban, mute (channel-specific or server-wide)
 	- Purge messages
 	- Self-assignable roles
-	- Create giveaways
+	- Create giveaways/raffles
 	- Starboard system
 	- Disable and enable commands
 	- Custom welcome and goodbye messages
 - MEMES!
+- Music
+	- Play from YouTube, SoundCloud, Spotify, etc. in a voice channel
+    - Supports search, URLs, and playlists
+    - Anyone can add songs to the music queue
+    - Pause, resume, skip, seek, fast-forward, rewind, loop, shuffle, etc.
+    - Works with YouTube and Twitch livestreams too
+    - Get lyrics to a song
 - Information
 	- Info on the server, a member, channel, role, etc.
 	- Bot stats
 - Image Manipulation
-	- Convert images into ascii art (one of my favorites)
+	- Convert images into ascii art (one of my favorite features)
 	- Read text from an image
 	- Create memes
 	- Deepfry, magikify, and blurpify pictures
@@ -64,15 +71,15 @@ MAT's Bot has over 180 commands, including but not limited to:
 	- Dictionary and thesaurus commands
 	- Search Google images
 	- Set reminders
-- Get C&H and xkcd comics
+- Get Cyanide & Happiness and xkcd comics
+- Create straw polls
+- Get showerthoughts and jokes
 - Create wordclouds for text channels
-- Start an Akinator game
 - ...and more!
 
 Invite MAT's Bot to your server and type `!mat help` for more info and a full list of commands. Report any problems or suggestions you may have at my [support server](https://discord.gg/khGGxxj).
 
 ### Coming Soon
- - Music commands
  - Economy
  - Auto moderation
  - Leveling
