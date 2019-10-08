@@ -121,7 +121,10 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
         try:
             if cog is None:
                 for extension in self.bot.extensions.keys():
-                    self.bot.reload_extension(extension)
+                    try:
+                        self.bot.reload_extension(extension)
+                    except:
+                        pass
                 await ctx.send(f"Reloaded all cogs", delete_after=5.0)
                 return await delete_message(ctx, 5)
             else:
@@ -156,7 +159,7 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
         """Update the bot's version"""
 
         self.bot.update_version()
-        await ctx.send(f"{self.bot.user.mention} is on version {self.bot.__version__}",
+        await ctx.send(f"{self.bot.user.mention} is on version `{self.bot.__version__}`",
                        delete_after=5.0)
         return await delete_message(ctx, 5)
 
