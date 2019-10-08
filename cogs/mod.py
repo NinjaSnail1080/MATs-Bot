@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from utils import find_color, delete_message, send_log
+from utils import find_color, delete_message, send_log, hastebin
 
 from discord.ext import commands, tasks
 import discord
@@ -281,7 +281,7 @@ class Moderation(commands.Cog):
     @check_giveaways.before_loop
     async def before_check_giveaways(self):
         await self.bot.wait_until_ready()
-        await asyncio.sleep(10) #* To ensure that the database is fully set up before it starts
+        await asyncio.sleep(30) #* To ensure that the database is fully set up before it starts
 
     def check_reaction(self, message, author):
         """For the `purge` and `prune` commands"""
@@ -560,16 +560,9 @@ class Moderation(commands.Cog):
             if members_failed:
                 content += (f"\n\n\n===================\nMembers Failed ({len(members_failed)}):"
                             "\n===================\n\n" + "\n".join(members_failed))
-
             try:
-                async with self.bot.session.post("https://hastebin.com/documents",
-                                                 data=content.encode("utf-8")) as w:
-                    #* For whatever reason, "await w.json()" doesn't work, so I'm using this:
-                    post = json.loads(await w.read())
-                    # post = await w.json()
-                    link = f"https://hastebin.com/raw/{post['key']}"
+                link = await hastebin(ctx, content)
             except:
-                #* On the rare occasion that it fails to post to hastebin
                 link = None
 
         duration = round(time.time() - start_time, 1)
@@ -1058,38 +1051,74 @@ class Moderation(commands.Cog):
     @commands.command(aliases=["survey", "strawpoll"],
                       brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> poll <#mention channel> <title of poll>`\n\nThe poll can "
-                      "have up to ten options and will be created in the channel you specified")
+                      "have up to ten options and will be created in the channel you specified"
+                      "\n\nTo create a simple yes/no poll, do `<prefix> poll yesno "
+                      "<#mention channel> <title of poll>`")
     @commands.bot_has_permissions(manage_messages=True)
     @commands.has_permissions(manage_messages=True)
-    async def poll(self, ctx, channel: discord.TextChannel, *, title: str):
+    async def poll(self, ctx, channel: discord.TextChannel=None, *, title: str):
         """Create a straw poll
         Format like this: `<prefix> poll <#mention channel> <title of poll>`
-        The poll can have up to ten options and will be created in the channel you specified
+        The poll can have up to ten options and will be created in the channel you specified.
+        To create a simple yes/no poll, add `yesno` in between `poll` and `<channel>`
         """
         def check_message():
             def check(message):
                 return message.author == ctx.author
             return check
 
-        options = {":one:": None, ":two:": None, ":three:": None, ":four:": None, ":five:": None,
-                   ":six:": None, ":seven:": None, ":eight:": None, ":nine:": None,
-                   ":keycap_ten:": None}
+        simple = ""
+        if channel is None:
+            raise commands.BadArgument
+
+        if simple.lower() == "yesno" or simple.lower() == "yes/no" or "simple" in simple.lower():
+            await ctx.send(
+                f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
+                delete_after=6.0)
+            await delete_message(ctx, 6)
+
+            embed = discord.Embed(
+                title=title, description="React with one of the emojis below to vote",
+                timestamp=datetime.datetime.utcnow(), color=find_color(ctx))
+            embed.set_author(
+                name=f"\U0001f4ca {ctx.author.display_name} is holding a straw poll:",
+                icon_url=ctx.author.avatar_url)
+
+            strawpoll = await channel.send(embed=embed)
+            await strawpoll.add_reaction("\U0001f44d")
+            await strawpoll.add_reaction("\U0001f44e")
+            return
+        elif not simple:
+            pass
+        else:
+            raise commands.BadArgument
+
+        options = {"🇦": None, "🇧": None, "🇨": None, "🇩": None, "🇪": None, "🇫": None,
+                   "🇬": None, "🇭": None, "🇮": None, "🇯": None, "🇰": None, "🇱": None,
+                   "🇲": None, "🇳": None, "🇴": None, "🇵": None, "🇶": None, "🇷": None,
+                   "🇸": None, "🇹": None}
         counter = 1
         last_option = None
-        for o in options.keys():
-            msg = (f"{ctx.author.mention}, type **Option {o}** for the poll __{title}__ in "
+        while True:
+            opt = list(options.keys())[counter - 1]
+            msg = (f"{ctx.author.mention}, type **Option {opt}** for the poll __{title}__ in "
                    f"the channel {channel.mention}.\n\nYou can also type `!cancel` to cancel the "
                    "creation of this poll")
+            if counter > 1:
+                if counter == 2:
+                    msg += " or `!back` to edit the previous option"
+                else:
+                    msg += ", `!back` to edit the previous option, "
             if counter > 2:
                 msg += (f" or `!finish` to create the poll with the {counter - 1} options you "
                         "put so far")
-            if counter == 10:
-                msg += (".\n\nAfter you type the 10th option, the poll will be created in "
-                        f"{channel.mention} since you will have reached the maximum number "
-                        "of poll options")
+            if counter == 20:
+                msg += (".\n\nAfter you type this option, the poll will be created in "
+                        f"{channel.mention} since you will have reached 20 poll options, which "
+                        "is the maximum number")
             if last_option is not None:
-                last_option_num = list(options.keys())[counter - 2]
-                msg = f"Option {last_option_num} will be **{last_option}**.\n\n" + msg
+                last_opt_letter = list(options.keys())[counter - 2]
+                msg = f"Option {last_opt_letter} will be **{last_option}**.\n\n" + msg
             wizard = await ctx.send(msg)
 
             try:
@@ -1100,6 +1129,7 @@ class Moderation(commands.Cog):
                     f"{ctx.author.mention} took too long to respond so the creation of the poll "
                     f"*{title}* has been canceled", delete_after=15.0)
                 return await delete_message(ctx, 15)
+
             if message.content.lower() == "!cancel":
                 temp = await ctx.send(
                     f"Ok, the creation of the poll __{title}__ has been canceled",
@@ -1108,6 +1138,12 @@ class Moderation(commands.Cog):
                 await message.delete()
                 await wizard.delete()
                 return await ctx.message.delete()
+            elif message.content.lower() == "!back":
+                await message.delete()
+                await wizard.delete()
+                last_option = None
+                counter -= 1
+                continue
             elif message.content.lower() == "!finish" and counter > 2:
                 await message.delete()
                 await wizard.delete()
@@ -1116,11 +1152,12 @@ class Moderation(commands.Cog):
                     delete_after=6.0)
                 await delete_message(ctx, 6)
                 break
+
             last_option = message.content
-            options[o] = last_option
+            options[opt] = last_option
             await message.delete()
             await wizard.delete()
-            if counter == 10:
+            if counter == 20:
                 await ctx.send(
                     f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
                     delete_after=6.0)
@@ -1129,18 +1166,25 @@ class Moderation(commands.Cog):
             counter += 1
 
         options = {k:v for k, v in options.items() if v is not None}
-        reactions = ["\u0031\u20E3", "\u0032\u20E3", "\u0033\u20E3", "\u0034\u20E3",
-                     "\u0035\u20E3", "\u0036\u20E3", "\u0037\u20E3", "\u0038\u20E3",
-                     "\u0039\u20E3", "\U0001F51F"][:len(options)]
 
-        embed = discord.Embed(
-            title=title, description="\n\n".join([f"{k}. {v}" for k, v in options.items()]),
-            color=find_color(ctx))
+        if len(options) <= 8:
+            embed = discord.Embed(
+                title="\U0001f4ca " + title,
+                description="\n\n".join([f"{k}. {v}" for k, v in options.items()]),
+                timestamp=datetime.datetime.utcnow(),
+                color=find_color(ctx))
+        else:
+            embed = discord.Embed(
+                title="\U0001f4ca " + title,
+                description="\n".join([f"{k}. {v}" for k, v in options.items()]),
+                timestamp=datetime.datetime.utcnow(),
+                color=find_color(ctx))
         embed.set_author(name=f"{ctx.author.display_name} is holding a straw poll:",
                          icon_url=ctx.author.avatar_url)
         embed.set_footer(text="React with one of the emojis below to vote")
+
         strawpoll = await channel.send(embed=embed)
-        for r in reactions:
+        for r in options.keys():
             await strawpoll.add_reaction(r)
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
@@ -1216,7 +1260,7 @@ class Moderation(commands.Cog):
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
 
-    @commands.group(aliases=["remove"], invoke_without_command=True)
+    @commands.group(invoke_without_command=True)
     async def purge(self, ctx):
         """**Must have the "Manage Messages" permission**
         Mass-deletes messages from a certain channel.
