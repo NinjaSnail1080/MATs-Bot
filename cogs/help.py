@@ -105,6 +105,9 @@ class Help(commands.Cog):
                 name="<:raisedfist:470319397291163678> Moderation",
                 value=f"{cog_cmds['Moderation']} commands\n`<prefix> help mod` for more info")
             embed.add_field(
+                name=":musical_note: Music", value=f"{cog_cmds['Music']} commands\n`<prefix> help "
+                "music` for more info")
+            embed.add_field(
                 name=":wink: NSFW", value=f"{cog_cmds['NSFW']} commands\n`<prefix> help nsfw` "
                 "for more info")
             embed.add_field(
@@ -249,7 +252,33 @@ class Help(commands.Cog):
             return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "music":
-            await ctx.send("No commands yet ¯\_(ツ)_/¯")
+            cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Music" and
+                               not c.hidden and c.name not in disabled), key=lambda c: c.name)
+            cmds = list(chunks(cmds, 6))
+
+            embeds = []
+            for i in cmds:
+                embed = discord.Embed(
+                    title="Help | Music Commands",
+                    description=f"**__Page {cmds.index(i) + 1}/{len(cmds)}__** "
+                                f"({cog_cmds['Music']} commands)\n\n" + self.show_info(ctx) + "\n"
+                                "\n**For all the commands labled `DJ`, you must have either the "
+                                "\"Manage Messages\" perm or the DJ Role (see the `musicsettings` "
+                                "command for more info) to use it. Also note that the `ytsearch` "
+                                "and `soundcloud` commands from the Utility category might come "
+                                "in handy here**",
+                    color=find_color(ctx))
+                embed.set_author(name="MAT's Bot")
+                if len(cmds) > 1:
+                    embed.set_footer(
+                        text=f"Click one of the emojis below to go to the next page or the "
+                        "previous one. This help message will be automatically deleted if it's "
+                        "left idle for longer than 5 minutes")
+                for c in i:
+                    embed.add_field(name=c.name, value=c.help, inline=False)
+                embeds.append(embed)
+
+            return await send_basic_paginator(ctx, embeds, 5)
 
         elif cat.lower() == "utility":
             cmds = sorted(list(c for c in self.bot.commands if c.cog_name == "Utility" and
@@ -346,6 +375,11 @@ class Help(commands.Cog):
                 name="<:raisedfist:470319397291163678> Moderation",
                 value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
                                             if c.cog_name == "Moderation" and not c.hidden
+                                            and c.name not in disabled]), inline=False)
+            embed.add_field(
+                name=":musical_note: Music",
+                value="\u200b" + ", ".join([f"`{c.name}`" for c in cmds
+                                            if c.cog_name == "Music" and not c.hidden
                                             and c.name not in disabled]), inline=False)
             embed.add_field(
                 name=":wink: NSFW",
