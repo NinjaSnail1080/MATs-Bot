@@ -12,6 +12,7 @@ discord.py[voice]
 google_images_download
 googletrans
 lxml
+lyricsgenius
 matplotlib
 numpy
 Pillow
