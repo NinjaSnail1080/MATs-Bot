@@ -139,7 +139,7 @@ class Fun(commands.Cog):
         if os.path.isfile(filename):
             os.remove(filename)
 
-    @commands.command(aliases=["aki"])
+    @commands.command(aliases=["aki"], hidden=True)
     @commands.cooldown(1, 45, commands.BucketType.user)
     async def akinator(self, ctx):
         """Start a game with the legendary Akinator!"""
@@ -340,6 +340,11 @@ class Fun(commands.Cog):
             return await game.edit(content=None, embed=embed)
 
         #* Start of command
+        return await ctx.send(
+            "I'm sorry, but this command isn't working right now. My creator is still having "
+            "trouble getting it to work. When he finally does, I'll be updated with the new code "
+            "and you'll be able to play Akinator with me.\n\nBut for now, you'll have to settle "
+            "with the website. Sorry about that")
         embed = discord.Embed(
             title="Hello, I am Akinator",
             description="Think about a real or fictional character. I will ask you questions and "
@@ -423,9 +428,9 @@ class Fun(commands.Cog):
         """
         await ctx.channel.trigger_typing()
         text = list(text.lower())
-        bigletters = ['🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯', '🇰', '🇱',
-                      '🇲', '🇳', '🇴', '🇵', '🇶', '🇷', '🇸', '🇹', '🇺', '🇻', '🇼', '🇽',
-                      '🇾', '🇿']
+        bigletters = ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯", "🇰", "🇱",
+                      "🇲", "🇳", "🇴", "🇵", "🇶", "🇷", "🇸", "🇹", "🇺", "🇻", "🇼", "🇽",
+                      "🇾", "🇿"]
         big = []
 
         for i in text:
@@ -658,9 +663,9 @@ class Fun(commands.Cog):
     @commands.command(aliases=["ddlcgen"],
                       brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ddlc <character> <background> <pose> <face> <text>`"
-                      "\nDo `!mat help ddlc` for more info on how to use this command.")
+                      "\nDo `<prefix> help ddlc` for more info on how to use this command.")
     @commands.cooldown(1, 45, commands.BucketType.user)
-    async def ddlc(self, ctx, character, background, pose, face, *, text: commands.clean_content(fix_channel_mentions=True)):
+    async def ddlc(self, ctx, character, background, pose, face, *, text: commands.clean_content(fix_channel_mentions=True, escape_markdown=True)):
         """Generate a DDLC (Doki Doki Literature Club) custom dialogue
         Format like this: `<prefix> ddlc <character> <background> <pose> <face> <text>`
         **Characters**: "sayori", "yuri", "natsuki", OR "monika"
