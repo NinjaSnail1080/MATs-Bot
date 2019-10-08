@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from utils import delete_message
 
 from discord.ext import commands, tasks
@@ -36,6 +37,11 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
         self.bot = bot
 
         self.bot.pool = self.bot.loop.run_until_complete(self.init_postgres())
+        self.bot.default_musicsettings = {
+            "max_size": 0,
+            "dj_role": None,
+            "strict": False
+        }
 
         self.update_db_msg_cmd_count.start()
 
@@ -90,6 +96,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                     welcome JSON,
                     goodbye JSON,
                     last_delete JSON,
+                    musicsettings JSON,
                     tags JSON NOT NULL DEFAULT '{}'
                 )
             ;""")
@@ -119,6 +126,13 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                 ON CONFLICT (id)
                     DO NOTHING
             ;""".format(", ".join([f"({g.id})" for g in self.bot.guilds])))
+
+            #* Update musicsettings to the default ones if they're NULL
+            await conn.execute("""
+                UPDATE guilddata
+                SET musicsettings = $1::JSON
+                WHERE musicsettings IS NULL
+            ;""", self.bot.default_musicsettings)
 
             #* Add all user ids to userdata if they aren't already there
             await conn.execute("""
@@ -178,7 +192,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
     @update_db_msg_cmd_count.before_loop
     async def before_update(self):
         await self.bot.wait_until_ready()
-        await asyncio.sleep(10) #* To ensure that the database is fully set up before it starts
+        await asyncio.sleep(30) #* To ensure that the database is fully set up before it starts
 
     @commands.command()
     async def reloadpg(self, ctx):
