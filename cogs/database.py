@@ -178,9 +178,10 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
             for data in self.bot.guilddata.copy().values():
                 await conn.execute("""
                     UPDATE guilddata
-                    SET commands_used = $1::JSON
+                    SET commands_used = $1::JSON,
+                        last_delete = $2::JSON
                     WHERE id = {}
-                ;""".format(data["id"]), data["commands_used"])
+                ;""".format(data["id"]), data["commands_used"], data["last_delete"])
 
             for data in self.bot.userdata.copy().values():
                 await conn.execute("""
