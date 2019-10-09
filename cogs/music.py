@@ -340,8 +340,8 @@ class Music(commands.Cog):
             except:
                 pass
 
-            self.players[guild.id].playing = False
             self.players[guild.id].queue._queue.clear()
+            self.players[guild.id].playing = False
             self.players[guild.id].player_task.cancel()
             self.players[guild.id].paused_task.cancel()
             self.players.pop(guild.id)
