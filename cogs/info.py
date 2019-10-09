@@ -706,7 +706,7 @@ class Info(commands.Cog):
             text=user.name + " has been on Discord for roughly " + "".join(footer))
 
         if user.premium_since is not None:
-            await ctx.send(content="\U00002666 This member is a Nitro server booster since "
+            await ctx.send(content="\U0001f537 This member is a Nitro server booster since "
                                    f"{user.premium_since.strftime('%b %-d, %Y')}!",
                            embed=embed)
         else:
