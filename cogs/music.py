@@ -443,6 +443,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def forward(self, ctx, sec: int):
         """Fast-forward the currently playing song
         Format like this: `<prefix> rewind <seconds to ffw>`
@@ -502,7 +503,8 @@ class Music(commands.Cog):
     @commands.command(name="loop", aliases=["repeat"])
     @is_dj(strict_perm=True)
     @check_voice()
-    async def loop_(self, ctx, param: str=""):
+    @commands.cooldown(1, 9, commands.BucketType.user)
+    async def loop_(self, ctx, param: str = ""):
         """Loop the currently playing song. Do `loop queue` to loop the entire queue. If a song or the queue is already looping, running this command again will stop the loop"""
 
         player = self.get_player(ctx)
@@ -552,7 +554,8 @@ class Music(commands.Cog):
             return await delete_message(ctx, 15)
 
     @commands.command()
-    async def lyrics(self, ctx, *, keywords: str=None):
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def lyrics(self, ctx, *, keywords: str = None):
         """Get the lyrics to a song!
         Format like this: `<prefix> lyrics (OPTIONAL)<song title>`
         If you don't put a song title AND I'm currently playing a song in the voice channel, I'll try to get the lyrics to that song
@@ -782,6 +785,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def pause(self, ctx):
         """Pause the currently playing song"""
 
@@ -804,6 +808,7 @@ class Music(commands.Cog):
                             "this: `<prefix> play <url OR search term>`\nYou can either put a "
                             "YouTube, Soundcloud, etc. URL OR the title of a song to search for. "
                             "Playlist URLs also work")
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def play(self, ctx, *, search):
         """Request a song and add it to the queue
         Format like this: `<prefix> play <url OR search term>`
@@ -862,6 +867,7 @@ class Music(commands.Cog):
     @commands.command(aliases=["np", "current", "nowplaying"])
     @check_queue(current=True)
     @check_voice()
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def playing(self, ctx):
         """Show the currently playing song"""
 
@@ -968,6 +974,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def replay(self, ctx):
         """Play the current song from the beginning"""
 
@@ -1004,6 +1011,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def rewind(self, ctx, sec: int):
         """Rewind the currently playing song
         Format like this: `<prefix> rewind <seconds to rewind>`
@@ -1076,6 +1084,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 12, commands.BucketType.user)
     async def seek(self, ctx, pos):
         """Seek to a certain point in the currently playing song
         Format like this: `<prefix> seek <position>`
@@ -1140,6 +1149,7 @@ class Music(commands.Cog):
     @check_queue(empty=True)
     @is_dj(strict_perm=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def shuffle(self, ctx):
         """Shuffle the songs in the queue"""
 
@@ -1153,6 +1163,7 @@ class Music(commands.Cog):
     @check_queue(current=True)
     @is_dj(requester_allowed=True)
     @check_voice()
+    @commands.cooldown(1, 9, commands.BucketType.user)
     async def skip(self, ctx):
         """**Must be a DJ UNLESS you requested the song**
         Skip the currently playing song and go to the next one
