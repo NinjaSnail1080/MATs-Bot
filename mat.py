@@ -96,7 +96,8 @@ class MAT(commands.Bot):
         self.games = ["\"!mat help\" for help", "\"!mat help\" for help",
                       "\"!mat help\" for help", "\"!mat help\" for help",
                       "with you", "dead", "with myself", "a prank on you", "with fire",
-                      "hard-to-get", "you like a god damn fiddle", "on {} servers!"]
+                      "hard-to-get", "you like a god damn fiddle",
+                      "on {} servers!", "with {} users!"]
 
         self.switch_games.start()
 
@@ -172,38 +173,32 @@ class MAT(commands.Bot):
         await self.process_commands(message)
 
     async def on_message_delete(self, message):
-        if message.guild is not None:
-            if not message.author.bot:
-                content = message.clean_content
+        if message.guild is not None and not message.author.bot:
+            content = message.clean_content
 
-                #* The following code is to better format custom emojis that appear in the content
-                custom_emoji = re.compile(r"<:(\w+):(\d+)>")
-                for m in custom_emoji.finditer(content):
-                    content = content.replace(m.group(), m.group()[1:-19])
+            #* The following code is to better format custom emojis that appear in the content
+            custom_emoji = re.compile(r"<:(\w+):(\d+)>")
+            for m in custom_emoji.finditer(content):
+                content = content.replace(m.group(), m.group()[1:-19])
 
-                last_delete = {"author": message.author.mention,
-                               "content": content,
-                               "channel": message.channel.mention,
-                               "creation": message.created_at.strftime(
-                                   "**Sent on:** %A, %B %-d, %Y at %X UTC")}
-
-                self.guilddata[message.guild.id]["last_delete"] = last_delete
-                async with self.pool.acquire() as conn:
-                    await conn.execute("""
-                        UPDATE guilddata
-                        SET last_delete = $1::JSON
-                        WHERE id = {}
-                    ;""".format(message.guild.id), self.guilddata[message.guild.id]["last_delete"])
+            last_delete = {
+                "author": message.author.mention,
+                "content": content,
+                "channel": message.channel.mention,
+                "creation": message.created_at.strftime("**Sent on:** %A, %B %-d, %Y at %X UTC")
+            }
+            self.guilddata[message.guild.id]["last_delete"] = last_delete
 
     @tasks.loop()
     async def switch_games(self):
-        while True:
-            try:
-                await self.change_presence(activity=discord.Game(
-                    random.choice(self.games).format(len(self.guilds))))
-            except:
-                await self.change_presence(activity=discord.Game(random.choice(self.games)))
-            await asyncio.sleep(random.randint(12, 20))
+        game = random.choice(self.games)
+        if game == self.games[-1]:
+            await self.change_presence(activity=discord.Game(game.format(len(self.users))))
+        elif game == self.games[-2]:
+            await self.change_presence(activity=discord.Game(game.format(len(self.guilds))))
+        else:
+            await self.change_presence(activity=discord.Game(game))
+        await asyncio.sleep(random.randint(12, 20))
 
     @switch_games.before_loop
     async def before_switch_games(self):
@@ -227,8 +222,11 @@ class MAT(commands.Bot):
             print("\nLogging out...")
             self.loop.run_until_complete(self.logout())
         finally:
+            try:
+                self.loop.run_until_complete(self.dbl.close())
+            except AttributeError:
+                pass
             self.loop.run_until_complete(self.pool.close())
-            self.loop.run_until_complete(self.dbl.close())
             self.loop.run_until_complete(self.session.close())
             self.loop.close()
             print("\nClosed\n")
