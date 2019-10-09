@@ -218,6 +218,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 50, True, False, "a post", "futanari")
 
     @commands.command(aliases=["gayporn"])
+    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
     async def gayp(self, ctx):
         """Posts some gay porn"""
@@ -340,7 +341,7 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 75, True, False, "a post", "lesbians")
 
     @commands.command()
-    @commands.cooldown(2, 6, commands.BucketType.user)
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def rule34(self, ctx, *, tag: str=None):
         """Posts some Rule 34
         Format like this: `<prefix> rule34 (OPTIONAL)<tag>`
@@ -387,7 +388,7 @@ class NSFW(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(brief="You need to include a tag to search with")
-    @commands.cooldown(2, 6, commands.BucketType.user)
+    @commands.cooldown(1, 6, commands.BucketType.user)
     async def yandere(self, ctx, *, tag: str):
         """Searches yande.re for a tag
         Format like this: `<prefix> yandere <tag>`
