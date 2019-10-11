@@ -165,8 +165,8 @@ class NSFW(commands.Cog):
                                 "cosplaygirls", "cosplayonoff", "FictionalBabes", "NSFWCostumes")
 
     @commands.command()
-    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
+    @has_voted()
     async def cumsluts(self, ctx):
         """Sends some pics of cumsluts"""
 
@@ -218,8 +218,8 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 50, True, False, "a post", "futanari")
 
     @commands.command(aliases=["gayporn"])
-    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
+    @has_voted()
     async def gayp(self, ctx):
         """Posts some gay porn"""
 
@@ -237,8 +237,8 @@ class NSFW(commands.Cog):
             "gonewild", "gonewildcurvy", "GoneWildSmiles", "PetiteGoneWild", "RealGirls")
 
     @commands.command()
-    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
+    @has_voted()
     async def hentai(self, ctx, arg: str=None):
         """Posts some hentai. Add `-gif` after the command for a hentai gif OR add `-irl` for a hentai_irl post. Add nothing extra for a regular hentai pic"""
 
@@ -313,8 +313,8 @@ class NSFW(commands.Cog):
         return await get_reddit(ctx, 1, 50, True, False, "a post", "OldSchoolCoolNSFW")
 
     @commands.command(aliases=["porngif"])
-    @has_voted()
     @commands.cooldown(4, 9, commands.BucketType.user)
+    @has_voted()
     async def pgif(self, ctx):
         """Posts a porn gif"""
 

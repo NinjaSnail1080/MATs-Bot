@@ -342,8 +342,8 @@ class Moderation(commands.Cog):
                 f"{member.mention} was given the **{role.name}** role by {ctx.author.mention}")
 
     @commands.command(brief="User not found. Try again")
-    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, users: commands.Greedy[discord.User], *, reason: str=None):
         """**Must have the "Ban Members" permission**
         Bans user(s) from the server
@@ -520,8 +520,8 @@ class Moderation(commands.Cog):
         await send_log(ctx, embed)
 
     @commands.command()
-    @commands.bot_has_permissions(manage_nicknames=True)
     @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_nicknames=True)
     async def dehoist(self, ctx, include_num: str=""):
         """**Must have the "Manage Server" permission**
         Dehoists members who have hoisted themselves (This means they've started their nickname with a special character like !, $, etc. for the sole purpose of appearing at the top of the members list).
@@ -728,8 +728,8 @@ class Moderation(commands.Cog):
                       "channel the command was performed in\n\nThe duration should look "
                       "something like this: `2w` OR `30d12h30m` OR `1d30m` (NO SPACES). The only "
                       "characters supported are `w`, `d`, `h` or `hr`, `m`, and `s`")
-    @commands.bot_has_permissions(manage_messages=True)
     @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def giveaway(self, ctx, blacklist: commands.Greedy[discord.Member]=[], channel: typing.Optional[discord.TextChannel]=None, num_winners: typing.Optional[int]=1, duration: str="", *, prize: str=None):
         """**Must have the "Manage Server" permission**
         Start a giveaway/raffle!
@@ -792,8 +792,8 @@ class Moderation(commands.Cog):
             ;""", self.bot.botdata["giveaways"])
 
     @commands.command(brief="Member not found. Try again")
-    @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, members: commands.Greedy[discord.Member], *, reason: str=None):
         """**Must have the "Kick Members" permission**
         Kicks member(s) from the server
@@ -1051,16 +1051,17 @@ class Moderation(commands.Cog):
     @commands.command(aliases=["survey", "strawpoll"],
                       brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> poll <#mention channel> <title of poll>`\n\nThe poll can "
-                      "have up to ten options and will be created in the channel you specified"
-                      "\n\nTo create a simple yes/no poll, do `<prefix> poll yesno "
+                      "have up to 20 options and will be created in the channel you specified"
+                      "\n\nIf you want to create a simple yes/no poll, do `<prefix> poll yesno "
                       "<#mention channel> <title of poll>`")
-    @commands.bot_has_permissions(manage_messages=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def poll(self, ctx, channel: discord.TextChannel=None, *, title: str):
+        #TODO: FIX THIS!!!
         """Create a straw poll
         Format like this: `<prefix> poll <#mention channel> <title of poll>`
-        The poll can have up to ten options and will be created in the channel you specified.
-        To create a simple yes/no poll, add `yesno` in between `poll` and `<channel>`
+        The poll can have up to 20 options and will be created in the channel you specified.
+        If you want to create a simple yes/no poll, add `yesno` in between `poll` and `<channel>`
         """
         def check_message():
             def check(message):
@@ -1193,8 +1194,8 @@ class Moderation(commands.Cog):
                       "this command, you will be shown how many members will be kicked and "
                       "you'll be asked to confirm the operation before I go ahead and actually "
                       "prune the server")
-    @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     async def prune(self, ctx, days: int):
         """**Must have the "Kick Members" permission**
         Prune the server from its inactive members
@@ -1402,8 +1403,8 @@ class Moderation(commands.Cog):
                    "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
                    "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
                    "\n__Example__: `04-03-2019`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def after(self, ctx, del_after: typing.Union[discord.Message, str], limit: int=100):
 
         try:
@@ -1424,8 +1425,8 @@ class Moderation(commands.Cog):
 
     @purge.command(name="all", brief="Invalid formatting. You must format the command like this: "
                    "`<prefix> purge all (OPTIONAL)<number of msgs to delete>`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def all_(self, ctx, limit: int=1000):
 
         await self.remove(ctx, limit, None, "messages were deleted")
@@ -1437,8 +1438,8 @@ class Moderation(commands.Cog):
                    "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
                    "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
                    "\n__Example__: `04-03-2019`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def around(self, ctx, del_around: typing.Union[discord.Message, str], limit: int=101):
 
         try:
@@ -1465,8 +1466,8 @@ class Moderation(commands.Cog):
                    "hold the message) and press `Copy Link`.\n\nIf you put a date instead, it "
                    "must be formatted like this: `mm-dd-yyyy`. Anything else will cause an error."
                    "\n__Example__: `04-03-2019`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def before(self, ctx, del_before: typing.Union[discord.Message, str], limit: int=100):
 
         try:
@@ -1487,9 +1488,9 @@ class Moderation(commands.Cog):
                 before=del_before)
 
     @purge.command()
+    @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(
         manage_messages=True, read_message_history=True, manage_channels=True)
-    @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx):
 
         confirm = await ctx.send("React with \U00002705 to confirm that you want to "
@@ -1530,24 +1531,24 @@ class Moderation(commands.Cog):
 
     @purge.command(brief="Invalid formatting. You must include a substring for me to look "
                    "for, like this: `<prefix> purge contains <substring>`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def contains(self, ctx, *, substr: str):
 
         await self.remove(ctx, 1000, lambda m: re.search(substr, m.content, re.IGNORECASE),
                           f"messages containing the string `{substr}` were deleted")
 
     @purge.command()
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def embeds(self, ctx):
 
         await self.remove(
             ctx, 1000, lambda m: len(m.embeds), "messages containing embeds were deleted")
 
     @purge.command(aliases=["emojis", "emote", "emotes"])
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def emoji(self, ctx):
 
         def check(m):
@@ -1557,16 +1558,16 @@ class Moderation(commands.Cog):
         await self.remove(ctx, 1000, check, "messages containing custom emojis were deleted")
 
     @purge.command(aliases=["attachments"])
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def files(self, ctx):
 
         await self.remove(ctx, 1000, lambda m: len(m.attachments),
                           "messages containing attachments were deleted")
 
     @purge.command(name="bot", aliases=["bots"])
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def from_bot(self, ctx, *, prefix=None):
 
         def check(m):
@@ -1581,8 +1582,8 @@ class Moderation(commands.Cog):
 
     @purge.command(aliases=["user", "members", "users"], brief="Invalid formatting. You must "
                    "format the command like this: `<prefix> purge member <@mention user(s)>`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def member(self, ctx, *users: discord.Member):
 
         users = list(users)
@@ -1594,8 +1595,8 @@ class Moderation(commands.Cog):
 
     @purge.command(brief="Invalid formatting. You're supposed to format the command like this: "
                    "`<prefix> purge pins (OPTIONAL)<number to leave pinned>`")
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def pins(self, ctx, leave: int=None):
 
         all_pins = await ctx.channel.pins()
@@ -1625,8 +1626,8 @@ class Moderation(commands.Cog):
             await send_log(ctx, embed)
 
     @purge.command()
-    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True, read_message_history=True)
     async def reactions(self, ctx):
 
         temp = await ctx.send("Please wait... This could take some time...")
@@ -1655,6 +1656,7 @@ class Moderation(commands.Cog):
                       "@mentions or member names that I'll randomly choose from. Or don't put "
                       "anything and I'll randomly pick someone from the server")
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     async def randomkick(self, ctx, *members: discord.Member):
         """**Must have the "Kick Members" permission**
         Kicks a random member, feeling lucky?
@@ -1681,11 +1683,9 @@ class Moderation(commands.Cog):
                     description=random.choice(rip_list)))
         except discord.Forbidden:
             return await ctx.send(
-                "Huh, it looks like I don't have permission to kick this person. Could one of "
-                "you guys check my role to make sure I have either the Kick Members privilege or "
-                "the Administrator privilege?\n\nIf I already, do, then I probably picked "
-                "someone with a role higher than mine. So try again, or better yet, put my role "
-                "above everyone else's. Then we can make this *really* interesting...")
+                "Huh, it looks like I don't have permission to kick this person. I probably "
+                "picked someone with a role higher than mine. Try again, or better yet, put my "
+                "role above everyone else's. Then we can make this *really* interesting...")
 
         embed = discord.Embed(description=str(member) + " was kicked", color=find_color(ctx))
         embed.set_author(name="A randomkick was performed by " + ctx.author.name,
@@ -1693,8 +1693,8 @@ class Moderation(commands.Cog):
         await send_log(ctx, embed)
 
     @commands.command()
-    @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def rmautorole(self, ctx):
         """**Must have the "Manage Roles" permission**
         Removes a previously set autorole
@@ -1843,8 +1843,8 @@ class Moderation(commands.Cog):
 
     @commands.command(
         brief="Role not found. Try again (note that the role name is case-sensitive)")
-    @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def setautorole(self, ctx, *, role: discord.Role = None):
         """**Must have the "Manage Roles" permission**
         Set an autorole for this server. An autorole is a role that'll be automatically assigned to new members when they join this server.
@@ -2038,8 +2038,8 @@ class Moderation(commands.Cog):
                       "`<prefix> softban <@mention user> (OPTINAL)<days of msgs to delete>`\nThe "
                       "number of days worth of messages to delete must be at least 1 and no more "
                       "than 7. If you don't include it, I'll default to one day")
-    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def softban(self, ctx, user: discord.User, days: int=1):
         """**Must have the "Ban Members" permission**
         Softban a user, that is, ban them and then immediately unban them to kick them from the server and delete their messages.
@@ -2081,8 +2081,8 @@ class Moderation(commands.Cog):
 
     @commands.command(brief="User not found in the bans list. To see a list of all banned "
                       "members, use the `allbanned` command.")
-    @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def unban(self, ctx, users: commands.Greedy[discord.User], *, reason: str=None):
         """**Must have the "Ban Members" permission**
         Unbans a previously banned user(s) from the server

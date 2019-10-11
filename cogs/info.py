@@ -63,9 +63,9 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["allbans"])
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.guild_only()
     @commands.bot_has_permissions(ban_members=True)
+    @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def allbanned(self, ctx):
         """Sends a list of all the banned users from the server"""
 
@@ -85,8 +85,8 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def allchannels(self, ctx):
         """Sends a list of all the channels in the server"""
 
@@ -116,8 +116,8 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def allroles(self, ctx):
         """Sends a list of all the roles in the server"""
 
@@ -135,8 +135,8 @@ class Info(commands.Cog):
     @commands.command(brief="Invalid formatting. You need to format the command like this: "
                       "`<prefix> channelinfo (OPTIONAL)<text channel OR voice channel (case-"
                       "sensitive)>`\n\nIf you don't provide a channel, I'll default to this one")
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def channelinfo(self, ctx, *, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
         """Info about a text or voice channel on this server. By default I'll show info about the channel the command was performed in, although you can specify a different one.
         Format like this: `<prefix> channelinfo (OPTIONAL)<text channel OR voice channel>`
@@ -225,8 +225,8 @@ class Info(commands.Cog):
     @commands.command(aliases=["emoteinfo"], brief="That's either not an emoji or it's one of "
                       "Discord's default emojis. You must put a custom emoji after the command "
                       "so I can get info on it")
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def emojiinfo(self, ctx, emoji: discord.Emoji=None):
         """Info about an emoji. Only works with custom emojis.
         Format like this: `<prefix> emojiinfo <emoji>`
@@ -270,8 +270,8 @@ class Info(commands.Cog):
                       "member> (OPTIONAL)<#mention channel>`\nIf you don't put a member, I'll "
                       "use you. If you don't put a channel, I'll use the channel the command "
                       "was performed in")
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def permissions(self, ctx, member: typing.Optional[discord.Member]=None, channel: typing.Union[discord.VoiceChannel, discord.TextChannel]=None):
         """Get a member's permissions in a channel
         Format like this: `<prefix> permissions (OPTIONAL)<@mention member> (OPTIONAL)<text OR voice channel>`
@@ -317,8 +317,8 @@ class Info(commands.Cog):
                        f"`{round(self.bot.latency * 1000, 2)}ms`")
 
     @commands.command(brief="Role not found. Try again (Role name is case-sensitive)")
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def roleinfo(self, ctx, *, role: discord.Role=None):
         """Info about a role on this server.
         Format like this: `<prefix> roleinfo <role name>`
@@ -365,8 +365,8 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["guildinfo"])
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def serverinfo(self, ctx):
         """Info about the server"""
 
@@ -585,8 +585,8 @@ class Info(commands.Cog):
                        f"started up on __{frmtd_started_at}__")
 
     @commands.command(aliases=["memberinfo"], brief="User not found. Try again")
-    @commands.cooldown(1, 3, commands.BucketType.user)
     @commands.guild_only()
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def userinfo(self, ctx, user: discord.Member=None):
         """Info about a user. By default I'll show your user info, but you can specify a different member of your server.
         Format like this: `<prefix> userinfo (OPTIONAL)<@mention user>`

@@ -1386,9 +1386,9 @@ class Fun(commands.Cog):
             await send_nekobot_image(ctx, resp)
 
     @commands.command(aliases=["wc", "tagcloud"])
-    @has_voted()
     @commands.cooldown(1, 30, commands.BucketType.user)
-    async def wordcloud(self, ctx, users: commands.Greedy[discord.Member], channel: typing.Optional[discord.TextChannel]=None, limit: typing.Optional[int]=2000):
+    @has_voted()
+    async def wordcloud(self, ctx, users: commands.Greedy[discord.Member], channel: typing.Optional[discord.TextChannel] = None, limit: typing.Optional[int] = 2000):
         """Generate a word cloud, which is an image that shows the frequencies of various words from messages sent in a channel
         Format like this: `<prefix> wordcloud (OPTIONAL)<@mention user(s)> (OPTIONAL)<channel> (OPTIONAL)<# of msgs to process>`
         If you mention any users, I'll only process their messages. If you don't, I'll process all messages.

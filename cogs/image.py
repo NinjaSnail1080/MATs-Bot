@@ -108,9 +108,9 @@ class Image(commands.Cog):
     @commands.command(brief="You didn't format the command correctly. It's supposed to look like "
                       "this: `<prefix> ascii (OPTIONAL)<@mention user OR attach an image OR "
                       "image url>`", name="ascii")
-    @has_voted()
     @commands.cooldown(1, 45, commands.BucketType.user)
-    async def ascii_command(self, ctx, member_url: typing.Union[discord.Member, str]=None):
+    @has_voted()
+    async def ascii_command(self, ctx, member_url: typing.Union[discord.Member, str] = None):
         """Converts an image or a member's avatar into ascii art. Will work for most images
         __Note__: For some images, you might want to zoom out to see the full ascii art (Ctrl – OR ⌘ –)
         ~~Rip mobile users~~
