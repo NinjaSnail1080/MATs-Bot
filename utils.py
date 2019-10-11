@@ -107,11 +107,12 @@ async def send_log(ctx, send_embed):
                 send_messages=False)})
 
         await logs.send("I created this channel just now to keep a log of all my moderation "
-                        "commands that have been used. Feel free to edit this channel "
-                        "however you'd like, but make sure I always have access to it!"
-                        "\n\nP.S. I don't have to use this channel if you don't want me to. You "
-                        "can use the `setlogs` command to set a different logs channel or "
-                        "the `nologs` command to disable logging moderation commands entirely.")
+                        "commands that have been used. Feel free to edit this channel however "
+                        "you'd like, including moving and/or renaming it, but just make sure I "
+                        "always have access to it!\n\nP.S. I don't have to use this channel if "
+                        "you don't want me to. You can use the `setlogs` command to set a "
+                        "different logs channel or the `nologs` command to disable logging "
+                        "moderation commands entirely.")
 
         ctx.bot.guilddata[ctx.guild.id]["logs"] = logs.id
         async with ctx.bot.pool.acquire() as conn:
