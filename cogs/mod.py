@@ -1048,17 +1048,17 @@ class Moderation(commands.Cog):
             "Logging moderation commands has been turned off for this server "
             f"by {ctx.author.mention}. To turn them back on, just use the `setlogs` command.")
 
-    @commands.command(aliases=["survey", "strawpoll"],
-                      brief="You didn't format the command correctly. It's supposed to look like "
-                      "this: `<prefix> poll <#mention channel> <title of poll>`\n\nThe poll can "
-                      "have up to 20 options and will be created in the channel you specified"
-                      "\n\nIf you want to create a simple yes/no poll, do `<prefix> poll yesno "
-                      "<#mention channel> <title of poll>`")
+    @commands.group(aliases=["survey", "strawpoll"], invoke_without_command=True,
+                    brief="You didn't format the command correctly. It's supposed to look like "
+                    "this: `<prefix> poll <#mention channel> <title of poll>`\n\nThe poll can "
+                    "have up to 20 options and will be created in the channel you specified"
+                    "\n\nIf you want to create a simple yes/no poll, do `<prefix> poll yesno "
+                    "<#mention channel> <title of poll>`")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def poll(self, ctx, channel: discord.TextChannel=None, *, title: str):
-        #TODO: FIX THIS!!!
-        """Create a straw poll
+        """**Must have the "Manage Messages" permission**
+        Create a straw poll
         Format like this: `<prefix> poll <#mention channel> <title of poll>`
         The poll can have up to 20 options and will be created in the channel you specified.
         If you want to create a simple yes/no poll, add `yesno` in between `poll` and `<channel>`
@@ -1068,30 +1068,7 @@ class Moderation(commands.Cog):
                 return message.author == ctx.author
             return check
 
-        simple = ""
         if channel is None:
-            raise commands.BadArgument
-
-        if simple.lower() == "yesno" or simple.lower() == "yes/no" or "simple" in simple.lower():
-            await ctx.send(
-                f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
-                delete_after=6.0)
-            await delete_message(ctx, 6)
-
-            embed = discord.Embed(
-                title=title, description="React with one of the emojis below to vote",
-                timestamp=datetime.datetime.utcnow(), color=find_color(ctx))
-            embed.set_author(
-                name=f"\U0001f4ca {ctx.author.display_name} is holding a straw poll:",
-                icon_url=ctx.author.avatar_url)
-
-            strawpoll = await channel.send(embed=embed)
-            await strawpoll.add_reaction("\U0001f44d")
-            await strawpoll.add_reaction("\U0001f44e")
-            return
-        elif not simple:
-            pass
-        else:
             raise commands.BadArgument
 
         options = {"🇦": None, "🇧": None, "🇨": None, "🇩": None, "🇪": None, "🇫": None,
@@ -1111,8 +1088,8 @@ class Moderation(commands.Cog):
                 else:
                     msg += ", `!back` to edit the previous option, "
             if counter > 2:
-                msg += (f" or `!finish` to create the poll with the {counter - 1} options you "
-                        "put so far")
+                msg += (f" or `!finish` to create the poll with the **{counter - 1}** options "
+                        "you put so far")
             if counter == 20:
                 msg += (".\n\nAfter you type this option, the poll will be created in "
                         f"{channel.mention} since you will have reached 20 poll options, which "
@@ -1182,11 +1159,36 @@ class Moderation(commands.Cog):
                 color=find_color(ctx))
         embed.set_author(name=f"{ctx.author.display_name} is holding a straw poll:",
                          icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="React with one of the emojis below to vote")
+        embed.set_footer(text=f"React with one of the {len(options)} emojis below to vote")
 
         strawpoll = await channel.send(embed=embed)
         for r in options.keys():
             await strawpoll.add_reaction(r)
+
+    @poll.command(aliases=["simple"], brief="You didn't format the command correctly. It's "
+                  "supposed to look like this: `<prefix> poll <#mention channel> <title of poll>`"
+                  "\n\nThe poll can have up to 20 options and will be created in the channel you "
+                  "specified\n\nIf you want to create a simple yes/no poll, do `<prefix> poll "
+                  "yesno <#mention channel> <title of poll>`")
+    async def yesno(self, ctx, channel: discord.TextChannel=None, *, title: str):
+        if channel is None:
+            raise commands.BadArgument
+
+        await ctx.send(
+            f"Ok, the poll __{title}__ has been created in the channel {channel.mention}",
+            delete_after=6.0)
+        await delete_message(ctx, 6)
+
+        embed = discord.Embed(
+            title="\U0001f4ca " + title, description="React with one of the emojis below to vote",
+            timestamp=datetime.datetime.utcnow(), color=find_color(ctx))
+        embed.set_author(
+            name=f"{ctx.author.display_name} is holding a straw poll:",
+            icon_url=ctx.author.avatar_url)
+
+        strawpoll = await channel.send(embed=embed)
+        await strawpoll.add_reaction("\U0001f44d")
+        await strawpoll.add_reaction("\U0001f44e")
 
     @commands.command(brief="Invalid formatting. The command is supposed to look like this: "
                       "`<prefix> prune <days>`\n\nInactive members are denoted if they have not "
