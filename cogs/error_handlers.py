@@ -102,7 +102,7 @@ class Error_Handlers(commands.Cog):
 
             #* Voting reward
             if await self.bot.dbl.get_user_vote(ctx.author.id):
-                await asyncio.sleep(c.per * (2/3))
+                await asyncio.sleep(retry_after)
                 ctx.command.reset_cooldown(ctx)
             return
 
