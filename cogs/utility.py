@@ -405,6 +405,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     async def prefix(self, ctx):
         """Shows my prefixes for this server. You can also add or remove server-specific prefixes (this requires the Manage Server perm)"""
+
         if self.bot.guilddata[ctx.guild.id]["prefixes"]:
             guild_prefixes = self.bot.guilddata[ctx.guild.id]["prefixes"]
         else:
@@ -419,7 +420,7 @@ class Utility(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     async def add(self, ctx, pre: str):
 
-        if len(self.bot.guilddata[ctx.guild.id]["prefixes"]) == 10:
+        if len(self.bot.guilddata[ctx.guild.id]["prefixes"]) >= 10:
             await ctx.send("This server already has 10 custom prefixes, which is the maximum. As "
                            "much as I'm sure you need yet another one, you can't add it unless "
                            "you remove one of the already existing prefixes", delete_after=12.0)
@@ -834,10 +835,10 @@ class Utility(commands.Cog):
             embed.set_author(name=f"{ctx.guild.name}: All Tags", icon_url=ctx.guild.icon_url)
             embed.set_footer(text=footer)
             for t in i:
-                if self.bot.get_user(tags[t]["owner"]):
+                if ctx.guild.get_member(tags[t]["owner"]):
                     owner = self.bot.get_user(tags[t]["owner"]).mention
                 else:
-                    owner = "Unknown"
+                    owner = "*Left the server*"
                 embed.add_field(
                     name=f"{sorted_tags.index(t) + 1}. {t}",
                     value=f"**Owner**: {owner}\n**Uses**: {tags[t]['uses']}")
@@ -927,13 +928,13 @@ class Utility(commands.Cog):
             color=find_color(ctx))
         embed.set_footer(text="Tag created")
 
-        if self.bot.get_user(the_tag["owner"]):
+        if ctx.guild.get_member(the_tag["owner"]):
             embed.set_author(name=self.bot.get_user(the_tag["owner"]),
                              icon_url=self.bot.get_user(the_tag["owner"]).avatar_url)
 
             embed.add_field(name="Owner", value=self.bot.get_user(the_tag["owner"]).mention)
         else:
-            embed.add_field(name="Owner", value="Unknown")
+            embed.add_field(name="Owner", value="`Left the server`")
         embed.add_field(name="Uses", value=the_tag["uses"])
         embed.add_field(
             name="Rank",
@@ -1092,7 +1093,7 @@ class Utility(commands.Cog):
 
             removed = []
             for name, data, in self.bot.guilddata[ctx.guild.id]["tags"].copy().items():
-                if self.bot.get_user(data["owner"]) not in ctx.guild.members:
+                if not ctx.guild.get_member(data["owner"]):
                     self.bot.guilddata[ctx.guild.id]["tags"].pop(name)
                     removed.append(name)
 
@@ -1143,8 +1144,8 @@ class Utility(commands.Cog):
         if ctx.author.id == owner_id:
             await ctx.send(f"Ok, {ctx.author.mention}'s `{name}` tag has been removed")
         else:
-            if self.bot.get_user(owner_id):
-                await ctx.send(f"Ok, {self.bot.get_user(owner_id).mention}'s `{name}` tag has "
+            if ctx.guild.get_member(owner_id):
+                await ctx.send(f"Ok, {ctx.guild.get_member(owner_id).mention}'s `{name}` tag has "
                                f"been removed by {ctx.author.mention}")
             else:
                 await ctx.send(f"Ok, the `{name}` tag has been removed by {ctx.author.mention}")
@@ -1171,7 +1172,7 @@ class Utility(commands.Cog):
             await ctx.send("Ownership of a tag cannot be transferred to a bot", delete_after=6.0)
             return await delete_message(ctx, 6)
 
-        old_owner = self.bot.get_user(self.bot.guilddata[ctx.guild.id]["tags"][name]["owner"])
+        old_owner = ctx.guild.get_member(self.bot.guilddata[ctx.guild.id]["tags"][name]["owner"])
         if new_owner == old_owner:
             await ctx.send(f"{new_owner.display_name} already owns this tag", delete_after=5.0)
             return await delete_message(ctx, 5)
