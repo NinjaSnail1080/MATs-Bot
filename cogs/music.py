@@ -439,14 +439,14 @@ class Music(commands.Cog):
         return await delete_message(ctx, 15)
 
     @commands.command(aliases=["ffw"], brief="Invalid formatting. The command is supposed to "
-                      "look like this:\n`<prefix> rewind <seconds to rewind>`")
+                      "look like this:\n`<prefix> forward <seconds to rewind>`")
     @check_queue(current=True)
     @is_dj(strict_perm=True)
     @check_voice()
     @commands.cooldown(1, 9, commands.BucketType.user)
     async def forward(self, ctx, sec: int):
         """Fast-forward the currently playing song
-        Format like this: `<prefix> rewind <seconds to ffw>`
+        Format like this: `<prefix> forward <seconds to ffw>`
         """
         player = self.get_player(ctx)
         if not player.current.data["duration"]:
@@ -504,7 +504,7 @@ class Music(commands.Cog):
     @is_dj(strict_perm=True)
     @check_voice()
     @commands.cooldown(1, 9, commands.BucketType.user)
-    async def loop_(self, ctx, param: str = ""):
+    async def loop_(self, ctx, param: str=""):
         """Loop the currently playing song. Do `loop queue` to loop the entire queue. If a song or the queue is already looping, running this command again will stop the loop"""
 
         player = self.get_player(ctx)
