@@ -418,7 +418,7 @@ class Info(commands.Cog):
             embed.add_field(name="System Channel", value="No System Channel")
         embed.add_field(name="Region", value=str(s.region).replace(
             "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
-                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "V.I.P."))
+                "Us", "U.S.").replace("Vip", "V.I.P."))
         if s.mfa_level:
             embed.add_field(name="Requires 2FA?", value="Yes")
         else:

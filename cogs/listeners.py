@@ -128,7 +128,7 @@ class Listeners(commands.Cog):
             embed.add_field(name="Requires 2FA?", value="No")
         embed.add_field(name="Region", value=str(guild.region).replace(
             "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
-                "Us", "U.S.").replace("Eu", "EUR").replace("Vip", "V.I.P."))
+                "Us", "U.S.").replace("Vip", "V.I.P."))
         embed.add_field(name="Default Notification Level",
                         value=str(guild.default_notifications)[18:].replace("_", " ").title())
         embed.add_field(
