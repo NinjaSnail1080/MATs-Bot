@@ -139,7 +139,7 @@ class Fun(commands.Cog):
         if os.path.isfile(filename):
             os.remove(filename)
 
-    @commands.command(aliases=["aki"], hidden=True)
+    @commands.command(aliases=["aki"])
     @commands.cooldown(1, 45, commands.BucketType.user)
     async def akinator(self, ctx):
         """Start a game with the legendary Akinator!"""
@@ -200,9 +200,11 @@ class Fun(commands.Cog):
             try:
                 await aki.start_game()
             except:
-                #* If main English server is down
-                await aki.start_game("en2")
-            target_progress = 85
+                try:
+                    await aki.start_game("en2")
+                except:
+                    await aki.start_game("en3")
+            target_progress = 80
             previous_progress = aki.progression #* 0 at the start
 
             while True:
@@ -303,7 +305,7 @@ class Fun(commands.Cog):
                     return await game.edit(content=None, embed=embed)
 
                 #* If the player selected the "no" emoji when Aki guessed their character
-                if aki.progression > 99:
+                if aki.progression > 95:
                     break
                 embed = discord.Embed(title="Would you like to continue?", color=find_color(ctx))
                 add_to_embed(embed)
@@ -323,7 +325,7 @@ class Fun(commands.Cog):
                     return ctx.message.delete()
 
                 if react.emoji == "\U00002611": #* Keep asking questions; continues the game loop
-                    target_progress = 99
+                    target_progress = 95
                     await game.edit(content="***Loading...***")
                 else:
                     break
@@ -340,11 +342,6 @@ class Fun(commands.Cog):
             return await game.edit(content=None, embed=embed)
 
         #* Start of command
-        return await ctx.send(
-            "I'm sorry, but this command isn't working right now. My creator is still having "
-            "trouble getting it to work. When he finally does, I'll be updated with the new code "
-            "and you'll be able to play Akinator with me.\n\nBut for now, you'll have to settle "
-            "with the website. Sorry about that")
         embed = discord.Embed(
             title="Hello, I am Akinator",
             description="Think about a real or fictional character. I will ask you questions and "
