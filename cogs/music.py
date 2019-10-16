@@ -63,23 +63,23 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.data = data
 
     @classmethod
-    async def create_source(cls, ctx, search: str, seek: int=None, as_list: bool=True):
+    async def create_source(cls, ctx, search: str, seek: int=None, gain: int=None, as_list: bool=True):
         """Extracts info from a video and returns it as a dict"""
 
         data = await ctx.bot.loop.run_in_executor(None, functools.partial(
             ctx.bot.ytdl.extract_info,
             url=search,
             download=False,
-            extra_info={"requester": ctx.author, "seek": seek}))
+            extra_info={"requester": ctx.author, "seek": seek, "gain": gain}))
 
         if "entries" in data:
             if len(data["entries"]) == 1:
                 data = data["entries"][0]
-                data.update({"requester": ctx.author, "seek": seek})
+                data.update({"requester": ctx.author, "seek": seek, "gain": gain})
             else:
                 list_data = []
                 for d in data["entries"]:
-                    d.update({"requester": ctx.author, "seek": seek})
+                    d.update({"requester": ctx.author, "seek": seek, "gain": gain})
                     list_data.append(d)
                 return list_data
 
@@ -96,11 +96,15 @@ class YTDLSource(discord.PCMVolumeTransformer):
             bot.ytdl.extract_info,
             url=data["webpage_url"],
             download=False,
-            extra_info={"requester": data["requester"], "seek": data["seek"]}))
+            extra_info={"requester": data["requester"],
+                        "seek": data["seek"],
+                        "gain": data["gain"]}))
 
         ffmpeg_options = default_ffmpeg_options.copy()
         if data["seek"]:
             ffmpeg_options["before_options"] += " -ss " + parse_duration(data["seek"])
+        if data["gain"]:
+            ffmpeg_options["before_optins"] += " -g " + data["gain"]
 
         return cls(discord.FFmpegPCMAudio(data["url"], **ffmpeg_options), data)
 
@@ -395,6 +399,15 @@ class Music(commands.Cog):
         #TODO: Make this one day
         raise NotImplementedError
 
+    # @commands.command()
+    # @check_queue(current=True)
+    # @has_voted()
+    # @check_voice()
+    # async def bassboost(self, ctx, level: int=3):
+    #     """Bassboost the currently playing song!
+    #     WIP
+    #     """
+
     @commands.command(aliases=["leftcleanup"])
     @check_queue(empty=True)
     @is_dj()
@@ -462,7 +475,10 @@ class Music(commands.Cog):
 
         current_time = int(time.time() - player.timestamp - player.time_paused)
         if current_time + sec > player.current.data["duration"]:
-            return await ctx.send("WIP")
+            await ctx.send(f"That's too far to fast-forward. The song is only "
+                           f"`{parse_duration(player.current.data['duration'])}` long",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
 
         return await ctx.invoke(self.seek, parse_duration(current_time + sec))
 
@@ -1030,7 +1046,10 @@ class Music(commands.Cog):
 
         current_time = int(time.time() - player.timestamp - player.time_paused)
         if current_time - sec < 0:
-            return await ctx.send("WIP")
+            await ctx.send("That's too far to rewind. The current position in the song is "
+                           f"`{parse_duration(current_time)}`",
+                           delete_after=7.0)
+            return await delete_message(ctx, 7)
 
         return await ctx.invoke(self.seek, parse_duration(current_time - sec))
 
@@ -1140,10 +1159,11 @@ class Music(commands.Cog):
         else:
             ctx.voice_client.stop()
 
-        await ctx.send(
-            f"{ctx.author.mention} seeked to `{parse_duration(position)}` in *{data['title']}*",
-            delete_after=15.0)
-        return await delete_message(ctx, 15)
+        if ctx.command.name != "bassboost":
+            await ctx.send(f"{ctx.author.mention} seeked to `{parse_duration(position)}` in "
+                           f"*{data['title']}*",
+                           delete_after=15.0)
+            return await delete_message(ctx, 15)
 
     @commands.command()
     @check_queue(empty=True)
