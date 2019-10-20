@@ -713,7 +713,7 @@ class Music(commands.Cog):
                         inline=False)
         embed.add_field(name=f"{ctx.prefix}musicsettings strict",
                         value="Toggle the Strict Perms setting. If it's **off**, the `pause`, "
-                              "`resume`, `seek`, `forward`, `back`, `replay`, `loop`, and "
+                              "`resume`, `seek`, `forward`, `rewind`, `replay`, `loop`, and "
                               "`shuffle` commands can be used by anyone. If it's **on**, only "
                               "people with the **Manage Messages** perm or the DJ role (if there "
                               "is one) can use those 8 commands",
@@ -785,7 +785,7 @@ class Music(commands.Cog):
             await ctx.send(
                 f"The Strict Perms setting has been turned **off** for this server by "
                 f"{ctx.author.mention}. Now, anyone can use the commands: "
-                "`pause`, `resume`, `seek`, `forward`, `back`, `replay`, `loop`, and `shuffle`")
+                "`pause`, `resume`, `seek`, `forward`, `rewind`, `replay`, `loop`, and `shuffle`")
 
         else:
             self.bot.guilddata[ctx.guild.id]["musicsettings"]["strict"] = True
@@ -794,7 +794,7 @@ class Music(commands.Cog):
             await ctx.send(f"The Strict Perms setting has been turned **on** for this server by "
                            f"{ctx.author.mention}. Now, only users with the **Manage Messages** "
                            "perm or the DJ role (if there is one) can use the commands: "
-                           "`pause`, `resume`, `seek`, `forward`, `back`, `replay`, `loop`, "
+                           "`pause`, `resume`, `seek`, `forward`, `rewind`, `replay`, `loop`, "
                            "and `shuffle`")
 
     @commands.command()
