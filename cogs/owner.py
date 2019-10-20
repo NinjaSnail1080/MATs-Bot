@@ -136,6 +136,13 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
             return await delete_message(ctx, 5)
 
     @commands.command()
+    async def restartsg(self, ctx):
+        self.bot.switch_games.cancel()
+        self.bot.switch_games.start()
+        await ctx.send("Restarted `switch_games` function", delete_after=3.0)
+        return await delete_message(ctx, 3)
+
+    @commands.command()
     async def setstatus(self, ctx, status):
         """Change the bot's presence"""
 
