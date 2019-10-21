@@ -36,25 +36,29 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        channels = [t for t in guild.text_channels if t.permissions_for(guild.me).send_messages]
+        try:
+            channels = [
+                t for t in guild.text_channels if t.permissions_for(guild.me).send_messages]
 
-        for c in channels:
-            if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
-                "general", c.name) or re.search("bot", c.name):
+            for c in channels:
+                if re.search("off-topic", c.name) or re.search("chat", c.name) or re.search(
+                    "general", c.name) or re.search("bot", c.name):
 
-                msg_channel = c
+                    msg_channel = c
+                    await msg_channel.send(
+                        embed=discord.Embed(description=self.bot.join_new_guild_message,
+                                            color=discord.Color.blurple()))
+                    break
+            else:
+                #* If it didn't find a channel to send in
+                msg_channel = random.choice(channels)
                 await msg_channel.send(
+                    content="~~Damn, you guys must have a really strange system for naming your "
+                            "channels~~",
                     embed=discord.Embed(description=self.bot.join_new_guild_message,
                                         color=discord.Color.blurple()))
-                break
-        else:
-            #* If it didn't find a channel to send in
-            msg_channel = random.choice(channels)
-            await msg_channel.send(
-                content="~~Damn, you guys must have a really strange system for naming your "
-                "channels~~",
-                embed=discord.Embed(
-                    description=self.bot.join_new_guild_message, color=discord.Color.blurple()))
+        except:
+            pass
 
         async with self.bot.pool.acquire() as conn:
             await conn.execute("""
@@ -128,7 +132,7 @@ class Listeners(commands.Cog):
             embed.add_field(name="Requires 2FA?", value="No")
         embed.add_field(name="Region", value=str(guild.region).replace(
             "-", " ").replace("south", "south ").replace("hong", "hong ").title().replace(
-                "Us", "U.S.").replace("Vip", "V.I.P."))
+                "Us", "U.S.").replace("Eu ", "EUR ").replace("Vip", "V.I.P."))
         embed.add_field(name="Default Notification Level",
                         value=str(guild.default_notifications)[18:].replace("_", " ").title())
         embed.add_field(
