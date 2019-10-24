@@ -104,7 +104,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if data["seek"]:
             ffmpeg_options["before_options"] += " -ss " + parse_duration(data["seek"])
         if data["gain"]:
-            ffmpeg_options["before_optins"] += " -g " + data["gain"]
+            ffmpeg_options["options"] += " -af bass=g=" + data["gain"]
 
         return cls(discord.FFmpegPCMAudio(data["url"], **ffmpeg_options), data)
 
@@ -1129,7 +1129,7 @@ class Music(commands.Cog):
             elif len(pos) == 2:
                 position = (int(pos[0]) * 60) + int(pos[1])
             elif len(pos) == 3:
-                position = (int(pos[0]) * 60 * 60) + (int(pos[0]) * 60) + int(pos[1])
+                position = (int(pos[0]) * 60 * 60) + (int(pos[1]) * 60) + int(pos[2])
             else:
                 raise commands.BadArgument
         except:
@@ -1143,7 +1143,8 @@ class Music(commands.Cog):
 
         await ctx.channel.trigger_typing()
         data = player.current.data
-        source = await YTDLSource.create_source(ctx, data["webpage_url"], position, False)
+        source = await YTDLSource.create_source(
+            ctx, data["webpage_url"], seek=position, as_list=False)
         player.queue._queue.appendleft(source)
 
         if player.looping:
@@ -1154,16 +1155,15 @@ class Music(commands.Cog):
         elif player.queue_looping:
             player.queue_looping = False
             ctx.voice_client.stop()
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
             player.queue_looping = True
         else:
             ctx.voice_client.stop()
 
-        if ctx.command.name != "bassboost":
-            await ctx.send(f"{ctx.author.mention} seeked to `{parse_duration(position)}` in "
-                           f"*{data['title']}*",
-                           delete_after=15.0)
-            return await delete_message(ctx, 15)
+        await ctx.send(
+            f"{ctx.author.mention} seeked to `{parse_duration(position)}` in *{data['title']}*",
+            delete_after=15.0)
+        return await delete_message(ctx, 15)
 
     @commands.command()
     @check_queue(empty=True)
