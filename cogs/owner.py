@@ -137,6 +137,8 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
 
     @commands.command()
     async def restartsg(self, ctx):
+        """Restart the "switch_games()" function"""
+
         self.bot.switch_games.cancel()
         self.bot.switch_games.start()
         await ctx.send("Restarted `switch_games` function", delete_after=3.0)
