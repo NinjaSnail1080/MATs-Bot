@@ -112,6 +112,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Player():
     """A class assigned to each guild that's playing music. Destroyed when the bot disconnects"""
 
+    __slots__ = ("bot", "channel", "cog", "queue", "next", "np_msg", "np_invoker", "volume",
+                 "looping", "queue_looping", "timestamp", "time_paused", "current",
+                 "playing", "player_task", "paused", "paused_task")
+
     def __init__(self, ctx):
         self.bot = ctx.bot
         self.channel = ctx.channel
@@ -159,11 +163,11 @@ class Player():
                                             f"**{source['title']}**")
                 continue
 
-            source.volume = self.volume
             self.current = source
+            self.current.volume = self.volume
 
             self.channel.guild.voice_client.play(
-                source, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
+                self.current, after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set))
 
             self.timestamp = time.time()
             if self.current.data["seek"]:
@@ -407,6 +411,12 @@ class Music(commands.Cog):
     #     """Bassboost the currently playing song!
     #     WIP
     #     """
+    #     player = self.get_player(ctx)
+    #     if not player.current.data["duration"]:
+    #         await ctx.send(f"*{player.current.data['title']}* is playing LIVE, so you can't use "
+    #                        "the `bassboost` command on it",
+    #                        delete_after=10.0)
+    #         return await delete_message(ctx, 10)
 
     @commands.command(aliases=["leftcleanup"])
     @check_queue(empty=True)
@@ -464,7 +474,7 @@ class Music(commands.Cog):
         player = self.get_player(ctx)
         if not player.current.data["duration"]:
             await ctx.send(f"*{player.current.data['title']}* is playing LIVE, so you can't use "
-                           "the forward command on it",
+                           "the `forward` command on it",
                            delete_after=10.0)
             return await delete_message(ctx, 10)
 
@@ -473,7 +483,7 @@ class Music(commands.Cog):
                            delete_after=6.0)
             return await delete_message(ctx, 6)
 
-        current_time = int(time.time() - player.timestamp - player.time_paused)
+        current_time = round(time.time() - player.timestamp - player.time_paused)
         if current_time + sec > player.current.data["duration"]:
             await ctx.send(f"That's too far to fast-forward. The song is only "
                            f"`{parse_duration(player.current.data['duration'])}` long",
@@ -525,9 +535,12 @@ class Music(commands.Cog):
 
         player = self.get_player(ctx)
         if player.looping:
-            if not player.paused:
-                embed = player.np_msg.embeds[0]
-                await player.np_msg.edit(embed=embed.set_author(name="\U0001f50a Now Playing"))
+            try:
+                if not player.paused:
+                    await player.np_msg.edit(
+                        embed=player.np_msg.embeds[0].set_author(name="\U0001f50a Now Playing"))
+            except:
+                pass
             player.looping = False
             await ctx.send(f"{ctx.author.mention} stopped the song from looping",
                            delete_after=15.0)
@@ -560,10 +573,12 @@ class Music(commands.Cog):
                            "me to play a song", delete_after=7.0)
             return await delete_message(ctx, 7)
         else:
-            if not player.paused:
-                embed = player.np_msg.embeds[0]
-                await player.np_msg.edit(embed=embed.set_author(
-                    name="\U0001f50a Now Playing\u2000|\u2000\U0001f501 Looping"))
+            try:
+                if not player.paused:
+                    await player.np_msg.edit(embed=player.np_msg.embeds[0].set_author(
+                        name="\U0001f50a Now Playing\u2000|\u2000\U0001f501 Looping"))
+            except:
+                pass
             player.looping = True
             await ctx.send(f"{ctx.author.mention} set the song to play on a loop",
                             delete_after=15.0)
@@ -814,8 +829,11 @@ class Music(commands.Cog):
         ctx.voice_client.pause()
         player.paused = True
 
-        embed = player.np_msg.embeds[0]
-        await player.np_msg.edit(embed=embed.set_author(name="\U000023f8 Paused"))
+        try:
+            await player.np_msg.edit(
+                embed=player.np_msg.embeds[0].set_author(name="\U000023f8 Paused"))
+        except:
+            pass
 
         await ctx.send(f"{ctx.author.mention} **paused** the song!", delete_after=15.0)
         return await delete_message(ctx, 15)
@@ -1012,12 +1030,15 @@ class Music(commands.Cog):
         ctx.voice_client.resume()
         player.paused = False
 
-        embed = player.np_msg.embeds[0]
-        if player.looping:
-            embed.set_author(name="\U0001f50a Now Playing\u2000|\u2000\U0001f501 Looping")
-        else:
-            embed.set_author(name="\U0001f50a Now Playing")
-        await player.np_msg.edit(embed=embed)
+        try:
+            if player.looping:
+                player.np_msg.edit(embed=player.np_msg.embeds[0].set_author(
+                    name="\U0001f50a Now Playing\u2000|\u2000\U0001f501 Looping"))
+            else:
+                player.np_msg.edit(
+                    embed=player.np_msg.embeds[0].set_author(name="\U0001f50a Now Playing"))
+        except:
+            pass
 
         await ctx.send(f"{ctx.author.mention} **resumed** the song!", delete_after=15.0)
         return await delete_message(ctx, 15)
@@ -1035,7 +1056,7 @@ class Music(commands.Cog):
         player = self.get_player(ctx)
         if not player.current.data["duration"]:
             await ctx.send(f"*{player.current.data['title']}* is playing LIVE, so you can't use "
-                           "the rewind command on it",
+                           "the `rewind` command on it",
                            delete_after=10.0)
             return await delete_message(ctx, 10)
 
@@ -1044,7 +1065,7 @@ class Music(commands.Cog):
                            delete_after=6.0)
             return await delete_message(ctx, 6)
 
-        current_time = int(time.time() - player.timestamp - player.time_paused)
+        current_time = round(time.time() - player.timestamp - player.time_paused)
         if current_time - sec < 0:
             await ctx.send("That's too far to rewind. The current position in the song is "
                            f"`{parse_duration(current_time)}`",
@@ -1112,7 +1133,7 @@ class Music(commands.Cog):
         player = self.get_player(ctx)
         if not player.current.data["duration"]:
             await ctx.send(f"*{player.current.data['title']}* is playing LIVE, so you can't use "
-                           "the seek command on it",
+                           "the `seek` command on it",
                            delete_after=10.0)
             return await delete_message(ctx, 10)
 
