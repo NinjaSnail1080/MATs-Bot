@@ -89,10 +89,9 @@ class Utility(commands.Cog):
                 try:
                     author = self.bot.get_user(r["author"])
                     channel = self.bot.get_channel(r["channel"])
-                    # try:
-                    #     msg = [m for m in self.bot.cached_messages if m.id == r["msg"]]
-                    # except IndexError:
-                    msg = await channel.fetch_message(r["msg"])
+                    msg = discord.utils.get(self.bot.cached_messages, id=r["msg"])
+                    if msg is None:
+                        msg = await channel.fetch_message(r["msg"])
                 except:
                     #* If something went wrong (for example, the bot can't see the user anymore),
                     #* just get rid of it and move on

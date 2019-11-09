@@ -87,7 +87,9 @@ class Moderation(commands.Cog):
             return
 
         channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        message = discord.utils.get(self.bot.cached_messages, id=payload.message_id)
+        if message is None:
+            message = await channel.fetch_message(payload.message_id)
         starboard = self.bot.get_channel(
             self.bot.guilddata[payload.guild_id]["starboard"]["channel"])
         num_reactions = self.bot.guilddata[payload.guild_id]["starboard"]["num_reactions"]
@@ -214,7 +216,9 @@ class Moderation(commands.Cog):
             if datetime.datetime.utcnow() >= datetime.datetime.fromtimestamp(g["end_time"]):
                 try:
                     channel = self.bot.get_channel(g["channel"])
-                    msg = await channel.fetch_message(g["msg"])
+                    msg = discord.utils.get(self.bot.cached_messages, id=g["msg"])
+                    if msg is None:
+                        msg = await channel.fetch_message(g["msg"])
                     author = channel.guild.get_member(g["author"])
                     blacklist = g["blacklist"]
                     num_winners = g["winners"]
