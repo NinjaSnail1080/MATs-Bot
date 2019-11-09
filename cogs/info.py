@@ -553,7 +553,7 @@ class Info(commands.Cog):
 
         uptime = datetime.datetime.utcnow() - self.bot.started_at
 
-        y = int(uptime.total_seconds()) // 31557600  #* Number of seconds in 356.25 days
+        y = int(uptime.total_seconds()) // 31557600  #* Number of seconds in 365.25 days
         mo = int(uptime.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
         d = int(uptime.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
         h = int(uptime.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
@@ -682,7 +682,7 @@ class Info(commands.Cog):
 
         delta = datetime.datetime.utcnow() - user.created_at
 
-        y = int(delta.total_seconds()) // 31557600  #* Number of seconds in 356.25 days
+        y = int(delta.total_seconds()) // 31557600  #* Number of seconds in 365.25 days
         mo = int(delta.total_seconds()) // 2592000 % 12  #* Number of seconds in 30 days
         d = int(delta.total_seconds()) // 86400 % 30  #* Number of seconds in 1 day
         h = int(delta.total_seconds()) // 3600 % 24  #* Number of seconds in 1 hour
