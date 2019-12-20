@@ -78,7 +78,7 @@ class MAT(commands.Bot):
                          shard_id=0,
                          status=discord.Status.dnd,
                          activity=discord.Game("Initializing..."),
-                         fetch_offline_members=False)
+                         fetch_offline_members=True)
 
         self.process = psutil.Process((os.getpid()))
 
