@@ -97,6 +97,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
                     goodbye JSON,
                     last_delete JSON,
                     musicsettings JSON,
+                    saved_roles JSON NOT NULL DEFAULT '{}',
                     tags JSON NOT NULL DEFAULT '{}'
                 )
             ;""")
