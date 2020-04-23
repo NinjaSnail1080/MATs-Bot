@@ -165,7 +165,7 @@ class Database(commands.Cog, command_attrs={"hidden": True}):
         self.bot.messages_read = collections.Counter(self.bot.botdata["messages_read"])
         self.bot.ready_for_commands = True
 
-    @tasks.loop(minutes=30)
+    @tasks.loop(minutes=20)
     async def update_db_msg_cmd_count(self):
         """Update the db with message and command counts"""
 
