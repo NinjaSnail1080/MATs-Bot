@@ -121,10 +121,7 @@ class Owner(commands.Cog, command_attrs={"hidden": True}):
         try:
             if cog is None:
                 for extension in self.bot.extensions.keys():
-                    try:
-                        self.bot.reload_extension(extension)
-                    except:
-                        pass
+                    self.bot.reload_extension(extension)
                 await ctx.send(f"Reloaded all cogs", delete_after=5.0)
                 return await delete_message(ctx, 5)
             else:
