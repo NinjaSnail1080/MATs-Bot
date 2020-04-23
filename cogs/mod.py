@@ -185,9 +185,16 @@ class Moderation(commands.Cog):
         if self.bot.guilddata[member.guild.id]["autorole"] is not None:
             try:
                 role = member.guild.get_role(self.bot.guilddata[member.guild.id]["autorole"])
-                await member.add_roles(role, reason=f"Autorole")
+                await member.add_roles(role, reason="Autorole")
             except:
                 pass
+
+        if str(member.id) in self.bot.guilddata[member.guild.id]["saved_roles"]:
+            saved_roles = []
+            for i in self.bot.guilddata[member.guild.id]["saved_roles"][str(member.id)]:
+                if member.guild.get_role(i) is not None:
+                    saved_roles.append(member.guild.get_role(i))
+            await member.add_roles(*saved_roles, reason="Saved roles")
 
         welcome = self.bot.guilddata[member.guild.id]["welcome"]
         if welcome is not None:
@@ -1847,6 +1854,59 @@ class Moderation(commands.Cog):
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
 
+    @commands.command(brief="Invalid Formatting. The command is supposed to look like this: "
+                      "`<prefix> saveroles <@mention member OR \"all\">`")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def saveroles(self, ctx, member: typing.Union[discord.Member, str]):
+        """Save a user's roles so that if they leave and rejoin a server, I'll automatically re-add their roles.
+        Format like this: `<prefix> saveroles <@mention member OR "all">`
+        If you put `all` instead of mentioning someone, I'll save the roles of all members on the server (except for those with only one role).
+        You can use the `unsaveroles` command to unsave someone's roles
+        """
+        async def update_db_saved_roles():
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET saved_roles = $1::JSON
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["saved_roles"])
+
+        def save_all_roles():
+            saved_roles = {}
+            for m in ctx.guild.members:
+                if len(m.roles) > 2:
+                    saved_roles.update(
+                        {str(m.id): [r.id for r in m.roles if r.name != "@everyone"]})
+            return saved_roles
+
+        if member == "all":
+            temp = await ctx.send("Please wait...")
+            with ctx.channel.typing():
+                saved_roles = await self.bot.loop.run_in_executor(None, save_all_roles)
+                self.bot.guilddata[ctx.guild.id]["saved_roles"].update(saved_roles)
+                await update_db_saved_roles()
+            await temp.delete()
+            await ctx.send(
+                f"I saved the roles of {len(saved_roles)} members on this server who had more"
+                "than 1 role. Now, if any of them leave and rejoin the server, their roles "
+                "will be re-added.\nNote: I only save current roles. If someone's roles change "
+                "in the future, this command will have to be called again to update them")
+
+        elif isinstance(member, discord.Member):
+            if len(member.roles) <= 1:
+                await ctx.send("That user doesn't have any roles", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            self.bot.guilddata[ctx.guild.id]["saved_roles"].update(
+                {str(member.id): [r.id for r in member.roles if r.name != "@everyone"]})
+            await update_db_saved_roles()
+            await ctx.send(f"Ok, I saved {member.mention}'s roles. Now, if they leave and rejoin "
+                           "the server, their roles will be re-added.\nNote: I only saved their "
+                           "current roles. If they ever gain or lose roles, this command "
+                           "will have to be called again to update their saved roles")
+        else:
+            raise commands.BadArgument
+
     @commands.command(
         brief="Role not found. Try again (note that the role name is case-sensitive)")
     @commands.has_permissions(manage_roles=True)
@@ -2137,6 +2197,47 @@ class Moderation(commands.Cog):
 
         await ctx.send(embed=embed)
         await send_log(ctx, embed)
+
+    @commands.command(brief="Invalid Formatting. The command is supposed to look like this: "
+                      "`<prefix> unsaveroles <@mention member OR \"all\">`")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def unsaveroles(self, ctx, member: typing.Union[discord.Member, str]):
+        """Unsave a user's roles so that they'll no longer be automatically re-added if they leave and rejoin the server.
+        Format like this: `<prefix> unsaveroles <@mention member OR "all">`
+        If you type `all` instead of mentioning someone, I'll unsave all roles for everyone on the server
+        """
+        async def update_db_saved_roles():
+            async with self.bot.pool.acquire() as conn:
+                await conn.execute("""
+                    UPDATE guilddata
+                    SET saved_roles = $1::JSON
+                    WHERE id = {}
+                ;""".format(ctx.guild.id), self.bot.guilddata[ctx.guild.id]["saved_roles"])
+
+        if member == "all":
+            if not self.bot.guilddata[ctx.guild.id]["saved_roles"]:
+                await ctx.send("No one on this server has their roles saved", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            saved_roles = self.bot.guilddata[ctx.guild.id]["saved_roles"].copy()
+            self.bot.guilddata[ctx.guild.id]["saved_roles"].clear()
+            await update_db_saved_roles()
+            await ctx.send(
+                f"I unsaved all the roles of {len(saved_roles)} members on this server who had "
+                "them saved. Now, if any of them leave and rejoin the server, their previous "
+                "roles will no longer be automatically re-added")
+
+        elif isinstance(member, discord.Member):
+            if str(member.id) not in self.bot.guilddata[ctx.guild.id]["saved_roles"]:
+                await ctx.send("That user doesn't have their roles saved", delete_after=5.0)
+                return await delete_message(ctx, 5)
+            self.bot.guilddata[ctx.guild.id]["saved_roles"].pop(str(member.id))
+            await update_db_saved_roles()
+            await ctx.send(
+                f"Ok, I unsaved {member.mention}'s roles. Now, if they leave and rejoin the "
+                "server, their previous roles will no longer be automatically re-added")
+        else:
+            raise commands.BadArgument
 
 
 def setup(bot):
