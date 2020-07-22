@@ -139,10 +139,15 @@ class Fun(commands.Cog):
         if os.path.isfile(filename):
             os.remove(filename)
 
-    @commands.command(aliases=["aki"])
+    @commands.command(aliases=["aki"], brief="Invalid formatting. The command is supposed to "
+                      "look like this: `<prefix> abandon (OPTIONAL)<theme>`\n\nThe theme can be "
+                      "either `characters` or `c`, `animals` or `a`, OR `objects` or `o`. If "
+                      "left out, it'll default to `characters`")
     @commands.cooldown(1, 45, commands.BucketType.user)
-    async def akinator(self, ctx):
-        """Start a game with the legendary Akinator!"""
+    async def akinator(self, ctx, theme=None):
+        """Start a game with the legendary Akinator!
+        Format like this: `<prefix> abandon (OPTIONAL)<theme>`
+        The theme can be either `characters` or `c`, `animals` or `a`, OR `objects` or `o`. If left out, it'll default to `characters`"""
 
         aki_up = ["https://i.imgur.com/ACUMdmP.png", "https://i.imgur.com/MV0i5Gn.png",
                   "https://i.imgur.com/RqXE9qK.png", "https://i.imgur.com/Cl9ZRlQ.png"]
@@ -194,16 +199,15 @@ class Fun(commands.Cog):
                 icon_url="https://is4-ssl.mzstatic.com/image/thumb/Purple128/v4/f5/11/6d/f5116d77"
                          "-c0cf-3a38-f2fa-e2fa1624d594/source/512x512bb.jpg")
 
-        async def play_akinator(game, player):
+        async def play_akinator(game, player, game_theme):
             await game.edit(content="***Loading...***")
             aki = Akinator()
-            try:
-                await aki.start_game()
-            except:
-                try:
-                    await aki.start_game("en2")
-                except:
-                    await aki.start_game("en3")
+            if game_theme == "character":
+                await aki.start_game("en", not game.channel.is_nsfw())
+            elif game_theme == "animal":
+                await aki.start_game("en_animals", not game.channel.is_nsfw())
+            elif game_theme == "object":
+                await aki.start_game("en_objects", not game.channel.is_nsfw())
             target_progress = 80
             previous_progress = aki.progression #* 0 at the start
 
@@ -265,15 +269,16 @@ class Fun(commands.Cog):
                             except akinator_lib.CantGoBackAnyFurther:
                                 pass
                     except akinator_lib.AkiNoQuestions:
-                        break
+                        aki.progression = 100.0
                     await game.remove_reaction(react, user)
 
                 await aki.win()
                 embed = discord.Embed(title="I think of...",
-                                      description=f"**{aki.name}** ({aki.description})\n\n"
-                                      "Was I correct?",
+                                      description=f"**{aki.first_guess['name']}** "
+                                                  f"({aki.first_guess['description']})\n\n"
+                                                  "Was I correct?",
                                       color=find_color(ctx))
-                embed.set_image(url=aki.picture)
+                embed.set_image(url=aki.first_guess['absolute_picture_path'])
                 embed.set_thumbnail(url=random.choice(aki_up))
                 add_to_embed(embed)
 
@@ -333,7 +338,7 @@ class Fun(commands.Cog):
             #* If Aki loses
             embed = discord.Embed(
                 title="Bravo, you have defeated me!",
-                description="I couldn't guess your character",
+                description=f"I couldn't guess your {game_theme}",
                 color=find_color(ctx))
             embed.set_image(url="https://i.imgur.com/Msmzzii.png")
             add_to_embed(embed, False)
@@ -342,10 +347,20 @@ class Fun(commands.Cog):
             return await game.edit(content=None, embed=embed)
 
         #* Start of command
+        if theme is None or theme == "characters" or theme == "c":
+            game_theme = "character"
+        elif theme == "animals" or theme == "a":
+            game_theme = "animal"
+        elif theme == "objects" or theme == "o":
+            game_theme = "object"
+        else:
+            raise commands.BadArgument
+
         embed = discord.Embed(
             title="Hello, I am Akinator",
-            description="Think about a real or fictional character. I will ask you questions and "
-            "try to guess who it is.\n\nPress \U00002611 to play or \U0000274c to cancel",
+            description=f"Think about a real or fictional **{game_theme}**. I will ask you "
+                        "questions and try to guess who it is.\n\nPress \U00002611 to play "
+                        "or \U0000274c to cancel",
             url="https://www.akinator.com", color=find_color(ctx))
         embed.set_image(
             url="https://en.akinator.com/bundles/elokencesite/images/akinator.png?v95")
@@ -371,7 +386,7 @@ class Fun(commands.Cog):
             return await game_msg.delete()
 
         try:
-            return await play_akinator(game_msg, ctx.author)
+            return await play_akinator(game_msg, ctx.author, game_theme)
         except Exception as e:
             await game_msg.delete()
             await ctx.message.delete()
