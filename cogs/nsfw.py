@@ -338,7 +338,7 @@ class NSFW(commands.Cog):
         """Hot redheads!"""
 
         await ctx.channel.trigger_typing()
-        return await get_reddit(ctx, 1, 75, True, False, "a post", "lesbians")
+        return await get_reddit(ctx, 1, 75, True, False, "a post", "redheads")
 
     @commands.command()
     @commands.cooldown(1, 6, commands.BucketType.user)
