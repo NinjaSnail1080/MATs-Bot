@@ -129,6 +129,13 @@ decorator.py
 /discord
 /google_images_download
 /googletrans
+/h2
+/h11
+/hpack
+/hstspreload
+/httpcore
+/httpx
+/hyperframe
 /idna
 idna_ssl.py
 /lxml
@@ -151,6 +158,8 @@ pyparsing.py
 /qrcode
 ratelimiter.py
 /requests
+/rfc3986
+/sniffio
 /selenium
 six.py
 /soupsieve
