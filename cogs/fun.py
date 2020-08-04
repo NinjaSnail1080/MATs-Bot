@@ -112,7 +112,7 @@ class Fun(commands.Cog):
                 resp = await w.read()
                 await send_dank_memer_img(ctx, resp)
 
-    @commands.command(aliases=["randface", "randomface"], hidden=True)
+    @commands.command(aliases=["randface", "randomface"])
     async def aiface(self, ctx):
         """Gets a picture of a randomly generated face from [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)
         __How it works__: This website uses an AI to generate a picture of a realistic human face, so believe it or not, the people you see when you use this command don't actually exist in real life.
@@ -301,7 +301,7 @@ class Fun(commands.Cog):
                 if react.emoji == "\U00002611":
                     embed = discord.Embed(
                         title="Great, guessed right one more time!",
-                        description=f"**{aki.name}** ({aki.description})",
+                        description=f"**{aki.first_guess['name']}** ({aki.first_guess['description']})",
                         color=find_color(ctx))
                     embed.set_image(url="https://i.imgur.com/cb6SLnJ.png")
                     add_to_embed(embed, False)
