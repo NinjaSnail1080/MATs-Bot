@@ -292,11 +292,11 @@ class Utility(commands.Cog):
             "features and commands before they get released on me, the main bot. However, please "
             "note that the experimental bot likely won't be online very often")
 
-    @commands.command(aliases=["googleimages", "images"],
+    @commands.command(aliases=["googleimages", "images"], hidden=True,
                       brief="You need to include some search terms so I can get images")
     @commands.cooldown(1, 18, commands.BucketType.user)
     async def gimages(self, ctx, *, keywords):
-        """Get images from Google Images.
+        """Get images from Google Images. [DOESN'T WORK ATM]
         Format like this: `<prefix> gimages <search terms>`
         SafeSearch will be turned on if this command is used in a non-NSFW channel
         """
@@ -1563,8 +1563,7 @@ class Utility(commands.Cog):
         with ctx.channel.typing():
             data = await self.bot.loop.run_in_executor(None, functools.partial(
                 self.bot.ytdl.extract_info,
-                url="https://www.youtube.com/results?search_query="
-                    f"{keywords.replace(' ', '+')}&page=1",
+                url=f"ytsearch20: {keywords}",
                 download=False))
 
             embeds = []
