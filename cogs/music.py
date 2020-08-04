@@ -1032,10 +1032,10 @@ class Music(commands.Cog):
 
         try:
             if player.looping:
-                player.np_msg.edit(embed=player.np_msg.embeds[0].set_author(
+                await player.np_msg.edit(embed=player.np_msg.embeds[0].set_author(
                     name="\U0001f50a Now Playing\u2000|\u2000\U0001f501 Looping"))
             else:
-                player.np_msg.edit(
+                await player.np_msg.edit(
                     embed=player.np_msg.embeds[0].set_author(name="\U0001f50a Now Playing"))
         except:
             pass
