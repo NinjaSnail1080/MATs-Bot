@@ -79,11 +79,6 @@ MAT's Bot has over 200 commands, with features including but not limited to:
 
 Invite MAT's Bot to your server and type `!mat help` for more info and a full list of commands. Report any problems or suggestions you may have at my [support server](https://discord.gg/khGGxxj).
 
-### Coming Soon
- - Economy
- - Auto moderation
- - Leveling
-
 ---
 
 ###### Dedicated to AwooMAT1417#7540
